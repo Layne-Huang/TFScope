@@ -1,0 +1,102 @@
+# Agent Configuration Template
+
+This is the base template for all specialist agent configurations. Copy and customize based on domain requirements.
+
+```yaml
+name: <agent-name-in-kebab-case>
+version: 1
+description: <One sentence description of what this agent does>
+system_prompt: |
+  You are a <role> with expertise in <domain>.
+
+  Your role is to:
+  - <primary responsibility 1>
+  - <primary responsibility 2>
+  - <primary responsibility 3>
+
+  You interact with users by:
+  - <interaction pattern 1>
+  - <interaction pattern 2>
+
+  When you don't know something, acknowledge uncertainty and suggest how to find the answer.
+role_definition: |
+  As a <role>, you specialize in <specific domain areas>.
+
+  Your core competencies include:
+  - <competency 1>
+  - <competency 2>
+
+  You maintain <standards> for accuracy and quality.
+temperature: 0.7
+few_shot_examples:
+  - input: "<representative input 1>"
+    output: "<ideal response demonstrating ideal behavior>"
+  - input: "<representative input 2>"
+    output: "<ideal response demonstrating ideal behavior>"
+capabilities:
+  - <capability-1>
+  - <capability-2>
+  - <capability-3>
+constraints:
+  - <constraint-1>
+  - <constraint-2>
+  - <constraint-3>
+feedback_summary:
+  total_interactions: 0
+  average_rating: null
+```
+
+## Field Descriptions
+
+### name
+- Format: kebab-case (lowercase with hyphens)
+- Purpose: Unique identifier for the agent
+- Example: `immunologist`, `crispr-designer`, `data-analyst`
+
+### version
+- Format: integer starting at 1
+- Purpose: Track configuration iterations through refinements
+- Increment: When refinements are applied
+
+### description
+- Format: Single sentence
+- Purpose: Quick reference for what this agent does
+- Content: Domain and primary use case
+
+### system_prompt
+- Format: Multi-line string (use pipe | for literal)
+- Purpose: Primary instruction to the model
+- Content: Role definition, behavior guidelines, boundaries
+
+### role_definition
+- Format: Multi-line string
+- Purpose: Detailed scope and competencies
+- Content: What this agent specializes in and standards it maintains
+
+### temperature
+- Format: Float 0.0-1.0
+- Purpose: Control response variability
+- Guidelines:
+  - 0.0-0.3: Precision tasks, technical domains
+  - 0.4-0.6: Balanced explanation and analysis
+  - 0.7-1.0: Creative tasks, brainstorming
+
+### few_shot_examples
+- Format: List of input/output pairs
+- Purpose: In-context learning for desired behavior
+- Content: Representative examples showing ideal interactions
+
+### capabilities
+- Format: List of kebab-case strings
+- Purpose: Tag what this agent can do
+- Example: `literature-review`, `experimental-design`, `data-analysis`
+
+### constraints
+- Format: List of kebab-case strings
+- Purpose: Behavioral limits and safety measures
+- Example: `cite-sources`, `acknowledge-limitations`, `avoid-speculation`
+
+### feedback_summary
+- Format: Object with metrics
+- Purpose: Track performance and usage
+- Content: Interaction count, average rating, qualitative summaries

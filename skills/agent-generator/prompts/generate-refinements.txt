@@ -1,0 +1,206 @@
+# Refinement Generation Prompt
+
+Generate specific configuration refinements based on feedback analysis.
+
+## Refinement Protocol
+
+You are generating refinements for agent: {{agent_name}}
+
+Current version: {{current_version}}
+Token budget: ~4000-5000 tokens (system_prompt + few_shot_examples)
+
+## CRITICAL: Refine and Consolidate, Don't Accumulate
+
+Multi-round training must **reduce or maintain token count**, not increase it.
+
+**When adding new content:**
+- Remove or consolidate related old content
+- Replace verbose explanations with concise principles
+- Remove redundant examples before adding new ones
+- Merge overlapping bullet points
+
+**Token budget check:**
+- Calculate projected token count after changes
+- If over budget, identify what to remove/consolidate
+- Aim to stay within 4000-5000 tokens total
+
+## Feedback Analysis Summary
+
+{{analysis_summary}}
+
+## Current Configuration
+
+{{current_config}}
+
+## Refinement Tasks
+
+### 1. System Prompt Refinements
+
+Generate specific improvements to the system prompt:
+
+```diff
+# System Prompt Changes
+
+- Old text that will be removed
++ New text that will be added
+```
+
+**Guidelines:**
+- Preserve what works (identified strengths)
+- Add missing guidance (identified weaknesses)
+- Clarify ambiguities (user confusion)
+- Add boundaries for common errors
+- Maintain overall structure and tone
+
+### 2. Few-Shot Examples
+
+Add or update few-shot examples:
+
+```yaml
+few_shot_examples:
+  # Existing examples (preserve successful ones)
+  - input: "{{existing input}}"
+    output: "{{existing output}}"
+
+  # New examples for improved coverage
+  - input: "{{new scenario 1}}"
+    output: "{{ideal response 1}}"
+  - input: "{{new scenario 2}}"
+    output: "{{ideal response 2}}"
+```
+
+**Guidelines:**
+- Address underperforming contexts
+- Show how to handle edge cases
+- Demonstrate desired interaction style
+- Include recent domain developments
+
+### 3. Capabilities Update
+
+```yaml
+capabilities:
+  # Existing capabilities
+  - existing-capability-1
+  - existing-capability-2
+
+  # New capabilities
+  - new-capability-1
+  - new-capability-2
+```
+
+**Guidelines:**
+- Add capabilities for unmet user needs
+- Remove unused or redundant capabilities
+- Clarify vague capabilities
+
+### 4. Constraints Update
+
+```yaml
+constraints:
+  # Existing constraints
+  - existing-constraint-1
+  - existing-constraint-2
+
+  # New or updated constraints
+  - new-constraint-1
+  - updated-constraint-2
+```
+
+**Guidelines:**
+- Add constraints to prevent common errors
+- Relax constraints that cause over-caution
+- Clarify ambiguous constraints
+
+### 5. Temperature Adjustment
+
+```yaml
+temperature: {{new_value}}  # was: {{old_value}}
+```
+
+**Guidelines:**
+- Increase if responses are too rigid or formulaic
+- Decrease if responses are too unfocused or inconsistent
+- Small increments (0.1-0.2) for gradual adjustment
+
+## Output Format
+
+Provide refinements in the following structure:
+
+```markdown
+# Refinement Proposal: {{agent_name}} v{{new_version}}
+
+## Summary
+
+{{brief summary of changes}}
+
+## Proposed Changes
+
+### 1. System Prompt
+
+{{diff or specific changes}}
+
+**Rationale:** {{why this change}}
+
+### 2. Few-Shot Examples
+
+{{added or updated examples}}
+
+**Rationale:** {{why these examples}}
+
+### 3. Capabilities
+
+{{capability changes}}
+
+**Rationale:** {{why these changes}}
+
+### 4. Constraints
+
+{{constraint changes}}
+
+**Rationale:** {{why these changes}}
+
+### 5. Temperature
+
+{{temperature change if applicable}}
+
+**Rationale:** {{why this change}}
+
+## Expected Impact
+
+Based on feedback analysis, these refinements should:
+- Address {{identified weakness 1}}
+- Improve {{identified weakness 2}}
+- Maintain {{existing strength}}
+
+## Risk Assessment
+
+**Low Risk:** Changes are additive, don't disrupt existing functionality
+**Medium Risk:** Changes modify core behavior, testing recommended
+**High Risk:** Changes fundamentally alter agent approach
+
+{{specific risks if applicable}}
+
+## Approval Required
+
+These refinements require human approval before application. Review the proposed changes carefully and confirm:
+- Changes align with agent purpose
+- Rationale is sound
+- Risks are acceptable
+
+To apply: Update agents/{{agent_name}}/config.yaml with these changes and increment version.
+```
+
+## Safety Checks
+
+Before proposing refinements:
+
+1. **Preserve Core Function**: Agent must still perform its primary role
+2. **Maintain Safety Boundaries**: Don't remove critical constraints
+3. **Avoid Overfitting**: Don't optimize for narrow use cases
+4. **Test Compatibility**: Ensure changes work together
+
+## Version Increment
+
+- Increment version by 1 for all refinements
+- Create version history entry in versions.jsonl
+- Keep backup of previous configuration

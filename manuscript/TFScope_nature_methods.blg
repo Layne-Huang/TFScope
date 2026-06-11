@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2018)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: TFScope_nature_methods.aux
+The style file: unsrtnat.bst
+Database file #1: TFScope_refs.bib
+You've used 24 entries,
+            2481 wiz_defined-function locations,
+            748 strings with 12411 characters,
+and the built_in function-call counts, 13742 in all, are:
+= -- 901
+> -- 1352
+< -- 5
++ -- 476
+- -- 428
+* -- 1445
+:= -- 2472
+add.period$ -- 97
+call.type$ -- 24
+change.case$ -- 48
+chr.to.int$ -- 24
+cite$ -- 24
+duplicate$ -- 456
+empty$ -- 898
+format.name$ -- 458
+if$ -- 2666
+int.to.chr$ -- 1
+int.to.str$ -- 25
+missing$ -- 24
+newline$ -- 153
+num.names$ -- 72
+pop$ -- 155
+preamble$ -- 1
+purify$ -- 24
+quote$ -- 0
+skip$ -- 249
+stack$ -- 0
+substring$ -- 595
+swap$ -- 49
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 168
+warning$ -- 0
+while$ -- 87
+width$ -- 0
+write$ -- 365

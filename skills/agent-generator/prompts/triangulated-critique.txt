@@ -1,0 +1,233 @@
+# Triangulated Critique Aggregation Protocol
+
+This protocol synthesizes critiques from multiple sources (domain agents, prompt-critic, user feedback) into a unified refinement proposal using consensus-based decision making.
+
+## Triangulation Process
+
+You are the Agent Generator analyzing triangulated feedback for {{target_agent_name}} v{{version}}.
+
+## Critique Sources
+
+### 1. Domain Agent Critics (2-3 agents)
+{{domain_critique_1}}
+{{domain_critique_2}}
+[... additional domain critiques ...]
+
+**Weight:** High for domain content, capability coverage, terminology accuracy
+
+### 2. Prompt-Critic (Design Specialist)
+{{prompt_critic_critique}}
+
+**Weight:** High for prompt structure, token efficiency, clarity, design quality
+
+### 3. User Feedback (Real-world performance)
+{{user_feedback_summary}}
+
+**Weight:** Highest for practical utility, interaction quality
+
+## Consensus Framework
+
+### Strong Consensus (ACT on these)
+
+**Definition:** 2+ independent sources agree on the same issue
+**Priority:** HIGH - Implement immediately
+**Confidence:** HIGH - Clear improvement direction
+
+**Examples:**
+- Domain critic says "missing capability X" + User feedback shows "struggles with X"
+- Prompt-critic says "token budget exceeded" + Domain critics note "verbose responses"
+- All sources identify "unclear role definition"
+
+### Moderate Consensus (CONSIDER these)
+
+**Definition:** Only 1 source mentions, but the issue is significant
+**Priority:** MEDIUM - Evaluate and decide
+**Confidence:** MODERATE - Requires judgment
+
+**Examples:**
+- Only prompt-critic identifies "constraint redundancy"
+- Only one domain critic suggests "missing subdomain"
+- User feedback shows "below 4.0 rating" but no specific complaints
+
+### Conflict (RESOLVE carefully)
+
+**Definition:** Sources disagree or suggest opposing changes
+**Priority:** Context-dependent
+**Resolution Strategy:**
+
+| Conflict Type | Resolution |
+|---------------|------------|
+| Domain vs Design | Design quality takes precedence (foundation) |
+| User vs Experts | User preference wins (utility focus) |
+| Expert A vs Expert B | Prompt-critic breaks tie (design principles) |
+| Safety vs Utility | Safety always wins |
+
+## Weighted Scoring
+
+Each critique dimension is scored by source:
+
+| Dimension | Domain Critics | Prompt-Critic | User Feedback | Weight |
+|-----------|----------------|---------------|---------------|--------|
+| Domain coverage | ⭐⭐⭐ | ⭐ | ⭐⭐ | 40% |
+| Prompt structure | ⭐ | ⭐⭐⭐ | ⭐ | 30% |
+| Practical utility | ⭐⭐ | ⭐ | ⭐⭐⭐ | 30% |
+
+**Combined Score = Σ(Weight × Source Score)**
+
+## Aggregation Algorithm
+
+For each potential improvement:
+
+1. **Calculate Support Score:**
+   ```
+   Support = (Domain_Strength × 0.4) + (Design_Strength × 0.3) + (User_Strength × 0.3)
+   ```
+   - Strength: 2 (strong consensus), 1 (moderate), 0.5 (weak)
+
+2. **Determine Priority:**
+   ```
+   Priority = Support × Impact × (1 - Risk)
+   ```
+   - Impact: 3 (high), 2 (medium), 1 (low)
+   - Risk: 0.9 (high), 0.5 (medium), 0.1 (low)
+
+3. **Rank by Priority** and address top items
+
+## Output Format
+
+```markdown
+# Triangulated Critique Summary: {{target_agent_name}} v{{version}}
+
+## Source Overview
+
+| Source | Strengths Identified | Weaknesses Identified | Confidence |
+|--------|---------------------|----------------------|------------|
+| Domain Critics | {{count}} strengths | {{count}} weaknesses | High |
+| Prompt-Critic | {{count}} strengths | {{count}} weaknesses | High |
+| User Feedback | {{rating}} avg rating | {{themes}} | Highest |
+
+## Consensus Analysis
+
+### Strong Consensus (2+ sources agree) - IMPLEMENT
+
+1. **{{Issue 1}}**
+   - **Sources:** {{who agrees}}
+   - **Support Score:** {{X.X}}/2.0
+   - **Priority Score:** {{X.X}}
+   - **Action:** {{Specific change}}
+   - **Rationale:** {{Why this is critical}}
+
+### Moderate Consensus (1 source) - EVALUATE
+
+1. **{{Issue 1}}**
+   - **Source:** {{who identified}}
+   - **Support Score:** {{X.X}}/2.0
+   - **Priority Score:** {{X.X}}
+   - **Decision:** {{Implement | Defer | Reject}}
+   - **Rationale:** {{Why this decision}}
+
+### Conflicts - RESOLVED
+
+1. **{{Conflict}}**
+   - **Domain says:** {{Suggestion A}}
+   - **Design says:** {{Suggestion B}}
+   - **Resolution:** {{Chosen approach}}
+   - **Rationale:** {{Design takes precedence / User preference wins / etc.}}
+
+## Dimension Analysis
+
+### Domain Coverage (40% weight)
+- **Domain Critics Assessment:** {{Summary}}
+- **Prompt-Critic Assessment:** {{Relevance}}
+- **User Feedback:** {{Practical gaps}}
+- **Combined Score:** {{X.X}}/5.0
+- **Action Required:** {{Yes/No - specific actions}}
+
+### Prompt Quality (30% weight)
+- **Prompt-Critic Assessment:** {{Structure, clarity, efficiency}}
+- **Domain Critics:** {{Is domain well-represented?}}
+- **User Feedback:** {{Is interaction smooth?}}
+- **Combined Score:** {{X.X}}/5.0
+- **Action Required:** {{Yes/No - specific actions}}
+
+### Practical Utility (30% weight)
+- **User Feedback:** {{Rating, comments, themes}}
+- **Domain Critics:** {{Are capabilities realistic?}}
+- **Prompt-Critic:** {{Is agent usable?}}
+- **Combined Score:** {{X.X}}/5.0
+- **Action Required:** {{Yes/No - specific actions}}
+
+## Ranked Improvements
+
+| Priority | Issue | Support | Impact | Risk | Action |
+|----------|-------|---------|--------|------|--------|
+| 1 | {{Top issue}} | {{X.X}} | High | Low | {{Specific}} |
+| 2 | {{Next}} | {{X.X}} | High | Med | {{Specific}} |
+| 3 | {{Next}} | {{X.X}} | Med | Low | {{Specific}} |
+
+## Refinement Proposal
+
+### System Prompt Changes
+```diff
+{{Specific changes with rationale and consensus support}}
+```
+
+### Few-Shot Changes
+{{Add/remove/modify with consensus support}}
+
+### Capability Changes
+{{Add/remove/modify with consensus support}}
+
+### Constraint Changes
+{{Add/remove/modify with consensus support}}
+
+## Token Budget Impact
+
+**Current:** {{X}} tokens
+**Proposed:** {{Y}} tokens (+{{delta}})
+**Status:** {{✓ Within budget | ✗ Over budget - need consolidation}}
+
+## Expected Outcomes
+
+**Current Performance:** {{X.X}}/5.0
+**Predicted Performance:** {{Y.Y}}/5.0
+**Confidence:** {{High/Medium/Low}}
+
+**Key Improvements:**
+- {{Improvement 1}} (supported by {{sources}})
+- {{Improvement 2}} (supported by {{sources}})
+
+**Risks Mitigated:**
+- {{Risk 1}} (identified by {{sources}})
+
+## Approval Decision
+
+**Recommendation:** {{Approve | Conditional approval | Revise further}}
+
+**Reasoning:** {{Summary of why this recommendation}}
+
+**If approve:** Apply changes and increment to v{{version + 1}}
+**If conditional:** Address {{specific concern}} and resubmit
+**If revise:** Gather more {{type of feedback}} and re-aggregate
+```
+
+## Quality Checks
+
+Before finalizing:
+
+1. **Strong consensus items are addressed** - No high-priority agreed issues ignored
+2. **Conflicts are resolved transparently** - Rationale provided for all decisions
+3. **Token budget maintained** - Within 4000-5000 token target
+4. **Safety constraints intact** - No critical boundaries removed
+5. **User preference respected** - Highest weight for practical utility
+
+## Consensus Thresholds
+
+**Minimum for action:**
+- System prompt changes: Moderate consensus (1 source) OR Strong consensus (2+)
+- Few-shot changes: Strong consensus (2+ sources)
+- Capability changes: Strong consensus (2+ sources)
+- Constraint additions: Strong consensus (2+ sources)
+- Constraint removals: Strong consensus (2+) + safety check
+
+**Safety veto:** Any source can veto a change that removes safety boundaries.

@@ -1,0 +1,61 @@
+# Domain Requirements Interview Protocol
+
+When creating a new specialist agent, conduct a structured interview to gather domain-specific requirements.
+
+## Interview Flow
+
+### Opening
+
+"Welcome to the Agent Generator. I'll create a specialist agent tailored to your needs through a brief interview. Please provide the domain you'd like an agent for (e.g., 'immunologist', 'molecular biologist', 'data analyst')."
+
+### Core Questions
+
+1. **Domain Scope**
+   - What specific subdomains or specializations within this field are relevant?
+   - What level of expertise is appropriate? (undergraduate, graduate, expert, specialist)
+
+2. **Primary Use Cases**
+   - What tasks will this agent perform most frequently?
+   - What are typical inputs you'll provide?
+   - What output formats are most useful?
+
+3. **Knowledge Boundaries**
+   - What should this agent handle confidently?
+   - What should it defer to other experts or sources?
+   - Are there common misconceptions it should address?
+
+4. **Interaction Style**
+   - How detailed should explanations be? (concise, moderate, comprehensive)
+   - Should it prioritize accuracy or accessibility when both aren't possible?
+   - Are there preferences for structure, format, or tone?
+
+5. **Evaluation Criteria**
+   - What makes this agent successful in your context?
+   - What are common failure modes to avoid?
+   - How will you measure performance?
+
+6. **Project Literature** (check `papers/` folder)
+   - Are there papers in `papers/` relevant to this agent's domain?
+   - Which papers should the agent be aware of or reference?
+   - Should the agent prioritize project literature over general knowledge?
+
+### Pattern Selection
+
+Based on interview responses, select the appropriate generation pattern:
+
+- **Technical Domain**: Scientific/medical/technical fields requiring literature citations and precise terminology
+- **Creative Writing**: Narrative, storytelling, content creation with emphasis on style
+- **Data Analysis**: Statistical reasoning, data interpretation, visualization guidance
+
+### Synthesis
+
+After gathering responses, synthesize into a domain specification:
+
+- Agent name (kebab-case)
+- One-sentence description
+- System prompt outline
+- Key capabilities
+- Critical constraints
+- Few-shot example scenarios
+
+Present this specification for user approval before generating the full configuration.

@@ -1,0 +1,138 @@
+# Agent Generation Prompt
+
+You are generating a specialist agent configuration based on the following domain specification.
+
+## Output Location
+
+Save the generated agent to: `agents/<agent-name>/config.yaml`
+
+Also create empty files for:
+- `agents/<agent-name>/feedback.jsonl`
+- `agents/<agent-name>/versions.jsonl`
+
+## Domain Specification
+
+Name: {{name}}
+Description: {{description}}
+Expertise Level: {{expertise_level}}
+Primary Use Cases: {{use_cases}}
+Interaction Style: {{interaction_style}}
+Key Capabilities: {{capabilities}}
+Critical Constraints: {{constraints}}
+
+## Generation Requirements
+
+Generate a complete YAML configuration file with the following structure:
+
+```yaml
+name: <agent-name>
+version: 1
+description: <one-sentence description>
+system_prompt: |
+  You are a <role> with expertise in <domain>.
+
+  Your role is to:
+  - <primary responsibility 1>
+  - <primary responsibility 2>
+  - <primary responsibility 3>
+
+  You interact with users by:
+  - <interaction pattern 1>
+  - <interaction pattern 2>
+
+  When you don't know something, acknowledge uncertainty and suggest how to find the answer.
+role_definition: |
+  As a <role>, you specialize in <specific domain areas>.
+
+  Your core competencies include:
+  - <competency 1>
+  - <competency 2>
+
+  You maintain <standards> for accuracy and quality.
+temperature: <0.0-1.0 based on task nature>
+few_shot_examples:
+  - input: "<representative input 1>"
+    output: "<ideal response 1>"
+  - input: "<representative input 2>"
+    output: "<ideal response 2>"
+capabilities:
+  - <capability-1>
+  - <capability-2>
+constraints:
+  - <constraint-1>
+  - <constraint-2>
+feedback_summary:
+  total_interactions: 0
+  average_rating: null
+```
+
+## Token Budget Guidelines
+
+**Target token budget: ~4000-5000 tokens** for system_prompt + few_shot_examples combined.
+
+This breaks down as:
+- System prompt: ~3000-3500 tokens (~75-80%)
+- Few-shot examples: ~1000-1500 tokens (~20-25%)
+- 2-3 examples maximum, each demonstrating distinct aspects
+
+**Why this budget?**
+- Sufficient context for domain expertise without excessive overhead
+- Fits well within context window while leaving room for user query
+- Enables fast subagent responses
+- Avoids token bloat that accumulates across rounds
+
+## System Prompt Guidelines
+
+The system prompt should:
+
+1. **Define Clear Role**: Explicitly state what the agent is and isn't
+2. **Specify Behavior**: How should the agent approach problems?
+3. **Set Boundaries**: What's outside scope? When to defer?
+4. **Establish Tone**: Professional, accessible, formal, conversational?
+5. **Include Safety**: What precautions are relevant to this domain?
+
+**Length optimization:**
+- Use bullet points over prose when possible
+- Consolidate related concepts
+- Use principles over exhaustive lists
+- Format constraints as actionable rules (e.g., "use-hgvs-nomenclature")
+
+## Few-Shot Example Guidelines
+
+Generate 2-3 representative examples that:
+
+1. Cover common use cases from the specification
+2. Demonstrate ideal interaction style
+3. Show how the agent handles uncertainty or edge cases
+4. Include domain-specific terminology appropriately
+5. Match the expected output format
+
+**Quality over quantity:**
+- Prefer 2 exceptional examples over 3-4 mediocre ones
+- Each example should teach something distinct
+- Keep examples concise (300-500 tokens each)
+- Remove redundant demonstrations
+
+## Temperature Selection
+
+- 0.0-0.3: Technical domains requiring precision, coding, data analysis
+- 0.4-0.6: General explanation, balanced creativity and accuracy
+- 0.7-1.0: Creative writing, brainstorming, exploratory tasks
+
+## Project Literature Integration
+
+If relevant papers exist in `papers/`:
+
+1. **Scan for relevance**: Check `papers/` for literature matching the agent's domain
+2. **Include awareness**: Add to system prompt that the agent can reference project papers
+3. **Key references**: If specific papers are foundational, mention them in the role definition
+
+Example addition to system_prompt:
+```
+You have access to project literature in `papers/`. When relevant, reference
+these papers for domain-specific guidance and methodology.
+```
+
+## Output Format
+
+Return the complete YAML configuration ready to write to: `agents/<agent-name>/config.yaml`

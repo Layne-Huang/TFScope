@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: pwm_rosetta
+Version: 0.1.0
+Summary: Hybrid AF3 + PyRosetta PWM generation for transcription factor binding sites
+Author: Lei Huang
+Requires-Python: >=3.9
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: matplotlib
+Requires-Dist: scipy
+Requires-Dist: biopython
+Requires-Dist: gemmi
+Requires-Dist: tqdm
+Provides-Extra: viz
+Requires-Dist: logomaker; extra == "viz"
+Dynamic: author
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

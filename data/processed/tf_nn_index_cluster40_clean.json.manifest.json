@@ -1,0 +1,29 @@
+{
+  "data": "data/processed/tf_pwm_aug_dbd_canon_trim.parquet",
+  "donor_splits": [
+    "train"
+  ],
+  "embeddings": "data/processed/tf_dbd_embeddings_aug.npz",
+  "exclusion_counts": {
+    "same_gene": 13941,
+    "same_record": 2947,
+    "same_sequence": 10505,
+    "same_source_id": 3297,
+    "same_uniprot": 14063
+  },
+  "exclusion_rules": [
+    "same_record",
+    "same_gene",
+    "same_uniprot",
+    "same_specific_source_id",
+    "same_sequence"
+  ],
+  "family_restricted": false,
+  "index": "data/processed/tf_nn_index_cluster40_clean.json",
+  "k": 16,
+  "missing_query_embeddings": [],
+  "n_donor_records": 2947,
+  "n_queries": 4247,
+  "n_specific_source_ids": 2033,
+  "split": "data/processed/splits/cluster40_clean/split.json"
+}

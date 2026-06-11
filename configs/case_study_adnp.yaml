@@ -1,0 +1,69 @@
+# ADNP case study — sequence-only homeodomain motif nomination for a flagship
+# neurodevelopmental orphan TF (ADNP / Helsmoortel-Van der Aa syndrome).
+# Facts verified against the local TFScope repo + UniProt (2026-06-09).
+project_name: adnp_case_study
+output_dir: results/adnp_case
+figure_dir: figures/figure7
+extended_figure_dir: figures/extended
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+# ADNP is a CLEAN ORPHAN (absent from every TFScope training/retrieval/benchmark
+# table), so the production RAG checkpoint is leakage-free for it (like SOHLH1,
+# NOT like the leaky ZGLP1). Single-checkpoint clean design. use_retrieval=true.
+checkpoint_production: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/cluster40_v18a_rag/ckpt_best.pt
+
+donor_parquet: data/processed/tf_pwm_aug_dbd_canon_trim.parquet
+cluster40_split: data/processed/splits/cluster40/split.json
+embeddings: data/processed/tf_dbd_embeddings_aug.npz
+# reuse the cluster40 held-out KNOWN-TF calibration already built for SOHLH1
+# (family-agnostic; one row per held-out gene with confidence + oracle_r)
+calibration_table: results/sohlh1_case/confidence/heldout_known_confidence.tsv
+calibration_bins:  results/sohlh1_case/confidence/confidence_calibration_bins.tsv
+
+# ── Target ────────────────────────────────────────────────────────────────────
+case_gene: ADNP
+case_uniprot: Q9H2P0
+case_family: Homeodomain
+case_family_id: 4
+case_full_length: 1102
+case_dbd_uniprot: "754-814"        # UniProt homeobox (single DNA-binding domain)
+case_dbd_start: 752               # 1-based window: homeobox +/- short flanks
+case_dbd_end: 822
+case_dbd_sequence: "LALDPKGHEDDSYEARKSFLTKYFNKQPYPTRREIEKLAASLWLWKSDIASHFSNKRKKCVRDCEKYKPGV"
+
+# ADNP2 = paralog companion. ALSO a clean orphan (no in-training motif), so this is
+# a cross-prediction CONSISTENCY check, not a curated-motif validation.
+companion_gene: ADNP2
+companion_uniprot: Q6IQ32
+companion_dbd_uniprot: "1047-1102"
+companion_dbd_start: 1041
+companion_dbd_end: 1110
+companion_dbd_sequence: "LDPKKYEGRSYEEKKQFLKDYFHKKPYPSKKEIELLSSLFWVWKIDVASFFGKRRYICMKAIKNHKPSVL"
+
+# references (none is an in-training paralog of ADNP). Canonical homeodomain TAAT
+# site + the top retrieved neighbour (PBX1, a TALE/TGAT-class homeodomain), since
+# TFScope's ADNP prediction is TGAT-like rather than canonical TAAT.
+canonical_homeodomain: TAATTA
+pbx_reference_gene: PBX1
+pbx_reference_filename: ORIG__PBX1.H13CORE.0.P.B.txt    # TGATTGACAG (TALE/TGAT)
+
+# masked homeodomain positive controls (in cluster40 training, leave-gene-out):
+# recover their curated motifs -> validates the homeodomain pipeline.
+homeodomain_control_genes: ["EN1", "PITX1", "ISL1", "PBX1"]
+
+retrieval_exclude_genes: ["ADNP", "ADNP2"]
+
+# ── Confidence / calibration ──────────────────────────────────────────────────
+success_threshold_r: 0.6
+confidence_bins: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+medium_confidence_min: 0.4
+high_confidence_min: 0.7
+gate_norm_range: [0.75, 0.97]
+
+# ── Motif processing ──────────────────────────────────────────────────────────
+ic_threshold: 0.25
+active_gate_threshold: 0.5
+max_alignment_offset: 10
+allow_reverse_complement: true
+max_motif_length: 20
+retrieval_top_k: 3

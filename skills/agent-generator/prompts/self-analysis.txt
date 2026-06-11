@@ -1,0 +1,198 @@
+# Self-Analysis Prompt
+
+The meta-agent analyzes its own generation performance across all specialist agents to identify patterns and improve its strategies.
+
+## Self-Analysis Protocol
+
+You are the Agent Generator meta-agent conducting self-analysis of your generation performance.
+
+## Analysis Scope
+
+### Generated Agents Summary
+
+Total agents generated: {{total_agents}}
+Agents with feedback data: {{agents_with_feedback}}
+Total feedback entries across all agents: {{total_feedback}}
+Average agent rating: {{average_agent_rating}}
+
+### Performance Distribution
+
+Top performing agents (rating >= 4.5):
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+
+Mid performing agents (3.5 <= rating < 4.5):
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+
+Low performing agents (rating < 3.5):
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+- {{agent_name}}: {{rating}}/5 ({{interactions}} interactions)
+
+### Pattern Extraction
+
+For each performance tier, analyze:
+
+1. **Domain Characteristics**: What types of domains perform well/poorly?
+2. **Configuration Choices**: What system prompt patterns correlate with success?
+3. **Few-Shot Quality**: How does example quality affect performance?
+4. **Temperature Settings**: What temperatures work best for what domains?
+5. **Capability Coverage**: Are there missing capabilities in low performers?
+
+## Analysis Tasks
+
+### 1. Successful Pattern Identification
+
+What patterns emerge from high-performing agents?
+
+- **System Prompt Patterns**: What phrasing, structures, or approaches appear consistently?
+- **Few-Shot Patterns**: What makes examples effective? (length, specificity, format)
+- **Domain-Specific Patterns**: What works for technical vs creative vs analytical domains?
+- **Interview Quality**: Did better interview responses lead to better agents?
+
+### 2. Anti-Pattern Identification
+
+What patterns correlate with poor performance?
+
+- **Vague System Prompts**: Are low-performing agents less specific?
+- **Missing Capabilities**: Are critical capabilities absent?
+- **Poor Few-Shot Examples**: Are examples unrealistic, too brief, or off-topic?
+- **Temperature Mismatches**: Is temperature inappropriate for the domain?
+
+### 3. Generation Process Issues
+
+What aspects of the generation process need improvement?
+
+- **Interview Questions**: Are we asking the right questions? Missing important areas?
+- **Pattern Selection**: Are we choosing appropriate templates?
+- **Customization**: Are we tailoring configurations enough to user needs?
+- **Validation**: Are we catching issues before the user sees the agent?
+
+### 4. Template and Prompt Quality
+
+Are current templates and prompts effective?
+
+- **Template Adequacy**: Do patterns cover common use cases? Are gaps emerging?
+- **Prompt Clarity**: Are generation prompts producing consistent, high-quality outputs?
+- **Example Quality**: Are template examples representative and effective?
+
+## Output Format
+
+Provide self-analysis in the following structure:
+
+```markdown
+# Self-Analysis Report
+
+## Meta-Agent Performance
+
+Generated: {{total_agents}} agents
+Average Rating: {{avg_rating}}/5
+Success Rate (>=4.0): {{success_rate}}%
+
+## Successful Patterns
+
+### System Prompt Patterns
+
+1. **{{pattern_name}}**
+   - Description: {{what the pattern is}}
+   - Evidence: {{which agents use it}}
+   - Success Rate: {{performance data}}
+
+### Few-Shot Patterns
+
+{{similar format}}
+
+### Domain-Specific Patterns
+
+{{similar format}}
+
+## Anti-Patterns
+
+### System Prompt Issues
+
+1. **{{anti-pattern}}**
+   - Description: {{what goes wrong}}
+   - Frequency: {{how often}}
+   - Impact: {{rating decrease}}
+
+### Generation Process Issues
+
+{{similar format}}
+
+## Template Evaluation
+
+### Effective Templates
+
+- **{{template_name}}**: {{why it works}}
+- **{{template_name}}**: {{why it works}}
+
+### Template Gaps
+
+- **{{missing pattern}}**: {{why needed}}
+- **{{missing pattern}}**: {{why needed}}
+
+## Generation Process Findings
+
+### Interview Strengths
+
+{{what works in interview process}}
+
+### Interview Weaknesses
+
+{{what's missing or unclear}}
+
+### Pattern Selection
+
+{{how well are we matching templates to needs?}}
+
+## Improvement Opportunities
+
+### High Impact
+
+1. **{{improvement}}**
+   - Expected Impact: {{high/medium/low}}
+   - Description: {{what to change}}
+   - Implementation: {{how to implement}}
+
+### Medium Impact
+
+{{similar format}}
+
+### Low Impact
+
+{{similar format}}
+
+## Self-Refinement Recommendation
+
+{{summary of whether self-refinement is warranted}}
+```
+
+## Analysis Guidelines
+
+### Statistical Rigor
+
+- Require minimum sample size (5+ agents) before drawing conclusions
+- Use confidence intervals for ratings
+- Be cautious about small sample claims
+
+### Causal Attribution
+
+- Distinguish correlation from causation
+- Consider confounding factors (domain difficulty, user expertise)
+- Multiple factors may contribute to outcomes
+
+### Avoid Overgeneralization
+
+- Patterns may not apply to all domains
+- User preferences vary significantly
+- Context matters greatly
+
+## Triggers for Self-Improvement
+
+Initiate self-refinement when:
+
+1. **Performance Threshold**: Average rating across agents < 4.0
+2. **Pattern Confidence**: Clear patterns identified with strong evidence
+3. **User Feedback**: Direct feedback on meta-agent performance
+4. **Template Gaps**: Clear missing use cases not covered by existing patterns
+5. **Scheduled Review**: Periodic self-review (e.g., after every 10 new agents)

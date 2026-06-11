@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TFScope — Model Architecture</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #555;
+    --rule: #c8c8c8;
+    --panel: #fafafa;
+    --panel-border: #d0d0d0;
+    --c-input:   #f0eada;   /* inputs   — warm sand */
+    --c-encoder: #dbe6f2;   /* encoder  — slate blue */
+    --c-pool:    #e7dff0;   /* pooling  — soft violet */
+    --c-moe:     #e1ecdb;   /* MoE      — sage green */
+    --c-family:  #f6e4cf;   /* family   — soft amber */
+    --c-head:    #f3d9d9;   /* heads    — muted rose */
+    --c-loss:    #ececec;   /* loss     — neutral grey */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 32px 40px 56px;
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  header { border-bottom: 1px solid var(--rule); padding-bottom: 14px; margin-bottom: 22px; }
+  h1 {
+    font-family: 'Charter', 'Georgia', 'Times New Roman', serif;
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: 0.2px;
+  }
+  .subtitle { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+  .figcap {
+    font-family: 'Charter', 'Georgia', 'Times New Roman', serif;
+    font-size: 13.5px;
+    color: var(--ink);
+    margin: 18px 4px 0;
+    text-align: justify;
+  }
+  .figcap b { font-weight: 700; }
+
+  /* Diagram frame */
+  .figure {
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    padding: 18px 14px 8px;
+    border-radius: 4px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px 22px;
+    margin: 14px 4px 4px;
+    font-size: 12px; color: var(--muted);
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch {
+    width: 14px; height: 14px; border: 1px solid #888;
+    display: inline-block;
+  }
+
+  svg { display: block; margin: 0 auto; }
+  text { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; fill: var(--ink); }
+  .lbl       { font-size: 13px; font-weight: 600; }
+  .lbl-sm    { font-size: 11.5px; font-weight: 600; }
+  .sub       { font-size: 11px; fill: #4a4a4a; }
+  .sub-i     { font-size: 11px; fill: #4a4a4a; font-style: italic; }
+  .tag       { font-size: 10.5px; fill: #2a2a2a; font-family: 'JetBrains Mono','Menlo',monospace; }
+  .shape     { font-size: 10px; fill: #5a5a5a; font-family: 'JetBrains Mono','Menlo',monospace; }
+  .title-sm  { font-size: 12.5px; font-weight: 700; fill: #1a1a1a; letter-spacing: 0.3px; }
+
+  .arrow { fill: none; stroke: #2a2a2a; stroke-width: 1.4; }
+  .arrow-dim { fill: none; stroke: #888; stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .panel-border { fill: none; stroke: #707070; stroke-width: 1; }
+  .panel-fill   { stroke: #888; stroke-width: 0.8; }
+  .dashed-group { fill: none; stroke: #888; stroke-width: 1; stroke-dasharray: 5 4; }
+
+  /* Equation strip */
+  .eq {
+    margin-top: 18px;
+    font-family: 'Charter', 'Georgia', serif;
+    font-size: 13px; line-height: 1.7;
+    color: var(--ink);
+    padding: 12px 16px;
+    border: 1px solid var(--panel-border);
+    background: #fcfcfc;
+    border-radius: 4px;
+  }
+  .eq code { font-family: 'JetBrains Mono','Menlo',monospace; font-size: 11.5px; background: #f1f1f1; padding: 1px 5px; border-radius: 3px; }
+  .eq .row { margin: 2px 0; }
+  .eq b { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TFScope — Seed Model for De Novo PWM Prediction</h1>
+  <div class="subtitle">
+    Family-conditioned, DBD-aware sequence-to-PWM regression with a Mixture-of-Experts decoder.
+  </div>
+</header>
+
+<div class="figure">
+
+<svg viewBox="0 0 1180 1080" width="1180" height="1080" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2a2a2a"/>
+    </marker>
+    <marker id="arrow-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- ====================================================================== -->
+  <!-- (a) INPUTS                                                              -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="40" y="34">a · Inputs</text>
+
+  <rect class="panel-fill" x="40"  y="50" width="200" height="58" rx="4" fill="var(--c-input)"/>
+  <text class="lbl-sm" x="140" y="74" text-anchor="middle">Protein sequence</text>
+  <text class="shape"  x="140" y="92" text-anchor="middle">tokens  ∈  ℝ^{B×L}</text>
+
+  <rect class="panel-fill" x="260" y="50" width="200" height="58" rx="4" fill="var(--c-input)"/>
+  <text class="lbl-sm" x="360" y="74" text-anchor="middle">DBD mask</text>
+  <text class="shape"  x="360" y="92" text-anchor="middle">m_DBD  ∈  {0,1}^{B×L}</text>
+
+  <rect class="panel-fill" x="480" y="50" width="200" height="58" rx="4" fill="var(--c-input)"/>
+  <text class="lbl-sm" x="580" y="74" text-anchor="middle">TF family id</text>
+  <text class="shape"  x="580" y="92" text-anchor="middle">f  ∈  {0,…,F−1}</text>
+
+  <!-- ====================================================================== -->
+  <!-- (b) ESM-2 ENCODER                                                       -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="40" y="148">b · Protein encoder</text>
+
+  <!-- ESM-2 main box -->
+  <rect class="panel-fill" x="40" y="166" width="420" height="160" rx="6" fill="var(--c-encoder)"/>
+  <text class="lbl" x="250" y="190" text-anchor="middle">ESM-2 (650M, 33 layers · frozen)</text>
+  <text class="sub" x="250" y="208" text-anchor="middle">weighted average of last 4 transformer layers</text>
+
+  <!-- LoRA tail -->
+  <rect x="60" y="226" width="380" height="44" rx="4" fill="#ffffff" stroke="#7a7a7a"/>
+  <text class="lbl-sm" x="250" y="245" text-anchor="middle">LoRA adapters on last 6 layers (q_proj, v_proj)</text>
+  <text class="sub"    x="250" y="261" text-anchor="middle">y = Wx + (α/r)·BAx&nbsp;&nbsp;·&nbsp;&nbsp;rank r ≪ d</text>
+
+  <text class="shape"  x="250" y="294" text-anchor="middle">E  ∈  ℝ^{B×L×1280}</text>
+  <text class="sub-i"  x="250" y="312" text-anchor="middle">per-residue contextual representation</text>
+
+  <!-- DBD indicator injection -->
+  <rect class="panel-fill" x="480" y="166" width="200" height="100" rx="6" fill="var(--c-encoder)"/>
+  <text class="lbl-sm" x="580" y="190" text-anchor="middle">DBD position indicator</text>
+  <text class="sub"   x="580" y="208" text-anchor="middle">learned vector u ∈ ℝ^{1280}</text>
+  <text class="tag"   x="580" y="232" text-anchor="middle">E' = E + m_DBD ⊙ u</text>
+  <text class="sub-i" x="580" y="252" text-anchor="middle">marks DBD residues for pooling</text>
+
+  <!-- arrows from inputs to encoder -->
+  <path class="arrow" d="M140,108 L140,140 L140,166" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M360,108 L360,140 L500,140 L500,166" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M460,200 L480,200" marker-end="url(#arrow)"/>
+
+  <!-- ====================================================================== -->
+  <!-- (c) DUAL-STREAM GATED ATTENTION POOLING                                  -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="40" y="368">c · Dual-stream gated attention pooling</text>
+
+  <rect class="panel-fill" x="40"  y="384" width="305" height="120" rx="6" fill="var(--c-pool)"/>
+  <text class="lbl-sm" x="192" y="406" text-anchor="middle">Global gated attention pool</text>
+  <text class="sub"   x="192" y="424" text-anchor="middle">all residues, 8 heads</text>
+  <text class="sub-i" x="192" y="442" text-anchor="middle">σ(W_g x) ⊙ V suppresses sinks</text>
+  <text class="shape" x="192" y="486" text-anchor="middle">h_global ∈ ℝ^{B×1280}</text>
+
+  <rect class="panel-fill" x="375" y="384" width="305" height="120" rx="6" fill="var(--c-pool)"/>
+  <text class="lbl-sm" x="527" y="406" text-anchor="middle">DBD gated attention pool</text>
+  <text class="sub"   x="527" y="424" text-anchor="middle">masked to DBD residues, 8 heads</text>
+  <text class="sub-i" x="527" y="442" text-anchor="middle">focuses on binding-domain context</text>
+  <text class="shape" x="527" y="486" text-anchor="middle">h_DBD ∈ ℝ^{B×1280}</text>
+
+  <!-- arrows down from encoder -->
+  <path class="arrow" d="M250,326 L250,360 L192,360 L192,384" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M250,326 L250,360 L527,360 L527,384" marker-end="url(#arrow)"/>
+  <!-- mask connection -->
+  <path class="arrow" d="M580,266 L580,310 L600,310 L600,384" marker-end="url(#arrow)"/>
+  <text class="sub" x="618" y="346">m_DBD</text>
+
+  <!-- Projection head -->
+  <rect class="panel-fill" x="200" y="528" width="320" height="56" rx="4" fill="#ffffff"/>
+  <text class="lbl-sm" x="360" y="550" text-anchor="middle">Projection head</text>
+  <text class="sub"   x="360" y="568" text-anchor="middle">concat → Linear → GELU → LayerNorm → Dropout</text>
+
+  <path class="arrow" d="M192,504 L192,520 L300,520 L300,528" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M527,504 L527,520 L420,520 L420,528" marker-end="url(#arrow)"/>
+
+  <text class="shape" x="360" y="604" text-anchor="middle">z ∈ ℝ^{B×512}</text>
+
+  <!-- ====================================================================== -->
+  <!-- (d) MIXTURE-OF-EXPERTS DECODER                                          -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="40" y="650">d · Mixture-of-Experts decoder (family-conditioned)</text>
+
+  <!-- big dashed MoE container -->
+  <rect class="dashed-group" x="40" y="666" width="900" height="280" rx="8"/>
+
+  <!-- Semantic family embedding (left column) -->
+  <rect class="panel-fill" x="60" y="688" width="220" height="118" rx="6" fill="var(--c-family)"/>
+  <text class="lbl-sm" x="170" y="710" text-anchor="middle">Semantic family</text>
+  <text class="lbl-sm" x="170" y="726" text-anchor="middle">embedding</text>
+  <text class="sub"   x="170" y="746" text-anchor="middle">ProTrek (text) ⊕ ESM-2 (seq)</text>
+  <text class="sub"   x="170" y="762" text-anchor="middle">→ MLP projection (frozen vectors)</text>
+  <text class="sub-i" x="170" y="784" text-anchor="middle">generalizes to unseen families</text>
+  <text class="shape" x="170" y="800" text-anchor="middle">e_f ∈ ℝ^{B×64}</text>
+
+  <!-- Family-aware gating -->
+  <rect class="panel-fill" x="60" y="820" width="220" height="110" rx="6" fill="var(--c-moe)"/>
+  <text class="lbl-sm" x="170" y="842" text-anchor="middle">Family-aware gating</text>
+  <text class="sub"   x="170" y="860" text-anchor="middle">MLP(z, e_f) + semantic bias</text>
+  <text class="sub-i" x="170" y="878" text-anchor="middle">cos(e_f, p_i) per expert prototype</text>
+  <text class="tag"   x="170" y="902" text-anchor="middle">top-k = 2 routing</text>
+  <text class="shape" x="170" y="920" text-anchor="middle">g ∈ Δ^{12}</text>
+
+  <!-- Experts panel -->
+  <rect class="panel-border" x="305" y="688" width="385" height="178" rx="6" fill="#ffffff"/>
+  <text class="lbl-sm" x="497" y="708" text-anchor="middle">SwiGLU experts &nbsp;·&nbsp; W_down( SiLU(W_g x) ⊙ W_u x )</text>
+
+  <!-- 12 expert cells -->
+  <g>
+    <rect x="320" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="345" y="744" text-anchor="middle">E₁</text>
+    <rect x="378" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="403" y="744" text-anchor="middle">E₂</text>
+    <rect x="436" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="461" y="744" text-anchor="middle">E₃</text>
+    <rect x="494" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="519" y="744" text-anchor="middle">E₄</text>
+    <rect x="552" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="577" y="744" text-anchor="middle">E₅</text>
+    <rect x="610" y="722" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="635" y="744" text-anchor="middle">E₆</text>
+
+    <rect x="320" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="345" y="786" text-anchor="middle">E₇</text>
+    <rect x="378" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="403" y="786" text-anchor="middle">E₈</text>
+    <rect x="436" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="461" y="786" text-anchor="middle">E₉</text>
+    <rect x="494" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="519" y="786" text-anchor="middle">E₁₀</text>
+    <rect x="552" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="577" y="786" text-anchor="middle">E₁₁</text>
+    <rect x="610" y="764" width="50" height="34" rx="3" fill="var(--c-moe)" stroke="#888"/>
+    <text class="tag" x="635" y="786" text-anchor="middle">E₁₂</text>
+  </g>
+
+  <!-- Shared experts row -->
+  <rect x="320" y="812" width="340" height="40" rx="3" fill="#fff4e1" stroke="#9b7c4a"/>
+  <text class="lbl-sm" x="490" y="830" text-anchor="middle">Shared expert (always active)</text>
+  <text class="sub"    x="490" y="846" text-anchor="middle">captures universal binding features</text>
+
+  <!-- FiLM conditioning -->
+  <rect class="panel-fill" x="305" y="880" width="180" height="50" rx="4" fill="var(--c-family)"/>
+  <text class="lbl-sm" x="395" y="900" text-anchor="middle">FiLM(e_f)</text>
+  <text class="sub"    x="395" y="918" text-anchor="middle">γ(e_f)·h + β(e_f)</text>
+
+  <!-- Prototype dictionary -->
+  <rect class="panel-fill" x="505" y="880" width="185" height="50" rx="4" fill="#eaeaf6"/>
+  <text class="lbl-sm" x="597" y="900" text-anchor="middle">Prototype dictionary</text>
+  <text class="sub"    x="597" y="918" text-anchor="middle">32 learned binding concepts</text>
+
+  <!-- Sum node -->
+  <circle cx="780" cy="806" r="22" fill="#ffffff" stroke="#444"/>
+  <text class="lbl" x="780" y="811" text-anchor="middle">⊕</text>
+  <text class="sub" x="780" y="846" text-anchor="middle">residual sum</text>
+  <text class="shape" x="780" y="862" text-anchor="middle">z̃ ∈ ℝ^{B×512}</text>
+
+  <!-- internal arrows in MoE -->
+  <path class="arrow" d="M280,747 L305,747" marker-end="url(#arrow)"/>
+  <text class="sub" x="292" y="738" text-anchor="middle">e_f</text>
+
+  <path class="arrow" d="M280,875 L305,875" marker-end="url(#arrow)"/>
+  <text class="sub" x="292" y="866" text-anchor="middle">e_f</text>
+
+  <path class="arrow" d="M690,747 L760,790" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M660,832 L760,810" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M485,905 L760,820" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M690,905 L760,820" marker-end="url(#arrow)"/>
+
+  <!-- z into MoE: top side and into gating -->
+  <path class="arrow" d="M360,610 L360,632 L170,632 L170,688" marker-end="url(#arrow)"/>
+  <text class="sub" x="290" y="624">z</text>
+  <path class="arrow" d="M360,610 L360,632 L497,632 L497,688" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M360,610 L360,632 L780,632 L780,784" marker-end="url(#arrow)"/>
+  <text class="sub-i" x="800" y="700" >residual skip</text>
+
+  <!-- family id into family embedding -->
+  <path class="arrow" d="M580,108 L580,130 L820,130 L820,640 L170,640 L170,688" marker-end="url(#arrow)" stroke-dasharray="0"/>
+  <text class="sub" x="700" y="124">family id  f</text>
+
+  <!-- ====================================================================== -->
+  <!-- (e) OUTPUT HEADS                                                        -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="980" y="676">e · Output heads</text>
+
+  <!-- Position gate head -->
+  <rect class="panel-fill" x="960" y="694" width="200" height="84" rx="6" fill="var(--c-head)"/>
+  <text class="lbl-sm" x="1060" y="716" text-anchor="middle">Position gate head</text>
+  <text class="sub"    x="1060" y="734" text-anchor="middle">MLP → σ(·) over 20 positions</text>
+  <text class="sub-i"  x="1060" y="752" text-anchor="middle">continuous mask, ordinal-regularized</text>
+  <text class="shape"  x="1060" y="770" text-anchor="middle">ĝ ∈ [0,1]^{B×20}</text>
+
+  <!-- PWM regression head -->
+  <rect class="panel-fill" x="960" y="798" width="200" height="132" rx="6" fill="var(--c-head)"/>
+  <text class="lbl-sm" x="1060" y="820" text-anchor="middle">PWM regression head</text>
+  <text class="sub"    x="1060" y="838" text-anchor="middle">pos-embed ⊕ z̃ → MLP</text>
+  <text class="sub"    x="1060" y="854" text-anchor="middle">self-attn over 20 positions</text>
+  <text class="sub"    x="1060" y="870" text-anchor="middle">cross-attn → DBD residues E'</text>
+  <text class="sub-i"  x="1060" y="888" text-anchor="middle">softmax over {A,C,G,T}</text>
+  <text class="shape"  x="1060" y="916" text-anchor="middle">P̂ ∈ Δ³^{B×4×20}</text>
+
+  <!-- z̃ -> heads -->
+  <path class="arrow" d="M820,806 L880,806 L880,736 L960,736" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M820,806 L880,806 L880,860 L960,860" marker-end="url(#arrow)"/>
+
+  <!-- E' (esm embeddings + dbd mask) -> PWM head cross-attn -->
+  <path class="arrow-dim" d="M680,200 L900,200 L900,890 L960,890" marker-end="url(#arrow-d)"/>
+  <text class="sub" x="910" y="194">E' &amp; m_DBD  (cross-attn keys/values)</text>
+
+  <!-- ====================================================================== -->
+  <!-- (f) TRAINING OBJECTIVE                                                  -->
+  <!-- ====================================================================== -->
+  <text class="title-sm" x="40" y="982">f · Training objective</text>
+
+  <rect class="panel-fill" x="40" y="998" width="1120" height="62" rx="6" fill="var(--c-loss)"/>
+  <text class="sub" x="60" y="1020">
+    <tspan font-weight="700" fill="#1a1a1a">ℒ</tspan>
+    <tspan> = </tspan>
+    <tspan>λ_g · BCE(ĝ, m*)  +  λ_ord · ordinal(ĝ)  +  λ_L1 · ‖P̂ − P*‖₁  +  λ_IC · |IC(P̂) − IC(P*)|  +  λ_H · H(P̂)  +  λ_bal · ℒ_balance  +  λ_div · ℒ_diversity</tspan>
+  </text>
+  <text class="sub" x="60" y="1042">
+    <tspan font-style="italic">Gate BCE + monotonic ordinal prior · L1-PWM (DeepPBS-style) · information-content matching · entropy floor · MoE load-balance + expert diversity.</tspan>
+  </text>
+
+</svg>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="item"><span class="swatch" style="background:var(--c-input)"></span>Inputs</div>
+  <div class="item"><span class="swatch" style="background:var(--c-encoder)"></span>Protein encoder (ESM-2 + LoRA)</div>
+  <div class="item"><span class="swatch" style="background:var(--c-pool)"></span>Gated attention pooling</div>
+  <div class="item"><span class="swatch" style="background:var(--c-moe)"></span>Mixture-of-Experts decoder</div>
+  <div class="item"><span class="swatch" style="background:var(--c-family)"></span>Family conditioning</div>
+  <div class="item"><span class="swatch" style="background:var(--c-head)"></span>Output heads</div>
+  <div class="item"><span class="swatch" style="background:var(--c-loss)"></span>Training objective</div>
+</div>
+
+</div><!-- /.figure -->
+
+<p class="figcap">
+  <b>Figure 1 · TFScope architecture.</b>
+  A frozen ESM-2 (650M) protein language model produces per-residue contextual embeddings;
+  low-rank (LoRA) adapters on the last six transformer layers allow lightweight task adaptation.
+  A learned DBD position indicator marks DNA-binding-domain residues, after which a
+  dual-stream <i>gated</i> attention pool extracts a global TF representation and a DBD-focused
+  representation in parallel — the sigmoidal value gate prevents attention sinks and suppresses
+  uninformative residues. The pooled streams are fused and routed through a family-conditioned
+  Mixture-of-Experts decoder containing twelve SwiGLU experts with top-2 routing, an always-active
+  shared expert, a FiLM modulation pathway, and a 32-slot prototype dictionary that exposes
+  interpretable binding concepts. Family routing is biased by a semantic embedding constructed
+  from ProTrek text and ESM-2 sequence vectors, enabling generalization to unseen TF families.
+  Two heads decode the result at fixed length 20: a position-gate head produces a continuous,
+  ordinal-regularized motif mask, while a PWM regression head combines self-attention across
+  positions with cross-attention back to the DBD residues, yielding the final per-position
+  nucleotide distribution. Training optimizes a weighted sum of gate, PWM (L1 + IC + entropy),
+  and MoE auxiliary losses.
+</p>
+
+<div class="eq">
+  <div class="row"><b>Encoder.</b>  E = WeightedAvg<sub>k=N−3..N</sub>( ESM-2<sub>k</sub>(s) ),&nbsp;&nbsp; E ∈ ℝ<sup>B×L×1280</sup>;&nbsp;&nbsp; E′ = E + m<sub>DBD</sub> ⊙ u.</div>
+  <div class="row"><b>Pool.</b>  h<sub>g</sub> = GAP(E′),&nbsp; h<sub>d</sub> = GAP(E′; m<sub>DBD</sub>);&nbsp; z = MLP( [h<sub>g</sub> ; h<sub>d</sub>] ) ∈ ℝ<sup>512</sup>.</div>
+  <div class="row"><b>MoE.</b>  g = Softmax<sub>top-2</sub>( MLP(z, e<sub>f</sub>) + cos(e<sub>f</sub>, p) ),&nbsp;&nbsp; z̃ = z + Σ<sub>i∈top2</sub> g<sub>i</sub>·FiLM(E<sub>i</sub>(z); e<sub>f</sub>) + E<sub>shared</sub>(z) + Proto(z).</div>
+  <div class="row"><b>Heads.</b>  ĝ = σ(MLP<sub>gate</sub>(z̃)),&nbsp;&nbsp; P̂ = Softmax<sub>nuc</sub>( NucHead( SelfAttn ∘ CrossAttn<sub>E′</sub>( PosMLP(z̃, p<sub>pos</sub>) ) ) ).</div>
+</div>
+
+</body>
+</html>

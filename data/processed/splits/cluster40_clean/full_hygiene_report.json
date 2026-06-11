@@ -1,0 +1,87 @@
+{
+  "retrieval_index": {
+    "clean": true,
+    "n_violations": 0,
+    "reason_counts": {},
+    "violations": []
+  },
+  "split": {
+    "clean": true,
+    "missing_filenames": [],
+    "overlaps": {
+      "gene_symbol": {
+        "train-test": [],
+        "train-val": [],
+        "val-test": []
+      },
+      "sequence": {
+        "train-test": [],
+        "train-val": [],
+        "val-test": []
+      },
+      "source_id": {
+        "train-test": [],
+        "train-val": [],
+        "val-test": []
+      },
+      "uniprot_id": {
+        "train-test": [],
+        "train-val": [],
+        "val-test": []
+      }
+    }
+  },
+  "summary": {
+    "test": {
+      "families": {
+        "C2H2_long": 101,
+        "C2H2_medium": 65,
+        "C2H2_short": 23,
+        "ETS": 16,
+        "Forkhead": 11,
+        "Homeodomain": 133,
+        "Nuclear_Receptor": 39,
+        "Other": 136,
+        "bHLH": 53,
+        "bZIP": 37
+      },
+      "genes": 197,
+      "rows": 614,
+      "uniprot_ids": 192
+    },
+    "train": {
+      "families": {
+        "C2H2_long": 542,
+        "C2H2_medium": 190,
+        "C2H2_short": 146,
+        "ETS": 118,
+        "Forkhead": 116,
+        "Homeodomain": 615,
+        "Nuclear_Receptor": 173,
+        "Other": 658,
+        "bHLH": 224,
+        "bZIP": 165
+      },
+      "genes": 914,
+      "rows": 2947,
+      "uniprot_ids": 899
+    },
+    "val": {
+      "families": {
+        "C2H2_long": 169,
+        "C2H2_medium": 58,
+        "C2H2_short": 23,
+        "ETS": 17,
+        "Forkhead": 16,
+        "Homeodomain": 117,
+        "Nuclear_Receptor": 38,
+        "Other": 156,
+        "bHLH": 54,
+        "bZIP": 38
+      },
+      "genes": 234,
+      "rows": 686,
+      "uniprot_ids": 231
+    }
+  }
+}

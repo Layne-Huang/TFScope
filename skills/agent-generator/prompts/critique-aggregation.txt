@@ -1,0 +1,293 @@
+# Critique Aggregation and Refinement Protocol
+
+This protocol synthesizes multiple agent critiques into a coherent refinement proposal.
+
+## Aggregation Process
+
+You are analyzing critiques for {{target_agent_name}} v{{version}} from multiple specialist agents.
+
+## Received Critiques
+
+{{critique_1}}
+
+{{critique_2}}
+
+{{critique_3}}
+
+[... additional critiques ...]
+
+## Aggregation Task
+
+Synthesize these critiques into a unified refinement proposal that:
+1. Identifies consensus issues (mentioned by multiple critics)
+2. Weights feedback by domain relevance and expertise
+3. Resolves conflicting suggestions
+4. Prioritizes high-impact, low-risk changes
+5. Maintains the agent's core identity and purpose
+
+## Analysis Framework
+
+### 1. Consensus Identification
+
+**Strong Consensus (3+ critics agree):**
+- {{Issue mentioned by multiple critics}}
+- **Priority:** HIGH - Address immediately
+- **Confidence:** HIGH - Clear improvement direction
+
+**Moderate Consensus (2 critics agree):**
+- {{Issue mentioned by 2 critics}}
+- **Priority:** MEDIUM - Consider addressing
+- **Confidence:** MODERATE - Likely improvement
+
+**Divergent Views:**
+- {{Conflicting suggestions}}
+- **Resolution Strategy:** {{How to reconcile}}
+  - Choose the more conservative/safer option
+  - Combine elements from both suggestions
+  - Preserve existing approach pending more data
+  - Test both approaches if feasible
+
+### 2. Domain Weighting
+
+**Higher weight to critiques from:**
+- Agents with overlapping domain knowledge
+- Agents with proven track record (high feedback scores)
+- Agents with complementary expertise
+
+**Lower weight to critiques from:**
+- Agents with minimal domain overlap
+- Agents with lower performance ratings
+- Agents suggesting changes outside their expertise
+
+### 3. Impact/Risk Assessment
+
+For each suggested change, assess:
+
+| Change | Impact (High/Med/Low) | Risk (High/Med/Low) | Priority |
+|--------|----------------------|---------------------|----------|
+| {{Change 1}} | {{Impact}} | {{Risk}} | {{Priority}} |
+
+**Priority = Impact / Risk** - prioritize high impact, low risk changes
+
+### 4. Token Budget Impact
+
+Calculate token budget implications:
+
+```
+Current tokens: {{current_count}}
+Budget: 4000-5000
+
+Proposed changes:
++ {{addition_1}}: +{{tokens}} tokens
++ {{addition_2}}: +{{tokens}} tokens
+- {{removal_1}}: -{{tokens}} tokens
+- {{removal_2}}: -{{tokens}} tokens
+
+Net change: {{net_change}} tokens
+New total: {{new_total}} tokens
+Status: {{Within budget | Over budget - need consolidation}}
+```
+
+## Aggregated Refinement Proposal
+
+### Executive Summary
+
+**Overall Assessment:** {{Effective | Needs improvement | Major revision needed}}
+
+**Key Findings:**
+- **Strongest areas:** {{What agents consistently praised}}
+- **Weakest areas:** {{What agents consistently flagged}}
+- **Consensus improvements:** {{Changes multiple agents recommended}}
+- **Conflicting feedback:** {{Disagreements and how to resolve}}
+
+### Priority Improvements (Ranked)
+
+**HIGH PRIORITY (Consensus + High Impact + Low Risk):**
+1. **{{Improvement 1}}**
+   - **Source:** {{Which critics recommended}}
+   - **Rationale:** {{Why this matters}}
+   - **Implementation:** {{Specific change}}
+
+**MEDIUM PRIORITY (Moderate consensus or moderate impact):**
+2. **{{Improvement 2}}**
+   - **Source:** {{Which critics recommended}}
+   - **Rationale:** {{Why this matters}}
+   - **Implementation:** {{Specific change}}
+
+**LOW PRIORITY (Single critic or high risk):**
+3. **{{Improvement 3}}**
+   - **Source:** {{Which critics recommended}}
+   - **Rationale:** {{Why this matters}}
+   - **Implementation:** {{Specific change}}
+   - **Caveat:** {{Why this is lower priority}}
+
+### System Prompt Refinements
+
+```diff
+# System Prompt Changes
+
+- {{Remove this problematic section}}
++ {{Add this improved section}}
+
+**Rationale:** {{Why this change}}
+**Supporting critics:** {{Who recommended this}}
+**Consensus level:** {{Strong/Moderate/Weak}}
+```
+
+### Few-Shot Example Updates
+
+**Remove examples (identified as redundant by multiple critics):**
+```yaml
+- input: "{{example to remove}}"
+  output: "{{output to remove}}"
+**Reason:** {{Why remove}}
+**Supporting critics:** {{Who flagged this}}
+```
+
+**Add examples (identified as gaps by multiple critics):**
+```yaml
+- input: "{{new example input}}"
+  output: "{{new example output}}"
+**Reason:** {{Why add}}
+**Supporting critics:** {{Who recommended}}
+**Domain coverage:** {{What capability this demonstrates}}
+```
+
+**Modify examples (identified as low-quality):**
+```yaml
+# Before:
+- input: "{{current input}}"
+  output: "{{current output}}"
+
+# After:
+- input: "{{improved input}}"
+  output: "{{improved output}}"
+**Reason:** {{Why modify}}
+**Supporting critics:** {{Who suggested}}
+```
+
+### Capability Changes
+
+**Remove capabilities (identified as redundant/out of scope):**
+```yaml
+- {{capability-to-remove}}
+**Reason:** {{Why remove}}
+**Supporting critics:** {{Who flagged}}
+```
+
+**Add capabilities (identified as missing):**
+```yaml
++ {{new-capability}}
+**Reason:** {{Why add}}
+**Supporting critics:** {{Who recommended}}
+**Domain gap filled:** {{What this covers}}
+```
+
+**Refine capabilities (identified as vague):**
+```yaml
+- {{old-vague-capability}}
++ {{new-specific-capability}}
+**Reason:** {{Why refine}}
+**Supporting critics:** {{Who suggested}}
+```
+
+### Constraint Changes
+
+**Add constraints (identified as missing):**
+```yaml
++ {{new-constraint}}
+**Reason:** {{Safety/correctness issue this prevents}}
+**Supporting critics:** {{Who recommended}}
+**Risk if omitted:** {{What could go wrong}}
+```
+
+**Remove/relax constraints (identified as overly restrictive):**
+```yaml
+- {{overly-restrictive-constraint}}
+**Reason:** {{Why this hinders the agent}}
+**Supporting critics:** {{Who recommended}}
+**Mitigation:** {{How to address risks without this constraint}}
+```
+
+### Consolidation Actions (if over budget)
+
+**To meet token budget, consolidate:**
+
+1. **{{Consolidation 1}}**: Merge {{sections A}} and {{sections B}}
+   - **Combined:** {{Unified text}}
+   - **Token savings:** {{~X tokens}}
+
+2. **{{Consolidation 2}}**: Replace {{verbose section}} with {{concise principle}}
+   - **Before:** {{Current text}}
+   - **After:** {{Concise replacement}}
+   - **Token savings:** {{~X tokens}}
+
+**Projected new total:** {{X}} tokens {{✓ Within budget | ✗ Still over - additional consolidation needed}}
+
+### Conflict Resolutions
+
+**Conflict 1: {{Opposing suggestions}}**
+- **Critics分歧:** {{Agent A said X, Agent B said Y}}
+- **Resolution:** {{Chosen approach and why}}
+  - {{Resolution rationale}}
+  - **Alternative:** {{If chosen approach doesn't work}}
+
+### Cross-Agent Synergies
+
+**New integration opportunities identified:**
+
+- **{{Synergy 1}}**: {{Target agent}} + {{Other agent}}
+  - **Use case:** {{When they'd work together}}
+  - **Benefit:** {{What this enables}}
+  - **Implementation:** {{How to make it work}}
+
+## Expected Outcomes
+
+**If these refinements are applied:**
+
+**Improvements:**
+- {{Improvement 1}}: {{Expected benefit}}
+- {{Improvement 2}}: {{Expected benefit}}
+
+**Risks Mitigated:**
+- {{Risk 1}}: {{How this addresses a concern}}
+- {{Risk 2}}: {{How this addresses a concern}}
+
+**Maintained Strengths:**
+- {{Strength 1}}: {{Preserved because}}
+- {{Strength 2}}: {{Preserved because}}
+
+**Performance Prediction:**
+- **Current rating:** {{X.X}}/5.0
+- **Predicted rating:** {{Y.Y}}/5.0
+- **Confidence:** {{High/Medium/Low}}
+
+## Implementation Plan
+
+**Phase 1 (Immediate):** {{High priority, low risk changes}}
+1. {{Change 1}}
+2. {{Change 2}}
+
+**Phase 2 (Validation):** {{Medium priority changes to validate}
+1. {{Change 1}}
+2. {{Change 2}}
+**Validation:** {{How to test these changes}}
+
+**Phase 3 (Deferred):** {{Low priority or high risk changes}}
+1. {{Change 1}}
+2. {{Change 2}}
+**Defer reason:** {{Why wait}}
+
+## Approval Required
+
+This aggregated refinement proposal requires human approval before implementation. Review:
+- [ ] Consensus issues are addressed
+- [ ] Conflicting suggestions are resolved appropriately
+- [ ] Token budget is maintained
+- [ ] Core agent function is preserved
+- [ ] Safety constraints are intact
+- [ ] Cross-agent synergies are viable
+
+**To approve:** Apply changes to agents/{{target_agent_name}}/config.yaml and increment version.
+
+**To reject:** Provide feedback on which aspects need revision.

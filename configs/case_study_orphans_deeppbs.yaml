@@ -1,0 +1,71 @@
+# Remaining orphan-TF nominations (ADNP2, ZHX2, ZHX3) — homeodomain family.
+# Per user directive: use the v18a full-aug-data / deeppbs-split / RAG checkpoint
+# (NOT the LFO checkpoints). All three are TRUE orphans (absent from the entire
+# parquet, hence from the deeppbs training set too). Verified 2026-06-09.
+project_name: orphan_homeodomain_deeppbs
+output_dir: results/orphan_homeodomain_deeppbs
+figure_dir: figures/figure8
+extended_figure_dir: figures/extended
+
+# ── Model (deeppbs split, v18a, RAG, honest leave-gene-out retrieval) ─────────
+checkpoint_production: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/deeppbs_v18a_attnrepair/ckpt_best.pt
+donor_parquet: data/processed/tf_pwm_aug_dbd_canon_trim.parquet
+deeppbs_split: data/processed/splits/deeppbs_aug_dbd/benchmark.json   # aug-filename deeppbs split
+embeddings: data/processed/tf_dbd_embeddings_aug.npz
+family_id: 4                       # Homeodomain
+canonical_homeodomain: TAATTA
+
+# ── Orphan targets (homeobox windows; for ZHX2/ZHX3 = the DNA-binding HD1, the
+#    most decisive of their 4-5 homeoboxes — screened, HD1 sharpest/most canonical) ─
+orphans:
+  - gene: ADNP2
+    uniprot: Q6IQ32
+    full_length: 1131
+    dbd_uniprot: "1043-1102"
+    dbd_sequence: "LALDPKKYEGRSYEEKKQFLKDYFHKKPYPSKKEIELLSSLFWVWKIDVASFFGKRRYICMKAIKNHKPSVLLGFDMSEL"
+    note: "ADNP paralog; also orphan; neurodevelopmental"
+  - gene: ZHX2
+    uniprot: Q9Y6X8
+    full_length: 837
+    dbd_uniprot: "263-324 (HD1 of 4)"
+    dbd_sequence: "PLNTTKYNSALDTNATMINSFNKFPYPTQAELSWLTAASKHPEEHIRIWFATQRLKHGISWSPEEVEEARKK"
+    note: "zinc-fingers-and-homeoboxes; tumour suppressor; HD1 = DNA-binding"
+  - gene: ZHX3
+    uniprot: Q9H4I2
+    full_length: 956
+    dbd_uniprot: "304-363 (HD1 of 5)"
+    dbd_sequence: "PLSSIPTYNAAMDSNSFLKNSFHKFPYPTKAELCYLTVVTKYPEEQLKIWFTAQRLKQGISWSPEEIEDA"
+    note: "ZHX2 paralog; HD1 = DNA-binding"
+
+# paralog reference that IS in training but whose stored motif is degenerate ("G")
+# -> NOT usable; documented for transparency.
+zhx_reference_gene: ZHX1
+# genes excluded from every orphan's leave-gene-out retrieval
+retrieval_exclude_genes: ["ADNP", "ADNP2", "ZHX1", "ZHX2", "ZHX3"]
+# consistency pairs (cross-prediction agreement, not validation)
+consistency_pairs: [["ZHX2", "ZHX3"], ["ADNP2", "ADNP"]]
+
+# masked homeodomain positive controls (in deeppbs training; leave-gene-out)
+homeodomain_control_genes: ["EN1", "PITX1", "ISL1", "PBX1"]
+
+# promoter scan gene sets (TSS+/-1 kb, hg38, dinucleotide-shuffle background)
+promoter_sets:
+  ADNP2: ["ADNP","ADNP2","POGZ","CHD8","CHD2","TCF4","FOXP1","FOXP2","MECP2","MEF2C","SATB2",
+          "AUTS2","TBR1","ARID1B","SCN2A","SHANK3","SYNGAP1","GRIN2B","NRXN1","DYRK1A","KMT2A",
+          "SETD5","NSD1","ANK2","ASH1L","CHD7","CTCF","POGZ"]
+  ZHX2: ["AFP","GPC3","H19","IGF2","CDKN1A","CCND1","CCNA2","CDK4","ABCB1","ALB","APOB","SERPINA1",
+         "CYP3A4","CDKN2A","MYC","BCL2","CDKN1B","HNF4A","FOXA2","ONECUT1","TTR","GHR","SOCS2","CEBPA"]
+  ZHX3: ["AFP","GPC3","CDKN1A","CCND1","CCNA2","CDK4","MYC","BCL2","NCAM1","CDH1","VIM","TWIST1",
+         "SNAI2","ZEB1","AR","KLK3","NKX3-1","FOXA1","HOXB13","TMPRSS2","ERG","PTEN","RB1","TP53"]
+
+# ── Confidence / calibration / motif processing ──────────────────────────────
+success_threshold_r: 0.6
+confidence_bins: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+medium_confidence_min: 0.4
+high_confidence_min: 0.7
+gate_norm_range: [0.75, 0.97]
+active_gate_threshold: 0.5
+max_alignment_offset: 10
+allow_reverse_complement: true
+max_motif_length: 20
+retrieval_top_k: 3

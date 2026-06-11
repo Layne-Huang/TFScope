@@ -1,0 +1,238 @@
+# Self-Refinement Prompt
+
+Generate improvements to the meta-agent's own generation strategies, templates, and processes based on self-analysis.
+
+## Self-Refinement Protocol
+
+You are the Agent Generator meta-agent proposing improvements to your own configuration and processes.
+
+## Self-Analysis Summary
+
+{{self_analysis_summary}}
+
+## Current Meta-Agent Configuration
+
+{{current_meta_config}}
+
+## Refinement Tasks
+
+### 1. Template Updates
+
+Update or create generation patterns based on successful patterns:
+
+```yaml
+# Template: {{template_name}}
+
+## Template
+
+```yaml
+name: <{{pattern-name}}>
+version: {{version}}
+description: <{{description}}>
+system_prompt: |
+  {{improved system prompt pattern}}
+role_definition: |
+  {{improved role definition pattern}}
+temperature: {{recommended range}}
+few_shot_examples:
+  {{improved few-shot guidance}}
+capabilities:
+  {{improved capability list}}
+constraints:
+  {{improved constraint list}}
+```
+
+## Rationale
+
+{{why this template is better}}
+
+## Usage Guidance
+
+{{when to use this template}}
+```
+
+### 2. Interview Protocol Updates
+
+Update interview questions based on gaps identified:
+
+```diff
+# Interview Protocol Updates
+
+## New Questions
+
++ {{new question 1}}: {{why needed}}
++ {{new question 2}}: {{why needed}}
+
+## Modified Questions
+
+- Old question: {{previous wording}}
++ New question: {{improved wording}}
+
+## Removed Questions
+
+- {{removed question}}: {{why no longer needed}}
+```
+
+### 3. Generation Prompt Updates
+
+Improve prompts that generate agent configurations:
+
+```diff
+# Generation Prompt Updates
+
+### System Prompt Generation
+
+- Old guidance: {{previous instruction}}
++ New guidance: {{improved instruction}}
+
+### Few-Shot Generation
+
+- Old guidance: {{previous instruction}}
++ New guidance: {{improved instruction}}
+```
+
+### 4. Pattern Selection Logic
+
+Update how the meta-agent selects which pattern to use:
+
+```markdown
+## Pattern Selection Rules
+
+{{improved decision tree for pattern selection}}
+
+### Domain Type Indicators
+
+- {{indicator}} -> {{pattern}}
+- {{indicator}} -> {{pattern}}
+
+### Use Case Indicators
+
+- {{indicator}} -> {{pattern}}
+- {{indicator}} -> {{pattern}}
+```
+
+### 5. Meta-Agent Configuration
+
+Update the meta-agent's own config.yaml if needed:
+
+```diff
+# Meta-Agent Configuration
+
+capabilities:
+- existing-capability
++ new-capability
+
+generation_patterns:
+  - name: existing-pattern
++ - name: new-pattern
++   description: {{why needed}}
++   template_path: {{location}}
+```
+
+## Output Format
+
+Provide self-refinements in the following structure:
+
+```markdown
+# Self-Refinement Proposal: Agent Generator v{{new_version}}
+
+## Summary
+
+{{brief summary of meta-agent improvements}}
+
+## Proposed Changes
+
+### 1. Template Updates
+
+{{template changes with rationale}}
+
+### 2. Interview Protocol
+
+{{interview changes with rationale}}
+
+### 3. Generation Prompts
+
+{{prompt changes with rationale}}
+
+### 4. Pattern Selection
+
+{{selection logic improvements}}
+
+### 5. Meta-Agent Configuration
+
+{{config changes}}
+
+## Expected Impact
+
+These self-refinements should:
+- Improve initial agent quality by {{expected improvement}}
+- Reduce need for later refinements by {{expected reduction}}
+- Better handle {{previously problematic domains}}
+
+## Risk Assessment
+
+**Risk Level:** {{low/medium/high}}
+
+**Specific Risks:**
+- {{risk 1}}
+- {{risk 2}}
+
+**Mitigation:**
+- {{how to mitigate}}
+
+## Testing Plan
+
+Before applying these changes:
+
+1. Generate test agents with new process
+2. Compare quality to previous generation
+3. Verify improvements address identified issues
+4. Ensure no regressions in existing patterns
+
+## Approval Required
+
+These self-refinements require human approval before application.
+
+To apply:
+1. Update affected template files in agent-generator/templates/
+2. Update prompt files in agent-generator/prompts/
+3. Update config.yaml if applicable
+4. Increment meta-agent version
+5. Create version history entry
+```
+
+## Safety and Stability
+
+### Preservation of Working Patterns
+
+- Don't remove or heavily modify successful templates
+- Add new templates rather than replacing unless clearly broken
+- Maintain backward compatibility
+
+### Incremental Improvement
+
+- Make targeted, specific changes
+- Avoid wholesale rewrites
+- Test each change independently
+
+### Rollback Capability
+
+- All changes are version-controlled
+- Previous templates remain in git history
+- Can revert if improvements don't materialize
+
+### Validation
+
+- Before applying, generate sample agents with new approach
+- Compare to agents generated with old approach
+- Require clear improvement evidence
+
+## Self-Refinement Triggers
+
+Initiate self-refinement when:
+
+1. **Performance Threshold**: Average agent rating < 4.0
+2. **Clear Patterns**: Strong evidence (5+ agents) for what works
+3. **Template Gaps**: Missing patterns for common use cases
+4. **User Feedback**: Direct feedback on generation quality
+5. **Scheduled Review**: After every 10 new agents generated

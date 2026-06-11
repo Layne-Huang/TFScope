@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments and credentials
+.env
+.env.*
+.venv/
+venv/
+*.pem
+*.key
+
+# Editors and local agents
+.vscode/
+.claude/
+.agents/
+.codex/
+
+# Training and generated outputs
+checkpoints/
+outputs/
+results/
+logs/
+wandb/
+slurm-*.out
+slurm-*.err
+
+# Large generated scientific outputs
+design_pdbs/
+molecules/
+foldx5/
+foldx5_Linux.zip
+fold_rela_model_0.cif
+
+# Licensed/downloaded third-party material
+bin/
+papers/
+
+# Local IPC artifacts
+pwm_test
+train
+
+# OS files
+.DS_Store
+Thumbs.db

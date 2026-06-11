@@ -1,0 +1,85 @@
+1. 最优先：先把 v10 变成 Retrieval-dominant，而不是 Retrieval-assisted
+
+现在 v10 的形式是：
+
+z
+final
+	​
+
+=z
+de novo
+	​
+
++β
+gated
+	​
+
+z
+retrieval
+	​
+
+
+这个设计的问题是：de novo logits 仍然有很大权重，可能把很好的 NN prior 拉坏。
+
+因为你的 LSO-NN 已经 0.812，而 v10 只有 0.542，这说明 v10 不是 retrieval 不够强，而是没有学会“什么时候应该相信 retrieval”。
+
+我建议改成：
+
+P
+final
+	​
+
+=w⋅P
+retrieval
+	​
+
++(1−w)⋅P
+de novo
+	​
+
+
+或者 logits 版本：
+
+z
+final
+	​
+
+=w⋅z
+retrieval
+	​
+
++(1−w)⋅z
+de novo
+	​
+
++δz
+
+其中 w 是 query-specific、position-specific、neighbor-specific 的 gate。
+
+更具体：
+
+w
+j
+	​
+
+=σ(MLP[s
+NN
+	​
+
+,s
+trust
+	​
+
+,IC
+prior,j
+	​
+
+,H
+prior,j
+	​
+
+,family,DBD similarity])
+
+这样模型可以在高可信 neighbor 时直接接近 NN baseline，在低可信 neighbor 时再依赖 de novo。
+
+目标不是让 v10 从 0.54 慢慢学到 0.70，而是让它先恢复到 LSO-NN 的 0.77–0.81 附近，然后让 de novo correction 进一步修正 NN 的错误。

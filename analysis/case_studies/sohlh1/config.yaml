@@ -1,0 +1,59 @@
+# SOHLH1 orphan-TF case study — verified configuration
+# (all facts confirmed against UniProt + the TFScope training tables on 2026-06-08)
+
+case_study:
+  primary_tf: "SOHLH1"
+  paralog_tf: "SOHLH2"
+  tf_family_expected: "bHLH"
+  family_id: 3                       # bHLH in TFScope's 10-family scheme
+  organism: "Homo sapiens"
+  output_dir: "results/case_study_sohlh1"
+
+# ── Production RAG checkpoint ────────────────────────────────────────────────
+# cluster40_v18a_rag was trained on the full augmented dataset minus the
+# cluster40 (<=40% id) held-out test clusters. It HAS seen SOHLH2 (paralog, in
+# cluster40 train) but has NEVER seen SOHLH1 (absent from every TFScope table).
+# use_retrieval=true, so one checkpoint serves both noRAG and RAG_LGO modes.
+model:
+  checkpoint: "/n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/cluster40_v18a_rag/ckpt_best.pt"
+  donor_parquet: "data/processed/tf_pwm_aug_dbd_canon_trim.parquet"
+  donor_split: "data/processed/splits/cluster40/split.json"   # donors = train + val
+  embeddings: "data/processed/tf_dbd_embeddings_aug.npz"       # ESM2 L33 DBD-mean-pool
+
+retrieval:
+  top_k: 3
+  exclude_same_gene: true
+
+# ── SOHLH1 (Q5JUK2, 328 aa). UniProt bHLH domain 53-104; training-matched
+# DBD window = 53-110 (the SOHLH2 stored window is its UniProt domain start +6
+# C-terminal residues, so we apply the same convention for a fair paralog pair).
+sohlh1:
+  uniprot_id: "Q5JUK2"
+  full_length: 328
+  dbd_window_start: 53              # 1-based, inclusive
+  dbd_window_end: 110               # 1-based, inclusive
+  dbd_sequence: "SCLRRNVISERERRKRMSLSCERLRALLPQFDGRREDMASVLEMSVQFLRLASALGPS"
+
+# ── SOHLH2 (Q9NX45, 425 aa). UniProt bHLH domain 201-252; stored training DBD
+# window 201-258. Three curated motifs in TFScope (HOCOMOCO/CIS-BP/JASPAR).
+sohlh2:
+  uniprot_id: "Q9NX45"
+  full_length: 425
+  dbd_window_start: 201
+  dbd_window_end: 258
+  dbd_sequence: "KISLLHSSKEKLRRERIKYCCEQLRTLLPYVKGRKNDAASVLEATVDYVKYIREKISP"
+  reference_motif_filename: "ORIG__SOHLH2.MA1560.1.txt"        # JASPAR MA1560.1
+
+motif_processing:
+  active_gate_threshold: 0.5
+  ic_threshold: 0.25
+  max_motif_length: 20
+
+# Canonical bHLH references for biological-plausibility checks.
+references:
+  ebox_canonical: "CACGTG"          # palindromic E-box
+  ebox_degenerate: "CANNTG"
+
+confidence:
+  high_confidence_threshold: 0.70
+  medium_confidence_threshold: 0.40

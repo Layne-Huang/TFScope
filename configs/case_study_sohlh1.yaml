@@ -1,0 +1,63 @@
+# Revised SOHLH1 case study — confidence-calibrated orphan-TF motif nomination
+# All paths/facts verified against the local TFScope repo + UniProt (2026-06-08).
+project_name: sohlh1_case_study
+output_dir: results/sohlh1_case
+figure_dir: figures/figure5
+extended_figure_dir: figures/extended
+
+# ── Models ────────────────────────────────────────────────────────────────────
+# Production RAG checkpoint: full augmented data minus cluster40 (<=40% id) test.
+# Has seen SOHLH2 (paralog) but NEVER SOHLH1. use_retrieval=true (both modes).
+checkpoint_production: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/cluster40_v18a_rag/ckpt_best.pt
+# Fully bHLH-masked checkpoint (leave-family-out: NO bHLH in training). noRAG.
+# SOHLH2 sits in this checkpoint's held-out test split -> genuine masked control.
+checkpoint_bhlh_masked: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/lofo_v18a/bHLH/ckpt_best.pt
+
+donor_parquet: data/processed/tf_pwm_aug_dbd_canon_trim.parquet
+cluster40_split: data/processed/splits/cluster40/split.json     # calibration = test
+bhlh_lofo_split: data/processed/splits/lofo_v2/bHLH.json
+embeddings: data/processed/tf_dbd_embeddings_aug.npz            # ESM2 L33 DBD-mean-pool
+
+# ── Target ────────────────────────────────────────────────────────────────────
+case_gene: SOHLH1
+case_uniprot: Q5JUK2
+case_family: bHLH
+case_family_id: 3
+case_full_length: 328
+case_dbd_uniprot: "53-104"          # UniProt bHLH domain
+case_dbd_start: 53                  # 1-based training-matched window (SOHLH2 convention)
+case_dbd_end: 110
+case_dbd_sequence: "SCLRRNVISERERRKRMSLSCERLRALLPQFDGRREDMASVLEMSVQFLRLASALGPS"
+
+paralog_reference_gene: SOHLH2
+paralog_reference_uniprot: Q9NX45
+paralog_reference_motif: MA1560.1
+paralog_reference_filename: ORIG__SOHLH2.MA1560.1.txt
+paralog_dbd_start: 201
+paralog_dbd_end: 258
+paralog_dbd_sequence: "KISLLHSSKEKLRRERIKYCCEQLRTLLPYVKGRKNDAASVLEATVDYVKYIREKISP"
+
+canonical_ebox: CACGTG
+
+# genes never used as retrieved neighbours for the SOHLH1/SOHLH2 runs
+retrieval_exclude_genes: ["SOHLH1", "SOHLH2"]
+
+# ── Confidence / calibration ──────────────────────────────────────────────────
+success_threshold_r: 0.6
+confidence_bins: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+medium_confidence_min: 0.4
+high_confidence_min: 0.7
+# Calibrated decisiveness score = 0.5*IC_norm + 0.5*gate_norm.
+# Features selected as the held-out predictors of motif-recovery accuracy on
+# cluster40-test (gate Spearman +0.32, IC +0.29 vs oracle_r). The earlier
+# rag/noRAG-similarity (+0.40 wt) and retrieval-cosine terms were DROPPED: they
+# were anti-predictive on held-out TFs (rho -0.35 and -0.14).
+gate_norm_range: [0.75, 0.97]       # gate-prob normalization window (held-out range)
+
+# ── Motif processing ──────────────────────────────────────────────────────────
+ic_threshold: 0.25
+active_gate_threshold: 0.5
+max_alignment_offset: 10
+allow_reverse_complement: true
+max_motif_length: 20
+retrieval_top_k: 3

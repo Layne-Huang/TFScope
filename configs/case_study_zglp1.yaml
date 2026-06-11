@@ -1,0 +1,67 @@
+# ZGLP1 (GATA-type) case study — sequence-only GATA-class motif nomination for an
+# orphan germ-cell / oogenesis transcription factor. Honest dual-checkpoint design.
+# Facts verified against the local TFScope repo + UniProt (2026-06-09).
+project_name: zglp1_case_study
+output_dir: results/zglp1_case
+figure_dir: figures/figure6
+extended_figure_dir: figures/extended
+
+# ── Models ────────────────────────────────────────────────────────────────────
+# CLEAN, family-masked de-novo checkpoint: leave-family-out for the entire "Other"
+# family -> NEVER saw ANY GATA factor (GATA1-6 + ZGLP1 all in its held-out TEST).
+# use_retrieval=false (de-novo only). This is the leakage-clean generalization test.
+checkpoint_clean: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/lofo_v18a/Other/ckpt_best.pt
+# PRODUCTION RAG checkpoint. NOTE: ZGLP1 IS in this checkpoint's cluster40 TRAIN
+# split (HOCOMOCO H13CORE motif), so its predictions are LEAKY for the encoder and
+# are reported as a clearly-labelled production reference, NOT a clean nomination.
+# Retrieval is leave-gene-out (ZGLP1 excluded); the RAG output tracks retrieved GATA
+# paralogs, not ZGLP1's (divergent) leaked training pair.
+checkpoint_production: /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/cluster40_v18a_rag/ckpt_best.pt
+
+donor_parquet: data/processed/tf_pwm_aug_dbd_canon_trim.parquet
+cluster40_split: data/processed/splits/cluster40/split.json     # calibration = test
+other_lofo_split: data/processed/splits/lofo_v2/Other.json      # GATA/ZGLP1 held out here
+embeddings: data/processed/tf_dbd_embeddings_aug.npz            # ESM2 L33 DBD-mean-pool
+
+# ── Target ────────────────────────────────────────────────────────────────────
+case_gene: ZGLP1
+case_uniprot: P0C6A0
+case_family: Other            # GATA-type zinc finger is labelled "Other" in TFScope
+case_family_id: 9
+case_full_length: 273
+case_dbd_uniprot: "208-232"   # UniProt GATA-type ZN_FING (single GATA finger)
+case_dbd_start: 200           # 1-based window: ZF (208-232) + C-terminal basic tail
+case_dbd_end: 273
+case_dbd_sequence: "SEALEPRRCASCRTQRTPLWRDAEDGTPLCNACGIRYKKYGTRCSSCWLVPRKNVQPKRLCGRCGVSLDPIQEG"
+# ZGLP1 has a curated motif in TFScope's training data (HOCOMOCO H13CORE), so it is
+# NOT a true orphan w.r.t. our tables; we use that motif as (leaky) ground truth and
+# emphasise GATA-family/curated-DB (JASPAR/PBM) absence instead.
+ground_truth_filename: ORIG__ZGLP1.H13CORE.0.SGB.A.txt   # consensus ATGATCGAT (divergent GATA)
+
+# GATA-family reference motifs (all curated, in training) for family-level comparison.
+gata_reference_genes: ["GATA1", "GATA2", "GATA3", "GATA4", "GATA5", "GATA6"]
+gata_exemplar_filename: 4hc7_A_GATA3.MA0037.3.txt        # clean GATA exemplar (GATAA)
+canonical_gata: AGATAA
+
+# Retrieval-masked GATA positive controls (treated as orphan, gene excluded from
+# retrieval); these GATA factors ARE in cluster40 training (retrieval-masked, not
+# fully train-masked), analogous to the SOHLH2 control.
+gata_control_genes: ["GATA4", "GATA6"]
+
+# genes never used as retrieved neighbours for the ZGLP1 run (leave-gene-out)
+retrieval_exclude_genes: ["ZGLP1"]
+
+# ── Confidence / calibration ──────────────────────────────────────────────────
+success_threshold_r: 0.6
+confidence_bins: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+medium_confidence_min: 0.4
+high_confidence_min: 0.7
+gate_norm_range: [0.75, 0.97]
+
+# ── Motif processing ──────────────────────────────────────────────────────────
+ic_threshold: 0.25
+active_gate_threshold: 0.5
+max_alignment_offset: 10
+allow_reverse_complement: true
+max_motif_length: 20
+retrieval_top_k: 3

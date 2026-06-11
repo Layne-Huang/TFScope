@@ -1,0 +1,10 @@
+numpy
+pandas
+matplotlib
+scipy
+biopython
+gemmi
+tqdm
+
+[viz]
+logomaker
