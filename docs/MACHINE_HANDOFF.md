@@ -171,6 +171,14 @@ Run E1 before making architectural changes:
 sbatch scripts/train_v19_e1_baselines.sbatch
 ```
 
+On a local machine with at least six GPUs, run all six baselines concurrently:
+
+```bash
+GPU_IDS=0,1,2,3,4,5 bash scripts/run_v19_e1_local.sh
+```
+
+Outputs default to `checkpoints/v19_e1/`. Override this with `OUT_ROOT`.
+
 Evaluate the six runs using gene-macro gate-r, gene-macro canon-r, MAE,
 top-base accuracy, and per-family metrics. This establishes the genuine RAG
 benefit after leakage removal.
