@@ -1,0 +1,12 @@
+name: tfscope
+
+channels:
+  - bioconda
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - cd-hit
+  - pip:
+      - -r requirements.txt

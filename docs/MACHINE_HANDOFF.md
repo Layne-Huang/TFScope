@@ -119,11 +119,14 @@ redistribution.
 ## Environment Setup
 
 ```bash
-mamba create -n tfscope python=3.10 -y
+mamba env create -f environment.yml
 mamba activate tfscope
-pip install torch torchvision torchaudio
-pip install -r requirements.txt
 ```
+
+The environment installs Python 3.10, CD-HIT, and the project dependencies.
+PyTorch is intentionally excluded. Install the CUDA or CPU build appropriate
+for the target machine using https://pytorch.org/get-started/locally/. Install
+`entmax` afterward only when running sparse-attention experiments.
 
 The original environment name was `tfscope`. Training uses ESM-2
 `esm2_t33_650M_UR50D`; model weights are downloaded or loaded through

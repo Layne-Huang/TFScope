@@ -6,25 +6,28 @@ Predicting TF-DNA binding specificity from protein amino acid sequence using ESM
 
 ### 1. Create environment
 
+Create the project environment:
+
 ```bash
-mamba create -n tfscope python=3.10 -y
+mamba env create -f environment.yml
 mamba activate tfscope
 ```
 
-### 2. Install PyTorch with CUDA
+This installs Python 3.10, CD-HIT, and the packages listed in
+`requirements.txt`. PyTorch is intentionally not pinned because its build must
+match the target machine.
+
+Install the appropriate CUDA or CPU PyTorch build separately:
 
 ```bash
-# Adjust cuda version to your system (12.1 shown here)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# Use the command generated for your machine:
+# https://pytorch.org/get-started/locally/
+
+# Optional, only for entmax/sparsemax attention experiments:
+pip install entmax
 ```
 
-### 3. Install remaining dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Verify
+### 2. Verify
 
 ```bash
 python -c "import torch; print(f'PyTorch {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
