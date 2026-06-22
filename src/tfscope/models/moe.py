@@ -95,7 +95,19 @@ class SemanticFamilyEmbedding(nn.Module):
             nn.LayerNorm(out_dim),
         )
 
-    def forward(self, family_id: torch.Tensor) -> torch.Tensor:
+    def forward(self, family_id: torch.Tensor,
+                family_vec: torch.Tensor = None) -> torch.Tensor:
+        """Project a family vector to the model's family_embed_dim.
+
+        family_id : (B,) index into the frozen 34-family buffer (the trained path).
+        family_vec: (B, in_dim) optional raw text++ESM-2 vector for an UNSEEN family
+                    not in the buffer — built on the fly from a description and/or the
+                    protein's mean ESM-2 embedding. When given, it bypasses the lookup
+                    so any novel family routes through the same trained projection +
+                    semantic gate. Must match the buffer's in_dim.
+        """
+        if family_vec is not None:
+            return self.proj(family_vec.to(self.vectors.dtype))
         return self.proj(self.vectors[family_id])
 
 
@@ -112,6 +124,49 @@ def build_family_embedding(config: TFScopeConfig) -> nn.Module:
         if path:
             print(f"[MoE] family_embedding_path not found ({path}) — using learned embedding")
         return LearnedFamilyEmbedding(config.num_families, config.family_embed_dim)
+
+
+def load_semantic_family_vectors(config: TFScopeConfig):
+    """Load the (F, in_dim) semantic family vectors for the dual-family head.
+    Prefers dual_family_semantic_path (kept separate from the MoE's family_embedding_path
+    so the MoE can stay learned); falls back to family_embedding_path."""
+    import os
+    path = getattr(config, "dual_family_semantic_path", "") or getattr(config, "family_embedding_path", None)
+    if path and os.path.isfile(path):
+        data = torch.load(path, map_location="cpu", weights_only=False)
+        return data["embeddings"].float()
+    return None
+
+
+class DualFamilyConditioner(nn.Module):
+    """Fuse learned-id (in-distribution identity) + semantic (text/ESM-2) family
+    signals into one conditioning vector, gated by homology (e.g. top retrieval
+    cosine): high homology -> lean learned; low homology / OOD -> lean semantic.
+    `family_vec` lets callers pass an arbitrary semantic vector at inference
+    (e.g. a design's nearest-homolog text), bypassing the id lookup.
+    """
+
+    def __init__(self, num_families: int, semantic_vectors, d_cond: int):
+        super().__init__()
+        self.learned = nn.Embedding(num_families, d_cond)
+        nn.init.normal_(self.learned.weight, std=0.02)
+        self.has_semantic = semantic_vectors is not None
+        if self.has_semantic:
+            self.register_buffer("sem_vectors", semantic_vectors)          # (F, in_dim) frozen
+            self.sem_proj = nn.Sequential(
+                nn.Linear(semantic_vectors.shape[1], d_cond), nn.GELU(),
+                nn.LayerNorm(d_cond))
+        self.gate = nn.Sequential(nn.Linear(1, 32), nn.GELU(), nn.Linear(32, 1))
+
+    def forward(self, family_id, homology=None, family_vec=None):
+        cl = self.learned(family_id)                                       # (B, d_cond)
+        if not self.has_semantic:
+            return cl
+        sv = family_vec if family_vec is not None else self.sem_vectors[family_id]
+        cs = self.sem_proj(sv.to(cl.dtype))                                # (B, d_cond)
+        h = homology if homology is not None else cl.new_ones(cl.size(0), 1)
+        g = torch.sigmoid(self.gate(h.to(cl.dtype)))                       # (B,1) ~1 in-dist
+        return g * cl + (1.0 - g) * cs
 
 
 # ── FiLM conditioning ─────────────────────────────────────────────────────────

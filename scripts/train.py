@@ -16,7 +16,9 @@ Resume from checkpoint:
 """
 
 import argparse
+import contextlib
 import json
+import math
 import os
 import sys
 import time
@@ -27,8 +29,10 @@ os.environ.setdefault("TORCH_HOME", _DEFAULT_CACHE)
 
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data import DataLoader, DistributedSampler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -42,7 +46,15 @@ from tfscope.data.dataset import (
 from tfscope.models.tfscope import TFScopeModel
 from tfscope.models.alignment import align_pwm
 from tfscope.losses.tfscope_loss import TFScopeLoss
-from tfscope.train.trainer import get_cosine_lr, _expert_utilization
+
+
+def get_cosine_lr(step, warmup_steps, total_steps):
+    """Linear warmup followed by cosine decay to zero."""
+    if warmup_steps > 0 and step < warmup_steps:
+        return step / warmup_steps
+    decay_steps = max(total_steps - warmup_steps, 1)
+    progress = min(max((step - warmup_steps) / decay_steps, 0.0), 1.0)
+    return 0.5 * (1.0 + math.cos(math.pi * progress))
 
 
 def parse_args():
@@ -77,6 +89,12 @@ def parse_args():
     # Training
     p.add_argument("--epochs", type=int, default=50)
     p.add_argument("--batch-size", type=int, default=32)
+    p.add_argument(
+        "--grad-accum-steps",
+        type=int,
+        default=1,
+        help="Accumulate this many micro-batches before each optimizer step.",
+    )
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--lora-lr",       type=float, default=1e-5)
     p.add_argument("--lora-rank",     type=int,   default=0,
@@ -93,6 +111,17 @@ def parse_args():
         action="store_true",
         help="Sample genes uniformly, then choose one motif record per sampled gene.",
     )
+    p.add_argument(
+        "--precision",
+        choices=("fp32", "bf16"),
+        default="fp32",
+        help="Forward/backward compute precision. BF16 uses CUDA autocast.",
+    )
+    p.add_argument(
+        "--tf32",
+        action="store_true",
+        help="Enable TF32 tensor-core math for remaining FP32 matmuls on CUDA.",
+    )
 
     # Model
     p.add_argument("--freeze-encoder", action="store_true", default=True)
@@ -108,6 +137,11 @@ def parse_args():
     p.add_argument("--init-from", default=None,
                    help="Load ONLY model weights from this checkpoint (fresh optimizer/"
                         "schedule/epoch) — for stage-2 finetuning after pretraining")
+    p.add_argument(
+        "--init-model",
+        default=None,
+        help="Load model weights exactly from a compatible checkpoint.",
+    )
     p.add_argument("--early-stop-patience", type=int, default=0,
                    help="Stop training if the monitored metric doesn't improve for N epochs (0=disabled)")
     p.add_argument("--no-save-best", action="store_true",
@@ -135,6 +169,31 @@ def parse_args():
                    help="Temperature for the contrastive similarity logits")
     p.add_argument("--init-from-pretrain", default=None,
                    help="Stage-A contrastive checkpoint to warm-start the protein encoder")
+    p.add_argument(
+        "--latent-registration",
+        action="store_true",
+        help="Marginalize PWM supervision over offset and reverse-complement states.",
+    )
+    p.add_argument("--registration-max-shift", type=int, default=10)
+    p.add_argument("--registration-min-overlap", type=int, default=4)
+    p.add_argument("--registration-temperature", type=float, default=0.1)
+    p.add_argument("--registration-coverage-penalty", type=float, default=0.5)
+    p.add_argument(
+        "--registration-anchor-path",
+        default="",
+        help="Optional train-only E3 consensus-relative anchor TSV.",
+    )
+    p.add_argument(
+        "--register-head",
+        action="store_true",
+        help="Predict the 42-state register and export internal PWM coordinates.",
+    )
+    p.add_argument("--register-loss-weight", type=float, default=0.5)
+    p.add_argument(
+        "--register-head-only",
+        action="store_true",
+        help="Freeze the base model and fine-tune only the register head.",
+    )
 
     # Retrieval augmentation (v8 RAG-TFScope)
     p.add_argument("--use-retrieval", action="store_true",
@@ -145,6 +204,26 @@ def parse_args():
                    help="Number of nearest neighbours to retrieve per sample")
     p.add_argument("--retrieval-dropout", type=float, default=0.15,
                    help="Classifier-free guidance: prob of zeroing retrieval at train")
+    p.add_argument("--aligned-trust-target", action="store_true")
+    p.add_argument("--trust-rank-weight", type=float, default=0.0)
+    p.add_argument("--trust-rank-margin", type=float, default=0.1)
+    p.add_argument(
+        "--positionwise-retrieval-gate",
+        action="store_true",
+        help="Gate retrieval independently at each PWM position using local donor support.",
+    )
+    p.add_argument(
+        "--align-retrieved-pwms",
+        action="store_true",
+        help="Align retrieved PWMs to the de-novo prediction before fusion.",
+    )
+    p.add_argument("--retrieval-alignment-max-shift", type=int, default=10)
+    p.add_argument("--retrieval-alignment-min-overlap", type=int, default=4)
+    p.add_argument(
+        "--retrieval-reranker-only",
+        action="store_true",
+        help="Fine-tune only donor trust and motif-wide retrieval gate parameters.",
+    )
     p.add_argument("--retrieval-index-path", default="data/processed/tf_nn_index.json",
                    help="Path to JSON NN index produced by build_nn_index.py")
     # Robust-RAG training augmentations (v17)
@@ -168,6 +247,12 @@ def parse_args():
     p.add_argument("--v18-contact-bias-scale", type=float, default=0.0)
     p.add_argument("--v18-contact-code", action="store_true",
                    help="v18b: family/aa contact-code MLP for Δz values")
+    p.add_argument("--dual-family", action="store_true",
+                   help="fuse learned-id + semantic family (gated by homology), deep-injected into v18 head")
+    p.add_argument("--dual-family-dim", type=int, default=None,
+                   help="dim of the fused family conditioning vector (default 64)")
+    p.add_argument("--dual-family-semantic-path", default=None,
+                   help="semantic family vectors for the dual head (e.g. family_embeddings_10.pt)")
     p.add_argument("--recognition-prior-path",
                    default="data/contact_maps/recognition_residues.json")
 
@@ -200,6 +285,9 @@ def init_wandb(args, config):
             # training
             "epochs":             args.epochs,
             "batch_size":         args.batch_size,
+            "grad_accum_steps":    args.grad_accum_steps,
+            "effective_batch_size": config.effective_batch_size,
+            "world_size":          getattr(config, "world_size", 1),
             "lr":                 args.lr,
             "lora_lr":            args.lora_lr,
             "warmup_steps":       args.warmup_steps,
@@ -207,6 +295,8 @@ def init_wandb(args, config):
             "split":              args.split,
             "dummy":              args.dummy,
             "gene_balanced_sampling": args.gene_balanced_sampling,
+            "latent_registration": args.latent_registration,
+            "registration_anchor_path": args.registration_anchor_path,
         },
         resume="allow",
         dir=args.out,
@@ -214,11 +304,71 @@ def init_wandb(args, config):
     return run
 
 
-def make_loaders(args, config):
+def distributed_context():
+    world_size = int(os.environ.get("WORLD_SIZE", "1"))
+    rank = int(os.environ.get("RANK", "0"))
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    return rank, local_rank, world_size
+
+
+def unwrap(module):
+    return module.module if isinstance(module, DistributedDataParallel) else module
+
+
+def checkpoint_model_state(model):
+    """Save trainable adapters while omitting the frozen 650M ESM weights."""
+    state = {}
+    for key, value in model.state_dict().items():
+        if not key.startswith("backbone._esm_model") or ".lora_" in key:
+            state[key] = value
+    return state
+
+
+def assert_lora_loaded(model, missing_keys, checkpoint_path):
+    expected = {
+        key
+        for key in model.state_dict()
+        if key.startswith("backbone._esm_model") and ".lora_" in key
+    }
+    missing_lora = sorted(expected.intersection(missing_keys))
+    if missing_lora:
+        raise ValueError(
+            f"Checkpoint {checkpoint_path} is missing "
+            f"{len(missing_lora)} trained LoRA tensors"
+        )
+
+
+def reduce_epoch_metrics(metrics, device, distributed):
+    if not distributed:
+        return metrics
+    values = torch.tensor(
+        [metrics["loss"], metrics["gate_loss"], metrics["pwm_loss"]],
+        dtype=torch.float64,
+        device=device,
+    )
+    dist.all_reduce(values, op=dist.ReduceOp.SUM)
+    values /= dist.get_world_size()
+    return dict(zip(("loss", "gate_loss", "pwm_loss"), values.tolist()))
+
+
+def make_loaders(args, config, rank=0, world_size=1):
     if args.dummy:
         train_ds = SyntheticTFDataset(config, n_samples=512, seed=args.seed)
         val_ds   = SyntheticTFDataset(config, n_samples=64,  seed=args.seed + 1)
-        train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+        train_sampler = (
+            DistributedSampler(
+                train_ds,
+                num_replicas=world_size,
+                rank=rank,
+                shuffle=True,
+                seed=args.seed,
+            )
+            if world_size > 1
+            else None
+        )
+        train_loader = DataLoader(train_ds, batch_size=args.batch_size,
+                                  shuffle=train_sampler is None,
+                                  sampler=train_sampler,
                                   num_workers=0, collate_fn=collate_variable_length)
         val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False,
                                   num_workers=0, collate_fn=collate_variable_length)
@@ -234,6 +384,16 @@ def make_loaders(args, config):
             train_ds.df["gene_symbol"].tolist(),
             num_samples=len(train_ds),
             seed=args.seed,
+            rank=rank,
+            world_size=world_size,
+        )
+    elif world_size > 1:
+        train_sampler = DistributedSampler(
+            train_ds,
+            num_replicas=world_size,
+            rank=rank,
+            shuffle=True,
+            seed=args.seed,
         )
     train_loader = DataLoader(
         train_ds,
@@ -248,38 +408,66 @@ def make_loaders(args, config):
     return train_loader, val_loader
 
 
+def autocast_context(device, precision):
+    device_type = device.type if isinstance(device, torch.device) else device
+    return torch.autocast(
+        device_type="cuda",
+        dtype=torch.bfloat16,
+        enabled=device_type == "cuda" and precision == "bf16",
+    )
+
+
 def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
-                    device, global_step, wandb_run):
+                    device, global_step, wandb_run, grad_accum_steps=1,
+                    precision="fp32", distributed=False):
     """One training epoch. Logs per-step loss to W&B."""
     model.train()
     total_loss = gate_loss = pwm_loss = 0.0
     n_batches = 0
+    accumulated_batches = 0
+    optimizer.zero_grad()
 
-    for batch in loader:
+    for batch_idx, batch in enumerate(loader):
         batch = {k: v.to(device, dtype=torch.float32
                          if v.is_floating_point() else torch.long)
                  for k, v in batch.items()}
 
-        gate_logits, pwm_logits, aux = model(
-            batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
-            retrieved_pwms=batch.get('retrieved_pwms'),
-            retrieved_masks=batch.get('retrieved_masks'),
-            retrieved_sims=batch.get('retrieved_sims'),
-            recog_prior=batch.get('recog_prior'),
+        is_last_batch = batch_idx + 1 == len(loader)
+        should_step = accumulated_batches + 1 == grad_accum_steps or is_last_batch
+        sync_context = (
+            model.no_sync()
+            if distributed and not should_step
+            else contextlib.nullcontext()
         )
-        loss, metrics = loss_fn(
-            gate_logits, pwm_logits,
-            batch['target_pwm'].float(), batch['pwm_mask'].float(),
-            aux.get('gate_logits'), aux.get('top_indices'), aux.get('family_id'),
-            trust_logits=aux.get('trust_logits'),
-            retrieved_pwms=aux.get('retrieved_pwms'),
-            retrieved_masks=aux.get('retrieved_masks'),
-            attn=aux.get('attn'),
-            attn_key_mask=aux.get('attn_key_mask'),
-            recog_prior=aux.get('recog_prior'),
-            contact_target=batch.get('contact_target'),
-            contact_base_mask=batch.get('contact_base_mask'),
-        )
+        with sync_context, autocast_context(device, precision):
+            gate_logits, pwm_logits, aux = model(
+                batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
+                retrieved_pwms=batch.get('retrieved_pwms'),
+                retrieved_masks=batch.get('retrieved_masks'),
+                retrieved_sims=batch.get('retrieved_sims'),
+                recog_prior=batch.get('recog_prior'),
+            )
+            loss, metrics = loss_fn(
+                aux.get("internal_gate_logits", gate_logits),
+                aux.get("internal_pwm_logits", pwm_logits),
+                batch['target_pwm'].float(), batch['pwm_mask'].float(),
+                aux.get('gate_logits'), aux.get('top_indices'), aux.get('family_id'),
+                trust_logits=aux.get('trust_logits'),
+                retrieved_pwms=aux.get('retrieved_pwms'),
+                retrieved_masks=aux.get('retrieved_masks'),
+                attn=aux.get('attn'),
+                attn_key_mask=aux.get('attn_key_mask'),
+                recog_prior=aux.get('recog_prior'),
+                contact_target=batch.get('contact_target'),
+                contact_base_mask=batch.get('contact_base_mask'),
+                registration_anchor_mask=batch.get('registration_anchor_mask'),
+                registration_anchor_mode=batch.get('registration_anchor_mode'),
+                registration_orientation=batch.get('registration_orientation'),
+                registration_offset=batch.get('registration_offset'),
+                register_logits=aux.get('register_logits'),
+            )
+            if not (torch.isnan(loss) or torch.isinf(loss)):
+                (loss / grad_accum_steps).backward()
 
         # ── Robust-RAG diagnostics (Feature 6) ─────────────────────────────
         rag_diag = {}
@@ -299,14 +487,22 @@ def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
                 rag_diag['frac_full_dropout']      = (nb_valid.sum(dim=-1) == 0).float().mean().item()
 
         if not (torch.isnan(loss) or torch.isinf(loss)):
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                list(model.parameters()) + list(loss_fn.parameters()), 1.0)
-            optimizer.step()
-            scheduler.step()
+            accumulated_batches += 1
+            if should_step:
+                if accumulated_batches < grad_accum_steps:
+                    correction = grad_accum_steps / accumulated_batches
+                    for parameter in list(model.parameters()) + list(loss_fn.parameters()):
+                        if parameter.grad is not None:
+                            parameter.grad.mul_(correction)
+                torch.nn.utils.clip_grad_norm_(
+                    list(model.parameters()) + list(loss_fn.parameters()), 1.0)
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                accumulated_batches = 0
+                global_step += 1
 
-            if wandb_run is not None:
+            if wandb_run is not None and should_step:
                 wandb_run.log({
                     "train/loss":             loss.item(),
                     "train/gate_loss":        metrics['gate_loss'],
@@ -316,6 +512,18 @@ def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
                     "train/pwm_ic":           metrics.get('pwm_ic', 0),
                     "train/pwm_entropy":      metrics.get('pwm_entropy', 0),
                     "train/ordinal_violation":metrics.get('ordinal_violation', 0),
+                    "train/registration_loss": metrics.get('registration_loss', 0),
+                    "train/registration_entropy": metrics.get('registration_entropy', 0),
+                    "train/registration_coverage": metrics.get('registration_coverage', 0),
+                    "train/registration_anchor_fraction": metrics.get(
+                        'registration_anchor_fraction', 0
+                    ),
+                    "train/register_supervision": metrics.get(
+                        'register_supervision', 0
+                    ),
+                    "train/register_accuracy": metrics.get(
+                        'register_accuracy', 0
+                    ),
                     "train/balance_loss":     metrics.get('balance_loss', 0),
                     "train/diversity_loss":   metrics.get('diversity_loss', 0),
                     "train/sigma_gate":       metrics.get('sigma_gate', 1),
@@ -329,16 +537,15 @@ def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
         gate_loss  += metrics['gate_loss']
         pwm_loss   += metrics['pwm_loss']
         n_batches  += 1
-        global_step += 1
 
     n = max(n_batches, 1)
-    return ({'loss': total_loss / n, 'gate_loss': gate_loss / n,
-             'pwm_loss': pwm_loss / n},
-            global_step)
+    epoch_metrics = {'loss': total_loss / n, 'gate_loss': gate_loss / n,
+                     'pwm_loss': pwm_loss / n}
+    return reduce_epoch_metrics(epoch_metrics, device, distributed), global_step
 
 
 @torch.no_grad()
-def run_val_epoch(model, loss_fn, loader, device):
+def run_val_epoch(model, loss_fn, loader, device, precision="fp32"):
     model.eval()
     total_loss = gate_loss = pwm_loss = 0.0
     n_batches = 0
@@ -347,26 +554,33 @@ def run_val_epoch(model, loss_fn, loader, device):
         batch = {k: v.to(device, dtype=torch.float32
                          if v.is_floating_point() else torch.long)
                  for k, v in batch.items()}
-        gate_logits, pwm_logits, aux = model(
-            batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
-            retrieved_pwms=batch.get('retrieved_pwms'),
-            retrieved_masks=batch.get('retrieved_masks'),
-            retrieved_sims=batch.get('retrieved_sims'),
-            recog_prior=batch.get('recog_prior'),
-        )
-        loss, metrics = loss_fn(
-            gate_logits, pwm_logits,
-            batch['target_pwm'].float(), batch['pwm_mask'].float(),
-            aux.get('gate_logits'), aux.get('top_indices'), aux.get('family_id'),
-            trust_logits=aux.get('trust_logits'),
-            retrieved_pwms=aux.get('retrieved_pwms'),
-            retrieved_masks=aux.get('retrieved_masks'),
-            attn=aux.get('attn'),
-            attn_key_mask=aux.get('attn_key_mask'),
-            recog_prior=aux.get('recog_prior'),
-            contact_target=batch.get('contact_target'),
-            contact_base_mask=batch.get('contact_base_mask'),
-        )
+        with autocast_context(device, precision):
+            gate_logits, pwm_logits, aux = model(
+                batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
+                retrieved_pwms=batch.get('retrieved_pwms'),
+                retrieved_masks=batch.get('retrieved_masks'),
+                retrieved_sims=batch.get('retrieved_sims'),
+                recog_prior=batch.get('recog_prior'),
+            )
+            loss, metrics = loss_fn(
+                aux.get("internal_gate_logits", gate_logits),
+                aux.get("internal_pwm_logits", pwm_logits),
+                batch['target_pwm'].float(), batch['pwm_mask'].float(),
+                aux.get('gate_logits'), aux.get('top_indices'), aux.get('family_id'),
+                trust_logits=aux.get('trust_logits'),
+                retrieved_pwms=aux.get('retrieved_pwms'),
+                retrieved_masks=aux.get('retrieved_masks'),
+                attn=aux.get('attn'),
+                attn_key_mask=aux.get('attn_key_mask'),
+                recog_prior=aux.get('recog_prior'),
+                contact_target=batch.get('contact_target'),
+                contact_base_mask=batch.get('contact_base_mask'),
+                registration_anchor_mask=batch.get('registration_anchor_mask'),
+                registration_anchor_mode=batch.get('registration_anchor_mode'),
+                registration_orientation=batch.get('registration_orientation'),
+                registration_offset=batch.get('registration_offset'),
+                register_logits=aux.get('register_logits'),
+            )
         total_loss += loss.item()
         gate_loss  += metrics['gate_loss']
         pwm_loss   += metrics['pwm_loss']
@@ -379,7 +593,7 @@ def run_val_epoch(model, loss_fn, loader, device):
 
 @torch.no_grad()
 def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
-                      ic_thresh=0.25, max_shift=10):
+                      ic_thresh=0.25, max_shift=10, precision="fp32"):
     """Oracle-aligned Pearson r on up to n_tfs val TFs.
 
     For each TF: extract gate-predicted active columns, align vs the trimmed
@@ -405,15 +619,18 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
             break
         batch = {k: v.to(device, dtype=torch.float32 if v.is_floating_point() else torch.long)
                  for k, v in batch.items()}
-        gate_logits, pwm_logits, _ = model(
-            batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
-            retrieved_pwms=batch.get('retrieved_pwms'),
-            retrieved_masks=batch.get('retrieved_masks'),
-            retrieved_sims=batch.get('retrieved_sims'),
-            recog_prior=batch.get('recog_prior'),
-        )
-        pwm_prob  = F.softmax(pwm_logits, dim=1).cpu().numpy()   # (B, 4, L)
-        gate_prob = torch.sigmoid(gate_logits).cpu().numpy()      # (B, L)
+        with autocast_context(device, precision):
+            gate_logits, pwm_logits, _ = model(
+                batch['sequence_tokens'], batch['dbd_mask'], batch['family_id'],
+                retrieved_pwms=batch.get('retrieved_pwms'),
+                retrieved_masks=batch.get('retrieved_masks'),
+                retrieved_sims=batch.get('retrieved_sims'),
+                recog_prior=batch.get('recog_prior'),
+            )
+        pwm_prob = (
+            F.softmax(pwm_logits, dim=1).float().cpu().numpy()
+        )                                                          # (B, 4, L)
+        gate_prob = torch.sigmoid(gate_logits).float().cpu().numpy()  # (B, L)
         target    = batch['target_pwm'].cpu().numpy()             # (B, 4, L)
         mask      = batch['pwm_mask'].cpu().numpy()               # (B, L)
         take = min(pwm_prob.shape[0], n_tfs - collected)
@@ -446,12 +663,59 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
 
 def main():
     args = parse_args()
+    if args.grad_accum_steps < 1:
+        raise ValueError("--grad-accum-steps must be at least 1")
+    if args.registration_anchor_path and not args.latent_registration:
+        raise ValueError(
+            "--registration-anchor-path requires --latent-registration"
+        )
+    if args.registration_max_shift < 0:
+        raise ValueError("--registration-max-shift must be non-negative")
+    if args.registration_min_overlap < 1:
+        raise ValueError("--registration-min-overlap must be positive")
+    if args.registration_temperature <= 0:
+        raise ValueError("--registration-temperature must be positive")
+    if args.registration_coverage_penalty < 0:
+        raise ValueError("--registration-coverage-penalty must be non-negative")
+    if args.register_head and not args.latent_registration:
+        raise ValueError("--register-head requires --latent-registration")
+    if args.register_loss_weight < 0:
+        raise ValueError("--register-loss-weight must be non-negative")
+    rank, local_rank, world_size = distributed_context()
+    distributed = world_size > 1
+    is_main = rank == 0
+    if distributed:
+        if not torch.cuda.is_available():
+            raise ValueError("DDP training requires CUDA")
+        torch.cuda.set_device(local_rank)
+        device = torch.device("cuda", local_rank)
+        dist.init_process_group(
+            backend="nccl",
+            init_method="env://",
+            device_id=device,
+        )
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Device: {device}")
+    if is_main:
+        print(
+            f"Device: {device}  |  rank: {rank}/{world_size}  |  "
+            f"distributed: {distributed}"
+        )
+    if args.precision == "bf16" and device.type != "cuda":
+        raise ValueError("--precision bf16 requires CUDA")
+    if device.type == "cuda":
+        torch.backends.cuda.matmul.allow_tf32 = args.tf32
+        torch.backends.cudnn.allow_tf32 = args.tf32
+    if is_main:
+        print(f"Precision: {args.precision}  |  TF32: {args.tf32}")
 
-    os.makedirs(args.out, exist_ok=True)
+    if is_main:
+        os.makedirs(args.out, exist_ok=True)
+    if distributed:
+        dist.barrier(device_ids=[local_rank])
 
     # Config
     config = TFScopeConfig(
@@ -468,12 +732,27 @@ def main():
         residual_prior=args.residual_prior,
         retrieval_k=args.retrieval_k,
         retrieval_dropout=args.retrieval_dropout,
+        aligned_trust_target=args.aligned_trust_target,
+        trust_rank_loss_weight=args.trust_rank_weight,
+        trust_rank_margin=args.trust_rank_margin,
+        positionwise_retrieval_gate=args.positionwise_retrieval_gate,
+        align_retrieved_pwms=args.align_retrieved_pwms,
+        retrieval_alignment_max_shift=args.retrieval_alignment_max_shift,
+        retrieval_alignment_min_overlap=args.retrieval_alignment_min_overlap,
         retrieval_index_path=args.retrieval_index_path,
         pwm_ic_pcc_weight=args.ic_pcc_weight,
         pwm_topbase_weight=args.topbase_weight,
         pwm_topbase_margin=args.topbase_margin,
         pwm_contrastive_weight=args.contrastive_weight,
         pwm_contrastive_tau=args.contrastive_tau,
+        latent_registration=args.latent_registration,
+        registration_max_shift=args.registration_max_shift,
+        registration_min_overlap=args.registration_min_overlap,
+        registration_temperature=args.registration_temperature,
+        registration_coverage_penalty=args.registration_coverage_penalty,
+        registration_anchor_path=args.registration_anchor_path,
+        register_head=args.register_head,
+        register_loss_weight=args.register_loss_weight,
         full_retrieval_dropout=args.full_retrieval_dropout,
         neighbor_dropout=args.neighbor_dropout,
         hard_negative_rate=args.hard_negative_rate,
@@ -490,6 +769,13 @@ def main():
         v18_contact_code=args.v18_contact_code,
         recognition_prior_path=args.recognition_prior_path,
     )
+    config.grad_accum_steps = args.grad_accum_steps
+    config.world_size = world_size
+    config.effective_batch_size = (
+        args.batch_size * args.grad_accum_steps * world_size
+    )
+    config.precision = args.precision
+    config.tf32 = args.tf32
 
     # MoE / family taxonomy overrides (rebin run): only applied when explicitly given.
     if args.num_families is not None:      config.num_families = args.num_families
@@ -502,29 +788,79 @@ def main():
             "" if args.family_embedding_path.lower() == "none" else args.family_embedding_path)
     if args.v18_attn_sparse is not None:       config.v18_attn_sparse = args.v18_attn_sparse
     if args.v18_attn_alpha_init is not None:   config.v18_attn_alpha_init = args.v18_attn_alpha_init
+    config.use_dual_family = bool(args.dual_family)
+    if args.dual_family_dim is not None:           config.dual_family_dim = args.dual_family_dim
+    if args.dual_family_semantic_path is not None: config.dual_family_semantic_path = args.dual_family_semantic_path
+    if config.use_dual_family and is_main:
+        print(f"dual-family fusion ON (dim={config.dual_family_dim}, "
+              f"semantic_path={config.dual_family_semantic_path or '(MoE path)'})")
     if args.contact_distill_weight is not None: config.contact_distill_weight = args.contact_distill_weight
     if args.contact_targets_path is not None:   config.contact_targets_path = args.contact_targets_path
     if getattr(config, "contact_distill_weight", 0.0) > 0:
         print(f"contact distillation: weight={config.contact_distill_weight} "
               f"targets={getattr(config,'contact_targets_path','data/contact_maps/contact_targets.json')}")
-    print(f"v18 attention normalizer: {config.v18_attn_sparse}"
-          + (f" (alpha_init={config.v18_attn_alpha_init})" if config.v18_attn_sparse == "entmax_learn" else ""))
-    print(f"MoE: num_families={config.num_families} num_experts={config.num_experts} "
-          f"top_k={config.top_k} expert_hidden={config.expert_hidden_dim} "
-          f"family_embed={'learned' if not config.family_embedding_path else config.family_embedding_path}")
+    if is_main:
+        print(f"v18 attention normalizer: {config.v18_attn_sparse}"
+              + (f" (alpha_init={config.v18_attn_alpha_init})" if config.v18_attn_sparse == "entmax_learn" else ""))
+        print(f"MoE: num_families={config.num_families} num_experts={config.num_experts} "
+              f"top_k={config.top_k} expert_hidden={config.expert_hidden_dim} "
+              f"family_embed={'learned' if not config.family_embedding_path else config.family_embedding_path}")
+        if config.latent_registration:
+            anchor_description = (
+                config.registration_anchor_path
+                if config.registration_anchor_path
+                else "none (fully latent)"
+            )
+            print(
+                "Latent registration: "
+                f"shift=±{config.registration_max_shift} "
+                f"min_overlap={config.registration_min_overlap} "
+                f"temperature={config.registration_temperature} "
+                f"coverage_penalty={config.registration_coverage_penalty} "
+                f"anchors={anchor_description}"
+            )
+        if config.register_head:
+            print(
+                f"Register head: {2 * (2 * config.registration_max_shift + 1)} "
+                f"states | supervised weight={config.register_loss_weight}"
+            )
 
     # Data
-    train_loader, val_loader = make_loaders(args, config)
-    steps_per_epoch = len(train_loader)
+    train_loader, val_loader = make_loaders(args, config, rank, world_size)
+    steps_per_epoch = math.ceil(len(train_loader) / args.grad_accum_steps)
     total_steps = args.epochs * steps_per_epoch
     config.total_steps = total_steps
-    print(f"Train batches/epoch: {steps_per_epoch}  |  Total steps: {total_steps}")
+    effective_batch_size = args.batch_size * args.grad_accum_steps * world_size
+    if is_main:
+        print(
+            f"Train micro-batches/rank/epoch: {len(train_loader)}  |  "
+            f"Optimizer steps/epoch: {steps_per_epoch}  |  Total steps: {total_steps}"
+        )
+        print(
+            f"Micro-batch/rank: {args.batch_size}  |  "
+            f"Gradient accumulation: {args.grad_accum_steps}  |  "
+            f"World size: {world_size}  |  Global effective batch: {effective_batch_size}"
+        )
 
     # Model & loss
     model   = TFScopeModel(config, use_dummy_backbone=args.dummy).to(device)
     loss_fn = TFScopeLoss(config).to(device)
     if config.lora_rank > 0 and not args.dummy:
         model.backbone.build(device)   # eagerly load ESM so LoRA params exist before optimizer
+
+    if args.init_model:
+        checkpoint = torch.load(
+            args.init_model, map_location=device, weights_only=False
+        )
+        missing, unexpected = model.load_state_dict(
+            checkpoint["model"], strict=False
+        )
+        assert_lora_loaded(model, missing, args.init_model)
+        if is_main:
+            print(
+                f"Initialised exact model weights from {args.init_model} "
+                f"(missing={len(missing)}, unexpected={len(unexpected)})"
+            )
 
     # Stage-A → Stage-B: warm-start the protein encoder from contrastive pretraining.
     if getattr(args, "init_from_pretrain", None):
@@ -550,6 +886,42 @@ def main():
             n_tr += p.numel() if keep else 0
         print(f"v18 freeze-prior: training contact branch only ({n_tr/1e6:.2f}M params)")
 
+    if args.register_head_only:
+        if not config.register_head:
+            raise ValueError("--register-head-only requires --register-head")
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = name.startswith("register_head.")
+        if is_main:
+            trainable = sum(
+                parameter.numel()
+                for parameter in model.parameters()
+                if parameter.requires_grad
+            )
+            print(f"Register-head-only fine-tuning: {trainable:,} parameters")
+
+    if args.retrieval_reranker_only:
+        if not config.use_retrieval:
+            raise ValueError(
+                "--retrieval-reranker-only requires --use-retrieval"
+            )
+        gate_suffixes = (
+            "retrieval_beta",
+            "conf_scale",
+            "conf_thresh",
+        )
+        for name, parameter in model.named_parameters():
+            parameter.requires_grad = (
+                name.startswith("trust_predictor.")
+                or name.endswith(gate_suffixes)
+            )
+        if is_main:
+            trainable = sum(
+                parameter.numel()
+                for parameter in model.parameters()
+                if parameter.requires_grad
+            )
+            print(f"Retrieval-reranker-only fine-tuning: {trainable:,} parameters")
+
     # ── model size summary ────────────────────────────────────────────────────
     def _count(module):
         total     = sum(p.numel() for p in module.parameters())
@@ -571,27 +943,45 @@ def main():
         ("gate_head",             model.gate_head),
         ("pwm_head",              model.pwm_head),
     ]
-    print("\n── Model size ───────────────────────────────────────────")
-    print(f"  {'Module':<26} {'Total':>8}  {'Trainable':>10}")
-    print(f"  {'-'*26} {'-'*8}  {'-'*10}")
-    for name, mod in rows:
-        t, tr = _count(mod)
-        print(f"  {name:<26} {_fmt(t):>8}  {_fmt(tr):>10}")
-    total_t, total_tr = _count(model)
-    loss_t, loss_tr   = _count(loss_fn)
-    print(f"  {'─'*48}")
-    print(f"  {'TOTAL (model)':<26} {_fmt(total_t):>8}  {_fmt(total_tr):>10}")
-    print(f"  {'loss_fn (σ params)':<26} {_fmt(loss_t):>8}  {_fmt(loss_tr):>10}")
-    print(f"──────────────────────────────────────────────────────────\n")
+    if getattr(model, "use_register_head", False):
+        rows.append(("register_head", model.register_head))
+    if is_main:
+        print("\n── Model size ───────────────────────────────────────────")
+        print(f"  {'Module':<26} {'Total':>8}  {'Trainable':>10}")
+        print(f"  {'-'*26} {'-'*8}  {'-'*10}")
+        for name, mod in rows:
+            t, tr = _count(mod)
+            print(f"  {name:<26} {_fmt(t):>8}  {_fmt(tr):>10}")
+        total_t, total_tr = _count(model)
+        loss_t, loss_tr   = _count(loss_fn)
+        print(f"  {'─'*48}")
+        print(f"  {'TOTAL (model)':<26} {_fmt(total_t):>8}  {_fmt(total_tr):>10}")
+        print(f"  {'loss_fn (σ params)':<26} {_fmt(loss_t):>8}  {_fmt(loss_tr):>10}")
+        print(f"──────────────────────────────────────────────────────────\n")
+
+    if distributed:
+        model = DistributedDataParallel(
+            model,
+            device_ids=[local_rank],
+            output_device=local_rank,
+            find_unused_parameters=True,
+        )
 
     # LoRA params live inside backbone but need a higher lr than frozen base weights
-    lora_params  = [p for p in model.backbone.parameters() if p.requires_grad]
+    raw_model = unwrap(model)
+    raw_loss_fn = unwrap(loss_fn)
+    # DDP has already broadcast rank-0 parameters; use rank-specific RNG streams
+    # for dropout and other stochastic training operations.
+    torch.manual_seed(args.seed + rank)
+    np.random.seed(args.seed + rank)
+    lora_params  = [p for p in raw_model.backbone.parameters() if p.requires_grad]
     other_params = [p for p in model.parameters()
                     if p.requires_grad and not any(p is lp for lp in lora_params)]
     param_groups = [{'params': other_params, 'lr': args.lr}]
     if lora_params:
         param_groups.append({'params': lora_params, 'lr': args.lora_lr})
-        print(f"LoRA params: {sum(p.numel() for p in lora_params):,}  (lr={args.lora_lr})")
+        if is_main:
+            print(f"LoRA params: {sum(p.numel() for p in lora_params):,}  (lr={args.lora_lr})")
     optimizer = torch.optim.AdamW(
         param_groups + [{'params': loss_fn.parameters(), 'lr': args.lr}],
         weight_decay=0.01, betas=(0.9, 0.98),
@@ -614,32 +1004,36 @@ def main():
             sd = {(k.replace("pwm_head.", "pwm_head.prior_head.", 1)
                    if k.startswith("pwm_head.") else k): v
                   for k, v in sd.items()}
-        missing, unexpected = model.load_state_dict(sd, strict=False)
+        missing, unexpected = raw_model.load_state_dict(sd, strict=False)
         n_prior = sum(1 for m in missing if m.startswith("pwm_head.prior_head."))
-        print(f"Initialised model weights from {args.init_from} "
-              f"(missing={len(missing)}, unexpected={len(unexpected)}, "
-              f"prior_head missing={n_prior}); fresh optimizer/schedule/epoch")
+        if is_main:
+            print(f"Initialised model weights from {args.init_from} "
+                  f"(missing={len(missing)}, unexpected={len(unexpected)}, "
+                  f"prior_head missing={n_prior}); fresh optimizer/schedule/epoch")
 
     # Resume
     if args.resume and os.path.exists(args.resume):
         ckpt = torch.load(args.resume, map_location=device, weights_only=False)
-        model.load_state_dict(ckpt['model'], strict=False)
-        loss_fn.load_state_dict(ckpt['loss_fn'])
+        missing, _ = raw_model.load_state_dict(ckpt['model'], strict=False)
+        assert_lora_loaded(raw_model, missing, args.resume)
+        raw_loss_fn.load_state_dict(ckpt['loss_fn'])
         optimizer.load_state_dict(ckpt['optimizer'])
         scheduler.load_state_dict(ckpt['scheduler'])
         start_epoch    = ckpt['epoch'] + 1
         global_step    = ckpt.get('global_step', start_epoch * steps_per_epoch)
         best_val_loss  = ckpt.get('best_val_loss', float('inf'))
         best_oracle_r  = ckpt.get('best_oracle_r', -float('inf'))
-        print(f"Resumed from epoch {ckpt['epoch']}")
+        if is_main:
+            print(f"Resumed from epoch {ckpt['epoch']}")
 
     # Save config
-    with open(os.path.join(args.out, "config.json"), "w") as f:
-        json.dump(config.__dict__, f, indent=2, default=str)
+    if is_main:
+        with open(os.path.join(args.out, "config.json"), "w") as f:
+            json.dump(config.__dict__, f, indent=2, default=str)
 
     # W&B
     wandb_run = None
-    if not args.no_wandb:
+    if is_main and not args.no_wandb:
         try:
             wandb_run = init_wandb(args, config)
             print(f"W&B run: {wandb_run.url}")
@@ -648,34 +1042,65 @@ def main():
 
     use_oracle = args.eval_oracle_r and not args.dummy
     oracle_hdr = f"  {'Oracle-r':>9}" if use_oracle else ""
-    print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Val Loss':>10}  "
-          f"{'L_gate':>8}  {'L_pwm':>8}{oracle_hdr}  {'Time':>6}")
-    print("-" * (60 + (11 if use_oracle else 0)))
+    if is_main:
+        print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Val Loss':>10}  "
+              f"{'L_gate':>8}  {'L_pwm':>8}{oracle_hdr}  {'Time':>6}")
+        print("-" * (60 + (11 if use_oracle else 0)))
 
     for epoch in range(start_epoch, args.epochs):
         t0 = time.time()
+        if hasattr(train_loader.sampler, "set_epoch"):
+            train_loader.sampler.set_epoch(epoch)
 
         train_m, global_step = run_train_epoch(
             model, loss_fn, train_loader, optimizer, scheduler,
-            device, global_step, wandb_run)
+            device, global_step, wandb_run, args.grad_accum_steps,
+            args.precision, distributed)
 
-        val_m = run_val_epoch(model, loss_fn, val_loader, device)
+        if distributed:
+            dist.barrier(device_ids=[local_rank])
+        if is_main:
+            val_m = run_val_epoch(
+                raw_model, raw_loss_fn, val_loader, device, args.precision
+            )
+        else:
+            val_m = {"loss": 0.0, "gate_loss": 0.0, "pwm_loss": 0.0}
 
         # Oracle-r eval (every --oracle-r-every epochs or final epoch)
         oracle_r = None
         is_oracle_epoch = (use_oracle and (
             (epoch + 1) % args.oracle_r_every == 0 or epoch + 1 == args.epochs))
-        if is_oracle_epoch:
+        if is_oracle_epoch and is_main:
             oracle_r = run_oracle_r_eval(
-                model, val_loader, device,
-                n_tfs=args.oracle_r_n_tfs)
+                raw_model, val_loader, device,
+                n_tfs=args.oracle_r_n_tfs,
+                precision=args.precision)
+        if distributed:
+            payload = torch.tensor(
+                [
+                    val_m["loss"],
+                    val_m["gate_loss"],
+                    val_m["pwm_loss"],
+                    oracle_r if oracle_r is not None else float("nan"),
+                ],
+                dtype=torch.float64,
+                device=device,
+            )
+            dist.broadcast(payload, src=0)
+            val_m = dict(zip(
+                ("loss", "gate_loss", "pwm_loss"), payload[:3].tolist()
+            ))
+            oracle_r = (
+                None if torch.isnan(payload[3]) else float(payload[3].item())
+            )
 
         elapsed = time.time() - t0
         oracle_str = f"  {oracle_r:>9.4f}" if oracle_r is not None else (
                      f"  {'':>9}"           if use_oracle else "")
-        print(f"{epoch+1:>6}  {train_m['loss']:>10.4f}  {val_m['loss']:>10.4f}  "
-              f"{val_m['gate_loss']:>8.4f}  {val_m['pwm_loss']:>8.4f}"
-              f"{oracle_str}  {elapsed:>5.0f}s")
+        if is_main:
+            print(f"{epoch+1:>6}  {train_m['loss']:>10.4f}  {val_m['loss']:>10.4f}  "
+                  f"{val_m['gate_loss']:>8.4f}  {val_m['pwm_loss']:>8.4f}"
+                  f"{oracle_str}  {elapsed:>5.0f}s")
 
         # ── determine is_best ─────────────────────────────────────────────
         if use_oracle:
@@ -697,7 +1122,7 @@ def main():
                 patience_counter += 1
 
         # Log epoch-level validation metrics to W&B
-        if wandb_run is not None:
+        if is_main and wandb_run is not None:
             log_d = {
                 "val/loss":      val_m['loss'],
                 "val/gate_loss": val_m['gate_loss'],
@@ -721,14 +1146,13 @@ def main():
         #   (b) new best metric  →  overwrites ckpt_best.pt only
         save_milestone = (epoch + 1) % args.save_every == 0
         save_best      = is_best and not args.no_save_best
-        if save_milestone or save_best:
-            trainable_state = {k: v for k, v in model.state_dict().items()
-                               if not k.startswith('backbone._esm_model')}
+        if is_main and (save_milestone or save_best):
+            trainable_state = checkpoint_model_state(raw_model)
             ckpt = {
                 'epoch':         epoch,
                 'global_step':   global_step,
                 'model':         trainable_state,
-                'loss_fn':       loss_fn.state_dict(),
+                'loss_fn':       raw_loss_fn.state_dict(),
                 'optimizer':     optimizer.state_dict(),
                 'scheduler':     scheduler.state_dict(),
                 'best_val_loss': best_val_loss,
@@ -750,27 +1174,41 @@ def main():
 
         # Early stopping (only checked on oracle-r epochs when --eval-oracle-r is set)
         check_patience = (not use_oracle) or is_oracle_epoch
-        if args.early_stop_patience > 0 and check_patience and \
-                patience_counter >= args.early_stop_patience:
+        should_stop = (
+            args.early_stop_patience > 0
+            and check_patience
+            and patience_counter >= args.early_stop_patience
+        )
+        if distributed:
+            stop_tensor = torch.tensor(
+                int(should_stop), dtype=torch.int32, device=device
+            )
+            dist.broadcast(stop_tensor, src=0)
+            should_stop = bool(stop_tensor.item())
+        if should_stop:
             metric_str = (f"oracle r has not improved for {patience_counter} oracle-r epochs"
                           if use_oracle else
                           f"val loss has not improved for {patience_counter} epochs")
-            print(f"\nEarly stopping at epoch {epoch+1}: {metric_str} "
-                  f"(patience={args.early_stop_patience}).")
-            if use_oracle:
-                print(f"Best oracle r was {best_oracle_r:.4f}.")
-            else:
-                print(f"Best val loss was {best_val_loss:.4f}.")
+            if is_main:
+                print(f"\nEarly stopping at epoch {epoch+1}: {metric_str} "
+                      f"(patience={args.early_stop_patience}).")
+                if use_oracle:
+                    print(f"Best oracle r was {best_oracle_r:.4f}.")
+                else:
+                    print(f"Best val loss was {best_val_loss:.4f}.")
             break
 
-    if use_oracle:
-        print(f"\nDone. Best oracle r: {best_oracle_r:.4f}")
-    else:
-        print(f"\nDone. Best val loss: {best_val_loss:.4f}")
-    print(f"Checkpoints saved to: {args.out}/")
+    if is_main:
+        if use_oracle:
+            print(f"\nDone. Best oracle r: {best_oracle_r:.4f}")
+        else:
+            print(f"\nDone. Best val loss: {best_val_loss:.4f}")
+        print(f"Checkpoints saved to: {args.out}/")
 
     if wandb_run is not None:
         wandb_run.finish()
+    if distributed:
+        dist.destroy_process_group()
 
 
 if __name__ == "__main__":

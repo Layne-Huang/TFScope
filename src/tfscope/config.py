@@ -78,6 +78,11 @@ class TFScopeConfig:
     v18_contact_bias_scale: float = 0.0  # additive soft bias of recog prior into attn logits (0 = off)
     v18_contact_code: bool = False     # use family/aa contact-code MLP for Δz values
     recognition_prior_path: str = "data/contact_maps/recognition_residues.json"
+    # ── dual-family fusion (ProtDAT-style deep, gated): learned-id + semantic family ──
+    use_dual_family: bool = False      # fuse learned-id + semantic family in the v18 head
+    dual_family_dim: int = 64          # dim of the fused family conditioning vector
+    dual_family_semantic_path: str = ""  # semantic vectors for the dual head (separate from MoE's
+                                         # family_embedding_path so the MoE can stay learned)
 
     # Retrieval augmentation (v8 RAG-TFScope)
     use_retrieval: bool = False        # enable cross-attention to retrieved PWMs
@@ -85,6 +90,13 @@ class TFScopeConfig:
     retrieval_k: int = 3               # top-K nearest neighbours per sample
     retrieval_dropout: float = 0.20    # v10: moderate CFG (0.40 in v9 was too aggressive)
     trust_loss_weight: float = 0.5     # v10: weight on trust-predictor auxiliary BCE loss
+    aligned_trust_target: bool = False
+    trust_rank_loss_weight: float = 0.0
+    trust_rank_margin: float = 0.1
+    positionwise_retrieval_gate: bool = False
+    align_retrieved_pwms: bool = False
+    retrieval_alignment_max_shift: int = 10
+    retrieval_alignment_min_overlap: int = 4
     retrieval_hidden_dim: int = 128    # d for retrieved-PWM token embeddings (matches pwm_hidden_dim)
     retrieval_index_path: str = (
         "data/processed/tf_nn_index.json"
@@ -110,6 +122,15 @@ class TFScopeConfig:
     pwm_topbase_ic_thresh: float = 0.5 # only apply top-base loss where target IC > this (bits)
     pwm_contrastive_weight: float = 0.0  # DPAC-style in-batch contrastive (anti family-collapse)
     pwm_contrastive_tau: float = 0.1     # temperature for InfoNCE over PWM column-cosine similarity
+    # V19 E4: latent target registration over offset x reverse-complement states.
+    latent_registration: bool = False
+    registration_max_shift: int = 10
+    registration_min_overlap: int = 4
+    registration_temperature: float = 0.1
+    registration_coverage_penalty: float = 0.5
+    registration_anchor_path: str = ""
+    register_head: bool = False
+    register_loss_weight: float = 0.5
 
     # Training
     learning_rate: float = 3e-4

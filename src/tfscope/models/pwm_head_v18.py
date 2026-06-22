@@ -82,6 +82,11 @@ class ContactCrossAttention(nn.Module):
             nn.init.normal_(self.aa_embed.weight, std=0.02)
         self.out_norm = nn.LayerNorm(d)
 
+        # dual-family: project the fused family vector into a key/value "family token"
+        self.use_dual_family = bool(getattr(config, "use_dual_family", False))
+        if self.use_dual_family:
+            self.fam_kv = nn.Linear(int(getattr(config, "dual_family_dim", 64)), d)
+
     def _normalize(self, scores):
         """Map attention logits -> weights with the configured normalizer.
         softmax is dense; entmax variants yield exactly-zero weights (sparse contacts).
@@ -103,7 +108,7 @@ class ContactCrossAttention(nn.Module):
             return entmax_bisect(scores, alpha=a, dim=-1, n_iter=24)
         raise ValueError(f"unknown v18_attn_sparse mode: {mode}")
 
-    def forward(self, q, esm, tokens, key_valid, contact_bias=None):
+    def forward(self, q, esm, tokens, key_valid, contact_bias=None, fam_ctx=None):
         """
         q:            (B, Lq, d)        queries (one per PWM column)
         esm:          (B, Lk, esm_dim)  ESM residue embeddings
@@ -131,6 +136,18 @@ class ContactCrossAttention(nn.Module):
         Kh = K.view(B, Lk, H, dh).transpose(1, 2)
         Vh = V.view(B, Lk, H, dh).transpose(1, 2)
 
+        # dual-family: prepend a "family token" to keys/values so every PWM
+        # position attends to the fused family/semantic signal (deep injection)
+        n_fam = 0
+        if fam_ctx is not None and getattr(self, "use_dual_family", False):
+            fk = self.fam_kv(fam_ctx).view(B, 1, H, dh).transpose(1, 2)   # (B,H,1,dh)
+            Kh = torch.cat([fk, Kh], dim=2)
+            Vh = torch.cat([fk, Vh], dim=2)
+            key_valid = F.pad(key_valid, (1, 0), value=True)             # family token always visible
+            if contact_bias is not None:
+                contact_bias = F.pad(contact_bias, (1, 0), value=0.0)
+            n_fam, Lk = 1, Lk + 1
+
         # cosine attention logits
         Qn = F.normalize(Qh, dim=-1)
         Kn = F.normalize(Kh, dim=-1)
@@ -151,7 +168,11 @@ class ContactCrossAttention(nn.Module):
         ctx = ctx.transpose(1, 2).reshape(B, Lq, self.d)
         ctx = self.out_norm(ctx)
 
-        return ctx, attn.mean(dim=1)                                  # average heads for diagnostics
+        attn_diag = attn.mean(dim=1)                                  # (B, Lq, Lk) average heads
+        if n_fam:                                                     # drop family-token column;
+            attn_diag = attn_diag[:, :, n_fam:]                       # renormalize over DBD residues
+            attn_diag = attn_diag / attn_diag.sum(dim=-1, keepdim=True).clamp(min=1e-8)
+        return ctx, attn_diag
 
 
 class PWMHeadV18(nn.Module):
@@ -187,6 +208,16 @@ class PWMHeadV18(nn.Module):
                 nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(), nn.Linear(d, 4)
             )
 
+        # ── dual-family fusion: learned-id + semantic, gated by homology ──
+        self.use_dual_family = bool(getattr(config, "use_dual_family", False))
+        if self.use_dual_family:
+            from tfscope.models.moe import DualFamilyConditioner, load_semantic_family_vectors
+            dcond = int(getattr(config, "dual_family_dim", 64))
+            self.fam_cond = DualFamilyConditioner(
+                config.num_families, load_semantic_family_vectors(config), dcond)
+            self.dual_code_mlp = nn.Sequential(
+                nn.LayerNorm(d + dcond), nn.Linear(d + dcond, d), nn.GELU(), nn.Linear(d, 4))
+
         self.log_lambda = nn.Parameter(torch.tensor(math.log(config.v18_delta_scale_init)))
         self.bias_scale = float(config.v18_contact_bias_scale)
 
@@ -197,7 +228,8 @@ class PWMHeadV18(nn.Module):
     def forward(self, x, esm_embeddings=None, dbd_mask=None, sequence_tokens=None,
                 recog_prior=None, family_id=None,
                 retrieved_pwms=None, retrieved_masks=None, retrieved_sims=None,
-                trust_scores=None):
+                trust_scores=None, retrieval_reference_mask=None,
+                homology=None, family_vec=None):
         B = x.shape[0]
 
         # 1) prior logits from the legacy head (de-novo + optional RAG log-prior)
@@ -205,6 +237,7 @@ class PWMHeadV18(nn.Module):
             x, esm_embeddings=esm_embeddings, dbd_mask=dbd_mask,
             retrieved_pwms=retrieved_pwms, retrieved_masks=retrieved_masks,
             retrieved_sims=retrieved_sims, trust_scores=trust_scores,
+            retrieval_reference_mask=retrieval_reference_mask,
         )                                                            # (B, 4, L)
 
         # 2) contact-aware residual
@@ -223,10 +256,17 @@ class PWMHeadV18(nn.Module):
             sequence_tokens = torch.zeros(B, esm_embeddings.shape[1],
                                           dtype=torch.long, device=esm_embeddings.device)
 
-        ctx, attn = self.contact_attn(
-            q, esm_embeddings, sequence_tokens, dbd_mask.bool(), contact_bias)
+        c_fam = None
+        if self.use_dual_family:
+            c_fam = self.fam_cond(family_id, homology, family_vec)   # (B, dcond)
 
-        if self.use_contact_code:
+        ctx, attn = self.contact_attn(
+            q, esm_embeddings, sequence_tokens, dbd_mask.bool(), contact_bias, fam_ctx=c_fam)
+
+        if self.use_dual_family:
+            ctx_f = torch.cat([ctx, c_fam.unsqueeze(1).expand(B, self.max_length, -1)], dim=-1)
+            dz = self.dual_code_mlp(ctx_f).permute(0, 2, 1)          # (B, 4, L)
+        elif self.use_contact_code:
             fam = self.fam_embed(family_id) if family_id is not None else \
                 torch.zeros(B, 32, device=x.device)
             ctx_f = torch.cat([ctx, fam.unsqueeze(1).expand(B, self.max_length, -1)], dim=-1)

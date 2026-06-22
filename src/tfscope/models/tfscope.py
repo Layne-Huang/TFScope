@@ -8,6 +8,8 @@ from tfscope.models.moe import MOEBlock
 from tfscope.models.heads import PositionGateHead, PWMRegressionHead
 from tfscope.models.pwm_head_v18 import PWMHeadV18
 from tfscope.models.retrieval import TrustPredictor
+from tfscope.models.register_head import RegisterHead
+from tfscope.losses.registration import export_registered_predictions
 
 
 class TFScopeModel(nn.Module):
@@ -36,6 +38,9 @@ class TFScopeModel(nn.Module):
         self.gate_head = PositionGateHead(config)   # replaces MotifLengthHead
         self.use_v18 = getattr(config, "pwm_head_v18", False)
         self.pwm_head = PWMHeadV18(config) if self.use_v18 else PWMRegressionHead(config)
+        self.use_register_head = getattr(config, "register_head", False)
+        if self.use_register_head:
+            self.register_head = RegisterHead(config)
 
         self.use_retrieval = getattr(config, "use_retrieval", False)
         if self.use_retrieval:
@@ -64,7 +69,7 @@ class TFScopeModel(nn.Module):
 
     def forward(self, sequence_tokens, dbd_mask, family_id,
                 retrieved_pwms=None, retrieved_masks=None, retrieved_sims=None,
-                recog_prior=None):
+                recog_prior=None, family_vec=None, homology=None):
         """
         Args:
             sequence_tokens: (B, L) tokenized protein sequence
@@ -114,11 +119,21 @@ class TFScopeModel(nn.Module):
             retrieved_masks=ret_masks,
             retrieved_sims=ret_sims,
             trust_scores=(torch.sigmoid(trust_logits) if trust_logits is not None else None),
+            retrieval_reference_mask=(gate_logits.sigmoid() > 0.5).to(
+                gate_logits.dtype
+            ),
         )
         if self.use_v18:
+            # homology signal for dual-family gating: top retrieval cosine if available
+            if homology is None and retrieved_sims is not None:
+                homology = retrieved_sims.clamp(min=0.0).max(dim=1, keepdim=True).values
             head_kwargs.update(sequence_tokens=sequence_tokens,
-                               recog_prior=recog_prior, family_id=family_id)
-        pwm_logits  = self.pwm_head(moe_out, **head_kwargs)       # (B, 4, max_length)
+                               recog_prior=recog_prior, family_id=family_id,
+                               homology=homology, family_vec=family_vec)
+        pwm_logits = self.pwm_head(moe_out, **head_kwargs)        # internal frame
+        register_logits = (
+            self.register_head(moe_out) if self.use_register_head else None
+        )
 
         aux = dict(self.moe.aux_dict) if isinstance(self.moe.aux_dict, dict) else {}
         if self.use_v18 and self.pwm_head._last_attn is not None:
@@ -132,6 +147,17 @@ class TFScopeModel(nn.Module):
             # Diagnostics (Feature 6): beta gate value per sample
             if hasattr(self.pwm_head, "_last_beta_gated"):
                 aux['beta_gated'] = self.pwm_head._last_beta_gated
+        if register_logits is not None:
+            aux["register_logits"] = register_logits
+            aux["internal_gate_logits"] = gate_logits
+            aux["internal_pwm_logits"] = pwm_logits
+            if not self.training:
+                gate_logits, pwm_logits = export_registered_predictions(
+                    gate_logits,
+                    pwm_logits,
+                    register_logits,
+                    self.config.registration_max_shift,
+                )
         return gate_logits, pwm_logits, aux
 
     def infer_mask(self, gate_logits: torch.Tensor, threshold: float = 0.5) -> torch.Tensor:
