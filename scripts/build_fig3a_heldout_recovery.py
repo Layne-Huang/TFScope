@@ -87,11 +87,11 @@ def logo(ax, pwm, title, ct="black"):
 
 fams_all = sorted(set(x["family"] for x in rec))
 cmap = dict(zip(fams_all, plt.cm.tab10(np.linspace(0, 1, len(fams_all)))))
-fig = plt.figure(figsize=(13, 6.2))
+fig = plt.figure(figsize=(13, 5.6))
 gs = fig.add_gridspec(8, 3, width_ratios=[1.55, 0.95, 1.0], hspace=1.5, wspace=0.32)
 
-# (a) generalization: recovery vs identity-to-training
-axa = fig.add_subplot(gs[:5, 0])
+# (a) generalization: recovery vs identity-to-training (now full-height left)
+axa = fig.add_subplot(gs[:, 0])
 axa.axvspan(0, 40, color="#4575b4", alpha=0.06, zorder=0)
 for f in fams_all:
     pts = [(x["maxid"], x["r"]) for x in rec if x["family"] == f and x["maxid"] == x["maxid"]]
@@ -111,29 +111,21 @@ axa.set_title(f"a  Recovery is independent of similarity to training\n"
               f"(Spearman ρ={rho:.2f}, p={p_rho:.2f}; n.s.)", fontsize=10.5, fontweight="bold", loc="left")
 axa.legend(fontsize=6.2, frameon=False, ncol=2, loc="lower right", handletextpad=0.2, columnspacing=0.8)
 
-# (c) compact per-family recovery (secondary)
-axc = fig.add_subplot(gs[5:, 0])
-order_f = sorted(fams, key=lambda f: per_fam[f]["median"])
-data = [[g["r"] for g in genes if g["family"] == f] for f in order_f]
-bp = axc.boxplot(data, vert=False, patch_artist=True, widths=0.6, showfliers=False, medianprops=dict(color="k"))
-for patch, f in zip(bp["boxes"], order_f): patch.set_facecolor(cmap.get(f, "#888")); patch.set_alpha(0.8)
-axc.axvline(float(np.median(allr)), color="#d73027", ls="--", lw=1.1)
-axc.set_yticks(range(1, len(order_f) + 1)); axc.set_yticklabels(order_f, fontsize=7)
-axc.set_xlim(0, 1); axc.set_xlabel("recovery r", fontsize=8.5)
-axc.set_title(f"c  By family (median r={np.median(allr):.2f})", fontsize=9, fontweight="bold", loc="left")
-
-# (b) exemplar predicted vs curated logos
+# (b) exemplar predicted vs curated logos — prefer NOVEL (low-identity) factors to reinforce panel a
+cands = [g for g in genes if len(g["exemplar"]["cols"]) >= 7 and 0.82 <= g["r"] <= 0.985
+         and id_by.get(g["exemplar"]["fn"], np.nan) == id_by.get(g["exemplar"]["fn"], np.nan)]
+cands.sort(key=lambda g: id_by.get(g["exemplar"]["fn"], 1e9))   # most novel first
 picks, seen = [], set()
-for g in sorted(genes, key=lambda x: -x["r"]):
-    ex = g["exemplar"]
-    if len(ex["cols"]) < 7 or not (0.82 <= g["r"] <= 0.985) or g["family"] in seen: continue
+for g in cands:
+    if g["family"] in seen: continue
     picks.append(g); seen.add(g["family"])
     if len(picks) == 4: break
 for i, g in enumerate(picks):
-    ex = g["exemplar"]; cols = ex["cols"]
+    ex = g["exemplar"]; cols = ex["cols"]; eid = id_by.get(ex["fn"], np.nan)
     pred = np.clip(ex["pred"][:, cols], 1e-8, 1); pred /= pred.sum(0, keepdims=True)
     gt = np.clip(ex["gt"][:, cols], 1e-8, 1); gt /= gt.sum(0, keepdims=True)
-    logo(fig.add_subplot(gs[2 * i, 1:]), pred, f"{g['gene']} ({g['family']}, r={g['r']:.2f})  —  predicted", "#1a5")
+    logo(fig.add_subplot(gs[2 * i, 1:]), pred,
+         f"{g['gene']} ({g['family']}, r={g['r']:.2f}, {eid:.0f}% id to training)  —  predicted", "#1a5")
     logo(fig.add_subplot(gs[2 * i + 1, 1:]), gt, "curated (JASPAR/HOCOMOCO)", "#555")
 fig.text(0.50, 0.95, "b  Predicted vs curated motifs (held-out factors)", fontsize=10.5, fontweight="bold")
 fig.suptitle("Sequence-only prediction generalizes to held-out factors unlike anything in training",
@@ -142,3 +134,23 @@ out = f"{OUTD}/figure3a_heldout_recovery"
 fig.savefig(out + ".png", dpi=300, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight")
 print("exemplars:", [(g["gene"], g["family"], round(g["r"], 2)) for g in picks])
 print(f"saved {out}.png/.pdf")
+
+# ── standalone per-family held-out recovery → companion panel for Figure 1 (1e) ──
+OUTF1 = "figures/figure1e_heldout_perfamily"; os.makedirs(OUTF1, exist_ok=True)
+figf, axf = plt.subplots(figsize=(5.2, 4.0))
+order_f = sorted(fams, key=lambda f: per_fam[f]["median"])
+data = [[g["r"] for g in genes if g["family"] == f] for f in order_f]
+bp = axf.boxplot(data, vert=False, patch_artist=True, widths=0.62, showfliers=False, medianprops=dict(color="k"))
+for patch, f in zip(bp["boxes"], order_f): patch.set_facecolor(cmap.get(f, "#888")); patch.set_alpha(0.85)
+for i, f in enumerate(order_f):
+    axf.scatter(data[i], np.random.RandomState(i).normal(i + 1, 0.06, len(data[i])), s=6, color="k", alpha=0.25, zorder=3)
+    axf.text(1.02, i + 1, f"n={len(data[i])}", va="center", fontsize=7)
+axf.axvline(float(np.median(allr)), color="#d73027", ls="--", lw=1.2)
+axf.text(np.median(allr) + 0.01, 0.55, f"median {np.median(allr):.2f}", color="#d73027", fontsize=8, ha="left", va="center")
+axf.set_yticks(range(1, len(order_f) + 1)); axf.set_yticklabels(order_f, fontsize=8.5)
+axf.set_xlim(0, 1.0); axf.set_xlabel("held-out motif recovery (oracle-aligned r)", fontsize=9.5)
+axf.set_title(f"Held-out recovery by family ({summary['n_genes']} factors)", fontsize=10, fontweight="bold")
+figf.tight_layout()
+figf.savefig(f"{OUTF1}/figure1e_heldout_perfamily.png", dpi=300, bbox_inches="tight")
+figf.savefig(f"{OUTF1}/figure1e_heldout_perfamily.pdf", bbox_inches="tight")
+print(f"saved {OUTF1}/figure1e_heldout_perfamily.png/.pdf  (per-family panel for Figure 1)")

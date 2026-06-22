@@ -34,8 +34,9 @@ look-alikes. This is the trust foundation for the orphan-nomination panels (3b�
 > Fig. 2, accuracy was organised by recognition chemistry rather than by closeness to training,
 > remaining highest for the single-helix major-groove families and lowest for the long multi-finger
 > C2H2 proteins (Fig. 3a, panel c). Predicted logos for held-out factors reproduced their curated
-> motifs in core and flanks — the TAAT homeobox of CART1, the GCC/CAGG element of TFAP2E, and the
-> E-box-like sites of the zinc-finger factors ZSCAN4 and SP7 (Fig. 3a, panel b). Because only the
+> motifs in core and flanks even at low similarity to training — PAX8 at just 22% identity to any
+> training factor (r = 0.91), the CACGTG E-box of TFEB and the TGACGT element of CREB3 (both 33%
+> identity), and the homeobox site of TGIF1 (Fig. 3a, panel b). Because only the
 > protein sequence is required, this generalization extends across the large majority of factors
 > for which no structure exists and structure-based prediction cannot be applied.
 
@@ -48,8 +49,11 @@ look-alikes. This is the trust foundation for the orphan-nomination panels (3b�
 > nearest training factor (190 factors clustered out of training at 40% identity; shaded region,
 > <40% identity; black line, binned median). Recovery is independent of similarity to training
 > (Spearman ρ = −0.06, p = 0.12). **(b)** Predicted versus curated motif logos for representative
-> held-out factors across families. **(c)** Per-family recovery (secondary; the family head-to-head
-> against DeepPBS is Fig. 1e); dashed line, overall median r = 0.66.
+> held-out factors across families, each annotated with its % DBD identity to the nearest training
+> factor (e.g. PAX8 recovered at r = 0.91 despite only 22% identity to training).
+>
+> (Per-family held-out recovery moved to Figure 1 — companion to the 1e family head-to-head — so
+> Fig. 3a carries only the generalization claim.)
 
 Caveats: identity is taken to the 16 ESM-nearest training factors (a close approximation to the
 overall nearest); the combined parametric training set was not clustered against this test, but the
