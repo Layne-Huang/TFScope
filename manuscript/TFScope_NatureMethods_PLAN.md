@@ -115,6 +115,24 @@ sparsity/diversity loss so prototypes are peaked and distinct. Then re-run
 `scripts/build_fig2e_prototypes.py` to check specialization (share ≫ 1/n_fam) before deciding
 to reinstate the panel. See [[moe-collapse-fig2e]].
 
+**Refined design — experts = recognition MODES, not families (key insight, 2026-06-22):**
+Do NOT set `num_experts` = #families (12). Distinct families often share the same DNA-recognition
+chemistry, so the true latent basis is ~3–6 *generalized recognition modes*. Forcing 12 experts to
+split by family fights this structure — which is *why* the entropy/diversity loss could push to
+uniform at zero task cost. Proposed coarse mapping of the 10 families → ~5 modes:
+  1. **Helical major-groove readout (monomeric HTH / winged-helix):** Homeodomain, ETS, Forkhead
+     — a recognition α-helix inserted into the major groove.
+  2. **Zinc-coordinated readout:** C2H2_short/medium/long (ββα, Zn-stabilized recognition helix).
+  3. **Dimeric basic-helix (leucine-zipper / HLH):** bZIP, bHLH — each monomer reads a half-site.
+  4. **Nuclear-receptor-like:** Nuclear_Receptor (C4 Zn modules, dimeric direct/inverted repeats).
+  5. **β-sheet / loop & other special:** Other (T-box Ig-fold, STAT, p53 β-sandwich, Rel, MADS…).
+Concretely: set `num_experts ≈ 5–6` (5 modes + optional 1 shared general expert); replace the
+anti-specialization `family_diversity_loss` with either (a) coarse *mode-label* routing supervision
+(map family_id → mode_id, light CE on the gate), or (b) nothing extra — with only ~5 experts and the
+shared/residual dominance reduced, specialization should emerge. Expected payoff: a far cleaner Fig 2e
+— "the model discovers a small basis of DNA-recognition mechanisms, and families that share a binding
+chemistry share an expert" — which is a stronger interpretability claim than per-family prototypes.
+
 ## **TFScope nominates binding motifs for orphan transcription factors at proteome scale**  → Fig 3  *(the positive, sequence-only-unique story)*
 
 ### **Known motifs are recovered from sequence alone for held-out factors**  → Fig 3a
