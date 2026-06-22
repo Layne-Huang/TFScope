@@ -1,0 +1,122 @@
+[
+ {
+  "gene": "LHX5",
+  "uniprot": "Q9H2C1",
+  "family": "Homeodomain",
+  "oligomer": "monomer",
+  "motif_ic": 1.776,
+  "dna_top": "TAATTAAAT",
+  "dna_bottom": "ATTTAATTA",
+  "motif_core": "TAATTA",
+  "protein_dbd": "TKRRGPRTTIKAKQLETLKAAFAATPKPTRHIREQLAQETGLNMRVIQVWFQNRRSKERRMKQLS",
+  "protein_full": "TKRRGPRTTIKAKQLETLKAAFAATPKPTRHIREQLAQETGLNMRVIQVWFQNRRSKERRMKQLS"
+ },
+ {
+  "gene": "DLX2",
+  "uniprot": "Q07687",
+  "family": "Homeodomain",
+  "oligomer": "monomer",
+  "motif_ic": 1.744,
+  "dna_top": "TAATTACCT",
+  "dna_bottom": "AGGTAATTA",
+  "motif_core": "TAATTA",
+  "protein_dbd": "KKVRKPRTIYSSFQLAALQRRFQKTQYLALPERAELAASLGLTQTQVKIWFQNRRSKFKKMWKSG",
+  "protein_full": "KKVRKPRTIYSSFQLAALQRRFQKTQYLALPERAELAASLGLTQTQVKIWFQNRRSKFKKMWKSG"
+ },
+ {
+  "gene": "MLX",
+  "uniprot": "Q9UH92",
+  "family": "bHLH",
+  "oligomer": "homodimer (2 copies)",
+  "motif_ic": 1.988,
+  "dna_top": "CACGTGGCC",
+  "dna_bottom": "GGCCACGTG",
+  "motif_core": "CACGTG",
+  "protein_dbd": "RRRRAHTQAEQKRRDAIKRGYDDLQTIVPTCQQQDFSIGSQKLSKAIVLQKTIDYIQFLHKEKKK",
+  "protein_full": "RRRRAHTQAEQKRRDAIKRGYDDLQTIVPTCQQQDFSIGSQKLSKAIVLQKTIDYIQFLHKEKKK"
+ },
+ {
+  "gene": "MYOG",
+  "uniprot": "P15173",
+  "family": "bHLH",
+  "oligomer": "homodimer (2 copies)",
+  "motif_ic": 1.872,
+  "dna_top": "CAGCTGTGT",
+  "dna_bottom": "ACACAGCTG",
+  "motif_core": "CAGCTG",
+  "protein_dbd": "DRRRAATLREKRRLKKVNEAFEALKRSTLLNPNQRLPKVEILRSAIQYIERLQALLSS",
+  "protein_full": "DRRRAATLREKRRLKKVNEAFEALKRSTLLNPNQRLPKVEILRSAIQYIERLQALLSS"
+ },
+ {
+  "gene": "CREB3L2",
+  "uniprot": "Q70SY1",
+  "family": "bZIP",
+  "oligomer": "homodimer (2 copies)",
+  "motif_ic": 1.588,
+  "dna_top": "ACGTGGGCA",
+  "dna_bottom": "TGCCCACGT",
+  "motif_core": "ACGTGG",
+  "protein_dbd": "EKALKKIRRKIKNKISAQESRRKKKEYMDSLEKKVESCSTENLELRKKVEVLENTNRTLLQQLQKL",
+  "protein_full": "EKALKKIRRKIKNKISAQESRRKKKEYMDSLEKKVESCSTENLELRKKVEVLENTNRTLLQQLQKL"
+ },
+ {
+  "gene": "CREB3L1",
+  "uniprot": "Q96BA8",
+  "family": "bZIP",
+  "oligomer": "homodimer (2 copies)",
+  "motif_ic": 1.491,
+  "dna_top": "ACGTGGGCA",
+  "dna_bottom": "TGCCCACGT",
+  "motif_core": "ACGTGG",
+  "protein_dbd": "EKALKRVRRKIKNKISAQESRRKKKEYVECLEKKVETFTSENNELWKKVETLENANRTLLQQLQKL",
+  "protein_full": "EKALKRVRRKIKNKISAQESRRKKKEYVECLEKKVETFTSENNELWKKVETLENANRTLLQQLQKL"
+ },
+ {
+  "gene": "ELK1",
+  "uniprot": "P19419",
+  "family": "ETS",
+  "oligomer": "monomer",
+  "motif_ic": 1.528,
+  "dna_top": "ACTTCCGGTTGT",
+  "dna_bottom": "ACAACCGGAAGT",
+  "motif_core": "ACTTCCGGT",
+  "protein_dbd": "SVTLWQFLLQLLREQGNGHIISWTSRDGGEFKLVDAEEVARLWGLRKNKTNMNYDKLSRALRYYYDKNIIRKVSGQKFVYKFVSYPE",
+  "protein_full": "SVTLWQFLLQLLREQGNGHIISWTSRDGGEFKLVDAEEVARLWGLRKNKTNMNYDKLSRALRYYYDKNIIRKVSGQKFVYKFVSYPE"
+ },
+ {
+  "gene": "FOXG1",
+  "uniprot": "P55316",
+  "family": "Forkhead",
+  "oligomer": "monomer",
+  "motif_ic": 1.811,
+  "dna_top": "GTAAACAAAAG",
+  "dna_bottom": "CTTTTGTTTAC",
+  "motif_core": "GTAAACAA",
+  "protein_dbd": "YEKPPFSYNALIMMAIRQSPEKRLTLNGIYEFIMKNFPYYRENKQGWQNSIRHNLSLNKCFVKVPRHYDDPGKGNYWMLDPSSDDVFIGGTTGKLRR",
+  "protein_full": "YEKPPFSYNALIMMAIRQSPEKRLTLNGIYEFIMKNFPYYRENKQGWQNSIRHNLSLNKCFVKVPRHYDDPGKGNYWMLDPSSDDVFIGGTTGKLRR"
+ },
+ {
+  "gene": "SNAI1",
+  "uniprot": "O95863",
+  "family": "C2H2_medium",
+  "oligomer": "monomer",
+  "motif_ic": 1.464,
+  "dna_top": "ACAGGTGCACGC",
+  "dna_bottom": "GCGTGCACCTGT",
+  "motif_core": "ACAGGTGCA",
+  "protein_dbd": "AFNCKYCNKEYLSLGALKMHIRSHTLPCVCGTCGKAFSRPWLLQGHVRTHTGEKPFSCPHCSRAFADRSNLRAHLQTHSDVKKYQCQACARTFSRMSLLHKHQESGCSGCP",
+  "protein_full": "AFNCKYCNKEYLSLGALKMHIRSHTLPCVCGTCGKAFSRPWLLQGHVRTHTGEKPFSCPHCSRAFADRSNLRAHLQTHSDVKKYQCQACARTFSRMSLLHKHQESGCSGCP"
+ },
+ {
+  "gene": "SLC2A4RG",
+  "uniprot": "Q9NR83",
+  "family": "C2H2_short",
+  "oligomer": "monomer",
+  "motif_ic": 1.702,
+  "dna_top": "GCCGGCCGGCGC",
+  "dna_bottom": "GCGCCGGCCGGC",
+  "motif_core": "GCCGGCCGG",
+  "protein_dbd": "FQCLWKSCGKVLSTASAMQRHIRLVHLGRQA",
+  "protein_full": "FQCLWKSCGKVLSTASAMQRHIRLVHLGRQA"
+ }
+]
