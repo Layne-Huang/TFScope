@@ -15,7 +15,7 @@ sys.path.insert(0, "scripts"); sys.path.insert(0, "src")
 import numpy as np
 from eval_full_metrics import trimmed_core, aligned_cols
 
-NPZ = "results/v19_e9_model_composition/e5b_test_predictions.npz"
+NPZ = "results/fig3a_heldout/combined_heldout_predictions.npz"   # combined rag_contact (Fig 1 model)
 OUTD = "figures/figure3a_heldout_recovery"; os.makedirs(OUTD, exist_ok=True)
 RES = "results/fig3a_heldout"; os.makedirs(RES, exist_ok=True)
 
@@ -69,24 +69,19 @@ for f, s in sorted(per_fam.items(), key=lambda kv: -kv[1]["median"]): print(f"  
 # ── figure ──
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import logomaker, pandas as pd
 def logo(ax, pwm, title, color_title="black"):
+    # glyphs scaled in DATA coords by logomaker → never overflow the (short) axis
     pwm = np.clip(pwm, 1e-9, 1); pwm = pwm / pwm.sum(0, keepdims=True)
-    ic = 2 + (pwm * np.log2(pwm)).sum(0); H = pwm * ic
-    cols = {"A": "#2ca02c", "C": "#1f77b4", "G": "#ff7f0e", "T": "#d62728"}; order = "ACGT"
-    for j in range(pwm.shape[1]):
-        ys = 0
-        for b in np.argsort(H[:, j]):
-            h = H[b, j]
-            if h < 0.01: continue
-            ax.text(j + 0.5, ys + h / 2, order[b], ha="center", va="center",
-                    fontsize=min(22, 6 + 55 * h), fontweight="bold", color=cols[order[b]], family="monospace")
-            ys += h
-    ax.set_xlim(0, pwm.shape[1]); ax.set_ylim(0, 2.1); ax.set_xticks([]); ax.set_yticks([])
-    ax.set_title(title, fontsize=8, color=color_title)
-    for s in ax.spines.values(): s.set_visible(False)
+    ic = np.maximum(2 + (pwm * np.log2(pwm)).sum(0), 0)
+    H = (pwm * ic).T                                   # (L, 4) information-scaled heights
+    df = pd.DataFrame(H, columns=list("ACGT"))
+    logomaker.Logo(df, ax=ax, color_scheme="classic", show_spines=False, vpad=0.02)
+    ax.set_xticks([]); ax.set_yticks([]); ax.set_ylim(0, 2)
+    ax.set_title(title, fontsize=8, color=color_title, pad=2)
 
-fig = plt.figure(figsize=(12, 5.0))
-gs = fig.add_gridspec(8, 2, width_ratios=[1.7, 1.05], hspace=1.1, wspace=0.18)
+fig = plt.figure(figsize=(12, 6.2))
+gs = fig.add_gridspec(8, 2, width_ratios=[1.7, 1.05], hspace=1.5, wspace=0.18)
 
 # (a) per-family recovery distribution (best family on top)
 axa = fig.add_subplot(gs[:, 0])

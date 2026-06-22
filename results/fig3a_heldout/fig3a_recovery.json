@@ -1,60 +1,60 @@
 {
- "n_records": 600,
- "n_genes": 193,
- "median_r": 0.781,
- "mean_r": 0.728,
- "frac_r_ge_0p5": 0.819,
- "frac_r_ge_0p7": 0.57,
+ "n_records": 586,
+ "n_genes": 190,
+ "median_r": 0.664,
+ "mean_r": 0.656,
+ "frac_r_ge_0p5": 0.705,
+ "frac_r_ge_0p7": 0.458,
  "per_family": {
   "C2H2_long": {
-   "n": 48,
-   "median": 0.659,
-   "mean": 0.637
+   "n": 51,
+   "median": 0.386,
+   "mean": 0.423
   },
   "C2H2_medium": {
-   "n": 27,
-   "median": 0.838,
-   "mean": 0.78
+   "n": 26,
+   "median": 0.639,
+   "mean": 0.614
   },
   "C2H2_short": {
    "n": 9,
-   "median": 0.781,
-   "mean": 0.666
+   "median": 0.747,
+   "mean": 0.788
   },
   "ETS": {
    "n": 3,
-   "median": 0.835,
-   "mean": 0.705
+   "median": 0.758,
+   "mean": 0.776
   },
   "Forkhead": {
    "n": 5,
-   "median": 0.885,
-   "mean": 0.85
+   "median": 0.514,
+   "mean": 0.538
   },
   "Homeodomain": {
-   "n": 33,
-   "median": 0.985,
-   "mean": 0.888
+   "n": 32,
+   "median": 0.929,
+   "mean": 0.884
   },
   "Nuclear_Receptor": {
-   "n": 8,
-   "median": 0.729,
-   "mean": 0.751
+   "n": 5,
+   "median": 0.779,
+   "mean": 0.73
   },
   "Other": {
-   "n": 40,
-   "median": 0.635,
-   "mean": 0.66
+   "n": 39,
+   "median": 0.811,
+   "mean": 0.757
   },
   "bHLH": {
    "n": 9,
-   "median": 0.811,
-   "mean": 0.762
+   "median": 0.639,
+   "mean": 0.67
   },
   "bZIP": {
    "n": 11,
-   "median": 0.773,
-   "mean": 0.721
+   "median": 0.696,
+   "mean": 0.683
   }
  }
 }
