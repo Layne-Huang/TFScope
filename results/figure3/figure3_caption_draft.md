@@ -4,7 +4,7 @@
 **(a)** Sequence logos (information content) of the motifs predicted by TFScope from protein
 sequence alone for four orphan transcription factors (SOHLH1, ADNP, ZHX2, ZHX3); sublabels give the
 ChIP-seq cell line and dataset caveat. **(b)** Representative loci showing real ENCODE
-fold-change-over-control ChIP-seq signal (filled track) for ADNP, ZHX2 and ZHX3; the dotted line marks
+fold-change-over-control ChIP-seq signal (filled track) for all four factors (SOHLH1 GEO coverage; ADNP/ZHX2/ZHX3 ENCODE fold-change over control; tracks independently scaled); the dotted line marks
 the called peak summit and the triangle/shaded box the best predicted-motif match (MOODS, P < 10⁻⁴)
 with its strand. Loci were selected by a fixed rule (highest-signal peak with a top-quartile motif
 score, outside ENCODE blacklist); coordinates are hg38. **(c)** Composition-controlled enrichment of

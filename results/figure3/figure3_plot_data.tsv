@@ -7,6 +7,7 @@ ZHX3	8	4678	0.467	3.88	0.0476	100	1.834	0.77	0.2376	HepG2	ENCODE ENCSR367KYL	CRI
 
 # Panel b representative peaks (selection rule: top-signal peak with best motif score >= 75th pct, standard chroms, not in ENCODE blacklist)
 panel	tf	chrom	start	end	summit	signal	peak_id	hit_pos	hit_strand	hit_score	L	locus	signal_max
+b	SOHLH1	chr13	49038152	49038558	49038444	5.34834	13609_SOHLH1_ChIP1_IGO_10521_B_63_S20_peaks_pval_0_001_with_tailored_control_peak_132	337	-	8.76998051781205	10	chr13:49037944-49038944	344.74
 b	ADNP	chr11	86158912	86159534	86159245	397.46557	.	763	+	6.745456907443324	9	chr11:86158745-86159745	17.27
 b	ZHX2	chr6	44387347	44387589	44387470	209.81583	.	370	+	7.2508404722377	9	chr6:44386970-44387970	29.12
 b	ZHX3	chr16	12661755	12662071	12661913	61.38279	.	47	+	6.936823599448053	8	chr16:12661413-12662413	7.4

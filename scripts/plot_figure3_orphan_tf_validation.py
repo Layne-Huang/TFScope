@@ -3,7 +3,7 @@
 Panels (all from REAL repository data; nothing synthetic):
   a  TFScope-predicted motif logos (results/genome_cre_scan/pwms/*.npy)
   b  Representative ChIP peaks: real ENCODE fold-change bigWig signal at a documented
-     auto-selected locus per TF (ADNP/ZHX2/ZHX3), real peak summit + best MOODS motif hit
+     auto-selected locus per TF (all four), real peak summit + best MOODS motif hit
   c  Composition-controlled enrichment (log2 vs dinucleotide shuffle; z) from per-TF JSON
   d  Specificity vs 100 column-shuffled-PWM nulls: percentile + null distributions (per-TF JSON)
 
@@ -160,7 +160,7 @@ for i, tf in enumerate(reptfs):
     ax.set_xticks([w0, summit, he - d["L"] / 2 if False else summit])
     ax.set_xticks([w0, summit, w1]); ax.set_xticklabels([f"{w0/1e6:.3f}", "summit", f"{w1/1e6:.3f}"], fontsize=5.8)
     if i == len(reptfs) - 1:
-        ax.set_xlabel("genomic position (Mb)  ·  ▲ motif hit  ·  ENCODE fold-change/control", fontsize=6, labelpad=1)
+        ax.set_xlabel("genomic position (Mb)  ·  ▲ motif hit  ·  ChIP-seq signal", fontsize=6, labelpad=1)
     plot_rows.append(dict(panel="b", tf=tf, **{k: d[k] for k in
                           ["chrom", "start", "end", "summit", "signal", "peak_id", "hit_pos", "hit_strand", "hit_score", "L"]},
                           locus=f"{c}:{w0}-{w1}", signal_max=round(float(vals.max()), 2)))

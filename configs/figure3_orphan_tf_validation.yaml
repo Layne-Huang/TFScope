@@ -10,7 +10,7 @@ tfs:
   SOHLH1:
     motif: results/genome_cre_scan/pwms/SOHLH1.npy
     peaks: orphan_tf_validation/data/raw_peaks/SOHLH1.bed
-    bigwig: null                                   # GEO GSE280248 bw not downloaded; not used in panel b
+    bigwig: /data1/leihuang/chip_bigwigs/SOHLH1.bw
     cell_line: HEK293
     caveat: low-quality ChIP
     source: GEO GSE280248
@@ -41,7 +41,7 @@ tfs:
     enrichment: orphan_tf_validation/results/enrichment/ZHX3.json
 
 plot:
-  representative_tfs: [ADNP, ZHX2, ZHX3]   # panel b loci (real bigWig signal)
+  representative_tfs: [SOHLH1, ADNP, ZHX2, ZHX3]   # panel b loci (real bigWig signal)
   locus_flank_bp: 500
   pval_threshold: 1.0e-4
   seed: 42
