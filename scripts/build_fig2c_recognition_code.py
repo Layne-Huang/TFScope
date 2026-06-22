@@ -174,13 +174,29 @@ ax[0].set_xlabel("Homeobox HMM position (Pfam PF00046)", fontsize=10)
 ax[0].set_ylabel("TFScope importance (mean z-score)", fontsize=10)
 ax[0].set_title(f"a  Homeodomain importance peaks at the recognition code (n={len(hd_results)} TFs)",
                 fontsize=10.5, fontweight="bold", loc="left")
-ax[0].legend(frameon=False, fontsize=8.5, loc="upper left")
-ax[0].set_ylim(top=max(vals) * 1.18)
-ax[0].annotate("recognition helix-3\n(pos 50, Asn51)", (50.5, meta_mean[50]),
-               xytext=(33, max(vals) * 1.02), fontsize=7.8, color="#7a1a12", ha="center",
-               arrowprops=dict(arrowstyle="-", color="#7a1a12", lw=0.7))
-ax[0].annotate("N-terminal arm", (3.5, meta_mean[3]),
-               xytext=(10, max(vals) * 0.82), fontsize=7.8, color="#7a1a12", ha="center",
+ax[0].legend(frameon=False, fontsize=8.5, loc="upper left", bbox_to_anchor=(0.01, 0.80))
+ax[0].set_ylim(top=max(vals) * 1.60)
+
+# homeodomain topology schematic above the bars (x = HMM position, y = axes fraction)
+import matplotlib.patches as mpatches
+trans = ax[0].get_xaxis_transform()
+ysch, hh = 0.88, 0.055
+regions = [("N-arm", 1, 9, "#bdbdbd", "arm"),
+           ("αI", 10, 22, "#9ecae1", "helix"),
+           ("αII", 27, 37, "#9ecae1", "helix"),
+           ("recognition αIII", 42, 57, "#fc9272", "helix")]
+for name, x0, x1, col, kind in regions:
+    if kind == "helix":
+        ax[0].add_patch(mpatches.Rectangle((x0, ysch), x1 - x0, hh, transform=trans,
+                        facecolor=col, edgecolor="k", lw=0.6, zorder=6, clip_on=False))
+    else:
+        ax[0].plot([x0, x1], [ysch + hh / 2, ysch + hh / 2], transform=trans,
+                   color=col, lw=3.5, solid_capstyle="round", zorder=6, clip_on=False)
+    ax[0].text((x0 + x1) / 2, ysch + hh + 0.015, name, transform=trans, ha="center",
+               va="bottom", fontsize=7.3, zorder=7,
+               color=("#7a1a12" if "recognition" in name else "#333"))
+ax[0].annotate("Asn51", (51, meta_mean[51]), xytext=(51, max(vals) * 1.30),
+               fontsize=7.5, color="#7a1a12", ha="center",
                arrowprops=dict(arrowstyle="-", color="#7a1a12", lw=0.7))
 
 # (b) per-TF AUROC: geometric contacts (Fig 2b) vs recognition code (Fig 2c), paired
