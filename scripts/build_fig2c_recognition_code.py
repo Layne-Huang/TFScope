@@ -186,6 +186,8 @@ regions = [("N-arm", 1, 9, "#bdbdbd", "arm"),
            ("αII", 27, 37, "#9ecae1", "helix"),
            ("recognition αIII", 42, 57, "#fc9272", "helix")]
 for name, x0, x1, col, kind in regions:
+    # light region shading behind the bars so the helix colours span the whole plot
+    ax[0].axvspan(x0 - 0.5, x1 + 0.5, color=col, alpha=0.16, zorder=0, lw=0)
     if kind == "helix":
         ax[0].add_patch(mpatches.Rectangle((x0, ysch), x1 - x0, hh, transform=trans,
                         facecolor=col, edgecolor="k", lw=0.6, zorder=6, clip_on=False))
