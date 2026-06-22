@@ -209,3 +209,24 @@ out = f"{OUTD}/figure2c_recognition_code"
 fig.savefig(out + ".png", dpi=300, bbox_inches="tight")
 fig.savefig(out + ".pdf", bbox_inches="tight")
 print(f"  saved {out}.png/.pdf")
+
+# ── supplementary: C2H2 alanine-scan confound (structural Zn ligands) ──
+figs, axs = plt.subplots(figsize=(4.6, 4.2))
+data = [c2_rec, c2_other, c2_zn]
+labels = ["recognition\ncode\n(-1,+2,+3,+6)", "other\npositions", "Zn ligands\n(Cys/His)"]
+colors = ["#d73027", "#c9ccd1", "#4575b4"]
+bp = axs.boxplot(data, patch_artist=True, widths=0.62, showfliers=False, medianprops=dict(color="k"))
+for patch, cc in zip(bp["boxes"], colors): patch.set_facecolor(cc); patch.set_alpha(0.85)
+for i, d in enumerate(data, 1):
+    axs.scatter(np.random.RandomState(i).uniform(i - 0.16, i + 0.16, len(d)), d, s=7,
+                color="k", alpha=0.25, zorder=3)
+axs.axhline(0, color="k", lw=0.7, ls=":")
+axs.set_xticklabels(labels, fontsize=8.5)
+axs.set_ylabel("TFScope importance (z-score)", fontsize=10)
+axs.set_title(f"C2H2 zinc finger (n={len(c2_results)} TFs):\nalanine scan flags structural Zn ligands",
+              fontsize=10, fontweight="bold")
+figs.tight_layout()
+outs = f"{OUTD}/figureS_c2h2_zn_confound"
+figs.savefig(outs + ".png", dpi=300, bbox_inches="tight")
+figs.savefig(outs + ".pdf", bbox_inches="tight")
+print(f"  saved {outs}.png/.pdf  (supplementary)")
