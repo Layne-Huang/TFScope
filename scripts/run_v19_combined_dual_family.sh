@@ -16,7 +16,7 @@ GPU_IDS="${GPU_IDS:-0,1,2}"
 BATCH_SIZE="${BATCH_SIZE:-12}"
 SEED="${SEED:-42}"
 EPOCHS="${EPOCHS:-225}"
-OUT_ROOT="${OUT_ROOT:-/data1/leihuang/project/TFScope/checkpoints/v19_combined_dual_family}"
+OUT_ROOT="${OUT_ROOT:-/data1/leihuang/project/TFScope/checkpoints/v19_combined_dual_family_rebin34}"
 PYTHON_BIN="${PYTHON_BIN:-/data1/leihuang/miniconda3/envs/tfscope/bin/python}"
 TORCHRUN_BIN="${TORCHRUN_BIN:-/data1/leihuang/miniconda3/envs/tfscope/bin/torchrun}"
 TORCH_HOME="${TORCH_HOME:-/data1/leihuang/.cache/torch}"
@@ -65,8 +65,9 @@ command=(
     --standalone
     --nproc_per_node="$NPROC"
     scripts/train.py
-    --data data/processed/tf_pwm_combined_fm_deeppbs.parquet
+    --data data/processed/tf_pwm_combined_rebin34_fixed.parquet
     --split data/processed/splits/combined_fm_deeppbs/split.json
+    --num-families 34
     --out "$OUT_DIR"
     --seed "$SEED"
     --epochs "$EPOCHS"
@@ -95,7 +96,7 @@ command=(
     --recognition-prior-path data/contact_maps/recognition_residues_cluster40trainonly.json
     --family-embedding-path none
     --dual-family
-    --dual-family-semantic-path data/processed/family_embeddings_10.pt
+    --dual-family-semantic-path data/processed/family_embeddings_rebin34_fixed.pt
     --precision bf16
     --tf32
     --no-wandb
