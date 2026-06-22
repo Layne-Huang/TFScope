@@ -103,12 +103,17 @@ for lo, hi in zip(bins[:-1], bins[1:]):
     if m.sum() >= 5: bx.append((lo + hi) / 2); bm.append(np.median(R[m]))
 axa.plot(bx, bm, "-o", color="#111", lw=2, ms=5, zorder=5, label="binned median")
 axa.axvline(40, color="#4575b4", ls="--", lw=1)
-axa.text(39, 0.02, "novel (<40% id)", color="#2c5", fontsize=7.5, ha="right", rotation=90, va="bottom")
+m_lt, m_ge = summary["median_r_id_lt40"], summary["median_r_id_ge40"]
+axa.hlines(m_lt, 18, 40, color="#d73027", lw=2.2, zorder=6)
+axa.hlines(m_ge, 40, 100, color="#d73027", lw=2.2, zorder=6)
+axa.text(29, m_lt + 0.04, f"novel (<40% id)\nmedian r={m_lt:.2f}", color="#a01", fontsize=7.8, ha="center", va="bottom")
+axa.text(70, m_ge - 0.05, f"≥40% id\nmedian r={m_ge:.2f}", color="#a01", fontsize=7.8, ha="center", va="top")
 axa.set_xlabel("% DBD identity to nearest training factor", fontsize=9.5)
 axa.set_ylabel("motif recovery (oracle-aligned r)", fontsize=9.5)
-axa.set_ylim(-0.05, 1.02); axa.set_xlim(18, 100)
-axa.set_title(f"a  Recovery is independent of similarity to training\n"
-              f"(Spearman ρ={rho:.2f}, p={p_rho:.2f}; n.s.)", fontsize=10.5, fontweight="bold", loc="left")
+axa.set_ylim(-0.05, 1.05); axa.set_xlim(18, 100)
+axa.set_title("a  Recovery does not increase with proximity to training\n"
+              "(no-RAG, sequence-only; novel factors recover as well as close ones)",
+              fontsize=10.3, fontweight="bold", loc="left")
 axa.legend(fontsize=6.2, frameon=False, ncol=2, loc="lower right", handletextpad=0.2, columnspacing=0.8)
 
 # (b) exemplar predicted vs curated logos — prefer NOVEL (low-identity) factors to reinforce panel a

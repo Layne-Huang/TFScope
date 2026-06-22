@@ -1,55 +1,55 @@
 {
  "n_records": 586,
  "n_genes": 190,
- "median_r": 0.664,
- "frac_r_ge_0p5": 0.705,
+ "median_r": 0.67,
+ "frac_r_ge_0p5": 0.684,
  "identity_median": 42.1,
  "frac_id_lt40": 0.415,
  "frac_id_lt30": 0.135,
- "spearman_r_vs_identity": -0.065,
- "spearman_p": 0.118,
- "median_r_id_lt40": 0.698,
- "median_r_id_ge40": 0.71,
+ "spearman_r_vs_identity": -0.137,
+ "spearman_p": 0.001,
+ "median_r_id_lt40": 0.738,
+ "median_r_id_ge40": 0.671,
  "per_family": {
   "C2H2_long": {
    "n": 51,
-   "median": 0.386
+   "median": 0.368
   },
   "C2H2_medium": {
    "n": 26,
-   "median": 0.639
+   "median": 0.598
   },
   "C2H2_short": {
    "n": 9,
-   "median": 0.747
+   "median": 0.854
   },
   "ETS": {
    "n": 3,
-   "median": 0.758
+   "median": 0.75
   },
   "Forkhead": {
    "n": 5,
-   "median": 0.514
+   "median": 0.604
   },
   "Homeodomain": {
    "n": 32,
-   "median": 0.929
+   "median": 0.925
   },
   "Nuclear_Receptor": {
    "n": 5,
-   "median": 0.779
+   "median": 0.71
   },
   "Other": {
    "n": 39,
-   "median": 0.811
+   "median": 0.851
   },
   "bHLH": {
    "n": 9,
-   "median": 0.639
+   "median": 0.702
   },
   "bZIP": {
    "n": 11,
-   "median": 0.696
+   "median": 0.704
   }
  }
 }

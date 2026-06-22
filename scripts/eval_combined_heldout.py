@@ -1,8 +1,7 @@
-"""Run the COMBINED rag_contact model (Fig 1 model, for consistency) on the cluster40_clean
-held-out test, emitting a predictions npz in the same format as the model-composition evals.
-Excludes the 26 test TFs that are in the combined model's training split (combined_fm_deeppbs)
-to remove direct leakage. Retrieval uses the cluster40_clean index (donors <40% identity to
-test → no homolog leakage in retrieval).
+"""Run the COMBINED model (v19_combined_fm_deeppbs_contact, use_retrieval=False — the SAME
+model as Fig 2 mutagenesis/recognition-code/structureless) on the cluster40_clean held-out
+test, emitting a predictions npz. Sequence-only / no retrieval (de-novo pathway). Excludes the
+26 test TFs that are in the combined model's training split (combined_fm_deeppbs).
 
 Out: results/fig3a_heldout/combined_heldout_predictions.npz
 """
@@ -15,10 +14,9 @@ from tfscope.config import TFScopeConfig
 from tfscope.models.tfscope import TFScopeModel
 from tfscope.data.dataset import TFDataset, collate_variable_length
 
-CKPT = "/data1/leihuang/project/TFScope/checkpoints/v19_combined_rag_contact/rag_seed42/ckpt_best.pt"
+CKPT = "/data1/leihuang/project/TFScope/checkpoints/v19_combined_fm_deeppbs_contact/rag_seed42/ckpt_best.pt"
 DATA = "data/processed/tf_pwm_aug_dbd.parquet"
 SPLIT = "data/processed/splits/cluster40_clean/split.json"
-IDX = "data/processed/tf_nn_index_cluster40_clean.json"
 OUT = "results/fig3a_heldout/combined_heldout_predictions.npz"
 os.makedirs("results/fig3a_heldout", exist_ok=True)
 dev = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -31,7 +29,7 @@ for k, v in json.load(open(os.path.join(os.path.dirname(CKPT), "config.json"))).
     if hasattr(cfg, k):
         try: setattr(cfg, k, type(getattr(cfg, k))(v))
         except Exception: pass
-cfg.retrieval_index_path = IDX
+cfg.use_retrieval = False                                    # sequence-only, de-novo pathway
 m = TFScopeModel(cfg).to(dev).eval()
 m.load_state_dict(torch.load(CKPT, map_location=dev, weights_only=False)["model"], strict=False)
 
