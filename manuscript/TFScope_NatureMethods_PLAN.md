@@ -92,6 +92,29 @@ distillation, not MoE specialization. Interpretability is carried instead by Fig
 `results/per_family/fig2e_prototype_collapse_diagnostic.json`, `scripts/build_fig2e_prototypes.py`.
 Figure 2 is now **2a → 2b → 2c → 2d**.
 
+**Why it collapsed (mechanism, for the rebuild):** over-determined.
+(1) Two regularizers reward uniformity — `family_diversity_loss` (w=0.01) does `loss = −entropy`
+of each family's mean gate distribution, i.e. *maximizes* routing entropy → forces every family
+to spread across all experts (mislabeled: it penalizes specialization); and `load_balance_loss`
+(Switch-style, w=0.05) evens the marginal expert usage.
+(2) No task pressure pushes back: the MoE is a residual (`out = x + shared + routed + proto`),
+a shared expert always fires, and the cross-attention PWM head reads ESM directly, so `moe_out`
+is not an information bottleneck — uniform gating costs nothing on the main loss.
+(3) Family identity already has redundant pathways (FiLM γ/β, gating semantic bias), so experts
+never *need* to specialize.
+(4) Prototype-specific: `softmax(q·protoᵀ·d^−0.5)` with d^−0.5≈0.044 is a high-temperature
+softmax → flat by construction; `proto_out ≈ mean(prototypes)` ≈ const → ~no gradient to sharpen,
+and no usage/sparsity loss rewards peaked prototype attention.
+
+**Planned fix (AFTER current training job finishes):** to revive Fig 2e —
+(i) flip `family_diversity_loss` to *minimize* within-family routing entropy (reward
+specialization) or remove it; (ii) shrink the shared-expert/residual dominance so routing
+matters (or add a small router-confidence/usage-entropy penalty per-token); (iii) lower the
+prototype softmax temperature (drop or learn the d^−0.5 scale); (iv) add a prototype-usage
+sparsity/diversity loss so prototypes are peaked and distinct. Then re-run
+`scripts/build_fig2e_prototypes.py` to check specialization (share ≫ 1/n_fam) before deciding
+to reinstate the panel. See [[moe-collapse-fig2e]].
+
 ## **TFScope nominates binding motifs for orphan transcription factors at proteome scale**  → Fig 3  *(the positive, sequence-only-unique story)*
 
 ### **Known motifs are recovered from sequence alone for held-out factors**  → Fig 3a
