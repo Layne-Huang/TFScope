@@ -1,0 +1,52 @@
+# Figure 3 (orphan-TF ChIP validation) — paths + labels (no hard-coding in the script)
+genome:
+  assembly: hg38
+  fasta: /data1/leihuang/WholeGenomeFasta/genome.fa
+  chrom_sizes: results/figure3/hg38.chrom.sizes
+  blacklist: /data1/leihuang/chip_bigwigs/hg38-blacklist.bed
+  gtf: null            # no gene model (no GTF queried) -> panel b omits gene track
+
+tfs:
+  SOHLH1:
+    motif: results/genome_cre_scan/pwms/SOHLH1.npy
+    peaks: orphan_tf_validation/data/raw_peaks/SOHLH1.bed
+    bigwig: null                                   # GEO GSE280248 bw not downloaded; not used in panel b
+    cell_line: HEK293
+    caveat: low-quality ChIP
+    source: GEO GSE280248
+    enrichment: orphan_tf_validation/results/enrichment/SOHLH1.json
+  ADNP:
+    motif: results/genome_cre_scan/pwms/ADNP.npy
+    peaks: orphan_tf_validation/data/raw_peaks/ADNP.bed
+    bigwig: /data1/leihuang/chip_bigwigs/ADNP.fc.bigWig
+    cell_line: K562
+    caveat: tagged
+    source: ENCODE ENCSR440VKE
+    enrichment: orphan_tf_validation/results/enrichment/ADNP.json
+  ZHX2:
+    motif: results/genome_cre_scan/pwms/ZHX2.npy
+    peaks: orphan_tf_validation/data/raw_peaks/ZHX2.bed
+    bigwig: /data1/leihuang/chip_bigwigs/ZHX2.fc.bigWig
+    cell_line: HepG2
+    caveat: ""
+    source: ENCODE ENCSR407BEZ
+    enrichment: orphan_tf_validation/results/enrichment/ZHX2.json
+  ZHX3:
+    motif: results/genome_cre_scan/pwms/ZHX3.npy
+    peaks: orphan_tf_validation/data/raw_peaks/ZHX3.bed
+    bigwig: /data1/leihuang/chip_bigwigs/ZHX3.fc.bigWig
+    cell_line: HepG2
+    caveat: CRISPR
+    source: ENCODE ENCSR367KYL
+    enrichment: orphan_tf_validation/results/enrichment/ZHX3.json
+
+plot:
+  representative_tfs: [ADNP, ZHX2, ZHX3]   # panel b loci (real bigWig signal)
+  locus_flank_bp: 500
+  pval_threshold: 1.0e-4
+  seed: 42
+colors:
+  SOHLH1: "#E69F00"
+  ADNP:   "#D95F4C"
+  ZHX2:   "#55A868"
+  ZHX3:   "#7B6BB1"
