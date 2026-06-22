@@ -7,8 +7,8 @@ import os, json
 import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PWM_DIR = os.path.join(ROOT, "..", "results", "genome_cre_scan", "pwms")
-TFS = ["ADNP", "ZHX2", "ZHX3"]
-CELL = {"ADNP": "K562 (tagged)", "ZHX2": "HepG2", "ZHX3": "HepG2 (CRISPR)"}
+TFS = ["SOHLH1", "ADNP", "ZHX2", "ZHX3"]
+CELL = {"SOHLH1": "HEK293 (low-qual)", "ADNP": "K562 (tagged)", "ZHX2": "HepG2", "ZHX3": "HepG2 (CRISPR)"}
 R = {tf: json.load(open(f"{ROOT}/results/enrichment/{tf}.json")) for tf in TFS}
 
 import matplotlib; matplotlib.use("Agg")
@@ -23,8 +23,8 @@ def logo(ax, tf):
     ax.set_xticks([]); ax.set_yticks([]); ax.set_ylim(0, 2)
     ax.set_title(f"{tf}\n{CELL[tf]}", fontsize=8.5)
 
-fig = plt.figure(figsize=(11.5, 6.4))
-gs = fig.add_gridspec(3, 3, height_ratios=[0.8, 1.1, 1.1], hspace=0.6, wspace=0.32)
+fig = plt.figure(figsize=(13, 6.4))
+gs = fig.add_gridspec(3, 4, height_ratios=[0.8, 1.1, 1.1], hspace=0.6, wspace=0.32)
 
 # A logos
 for i, tf in enumerate(TFS):
@@ -48,7 +48,7 @@ axb.set_ylim(0, max(l2) * 1.3)
 # C summit-distance density (centrality)
 axc = fig.add_subplot(gs[1, 1:])
 bins = np.arange(-250, 250, 25) + 12.5
-for tf, col in zip(TFS, ["#d73027", "#1a9850", "#7570b3"]):
+for tf, col in zip(TFS, ["#e6550d", "#d73027", "#1a9850", "#7570b3"]):
     h = np.array(R[tf]["dist_hist"], float); h = h / h.sum()
     axc.plot(bins, h, "-o", ms=3, color=col, label=f"{tf} (≤50bp: {R[tf]['frac_hits_within_50bp']:.2f})")
 axc.axhline(1 / len(bins), color="k", ls=":", lw=1)
@@ -72,7 +72,7 @@ axd.set_title("d  Motif specificity vs null PWMs", fontsize=9.5, fontweight="bol
 
 # D2 null-PWM enrichment distribution (one example: ADNP)
 axe = fig.add_subplot(gs[2, 1:])
-for tf, col in zip(TFS, ["#d73027", "#1a9850", "#7570b3"]):
+for tf, col in zip(TFS, ["#e6550d", "#d73027", "#1a9850", "#7570b3"]):
     nz = np.array(R[tf]["null_enrich"])
     axe.hist(nz, bins=20, alpha=0.35, color=col, label=f"{tf} null")
     axe.axvline(R[tf]["real_enrich_sub"], color=col, lw=2)
