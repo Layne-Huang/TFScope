@@ -97,6 +97,10 @@ command=(
     --family-embedding-path none
     --dual-family
     --dual-family-semantic-path data/processed/family_embeddings_rebin34_fixed.pt
+    --benchmark-eval
+    --benchmark-data data/processed/tf_pwm_deeppbs_rebin34.parquet
+    --benchmark-split data/processed/splits/deeppbs_cluster40/split.json
+    --benchmark-every 5
     --precision bf16
     --tf32
     --no-wandb

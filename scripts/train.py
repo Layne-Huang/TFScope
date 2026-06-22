@@ -155,6 +155,15 @@ def parse_args():
                    help="Compute oracle r every N epochs (default 5)")
     p.add_argument("--oracle-r-n-tfs", type=int, default=100,
                    help="Number of val TFs to use for oracle-r eval (default 100)")
+    # Benchmark eval: periodic oracle-r on a held-out, contamination-controlled set
+    # (e.g. cluster40 test). val-oracle-r is lenient + on easy paralogs, so it's a poor
+    # selector; this selects ckpt_best_bench on the hard test-like metric instead.
+    p.add_argument("--benchmark-eval", action="store_true",
+                   help="periodic oracle-r on a held-out benchmark; save ckpt_best_bench on it")
+    p.add_argument("--benchmark-data", default=None, help="parquet for the benchmark eval")
+    p.add_argument("--benchmark-split", default=None, help="split json for the benchmark eval (uses test split)")
+    p.add_argument("--benchmark-every", type=int, default=None,
+                   help="epochs between benchmark evals (default = --oracle-r-every)")
 
     # v14 de-novo loss terms (target base composition)
     p.add_argument("--ic-pcc-weight",  type=float, default=0.0,
@@ -827,6 +836,17 @@ def main():
 
     # Data
     train_loader, val_loader = make_loaders(args, config, rank, world_size)
+    # Benchmark loader (contamination-controlled held-out test, e.g. cluster40) for
+    # checkpoint selection on the hard test-like metric — built on the main rank only.
+    bench_loader = None
+    if getattr(args, "benchmark_eval", False) and args.benchmark_data and is_main and not args.dummy:
+        bench_ds = TFDataset(config, args.benchmark_data,
+                             args.benchmark_split or args.split, split="test",
+                             max_seq_len=args.max_seq_len)
+        bench_loader = DataLoader(bench_ds, batch_size=args.batch_size, shuffle=False,
+                                  num_workers=0, collate_fn=collate_variable_length)
+        print(f"benchmark eval: {len(bench_ds)} TFs from "
+              f"{os.path.basename(args.benchmark_data)} (test split)")
     steps_per_epoch = math.ceil(len(train_loader) / args.grad_accum_steps)
     total_steps = args.epochs * steps_per_epoch
     config.total_steps = total_steps
@@ -993,6 +1013,7 @@ def main():
     global_step  = 0
     best_val_loss  = float('inf')
     best_oracle_r  = -float('inf')
+    best_bench     = -float('inf')
     patience_counter = 0
 
     # Stage-2 finetune init: load ONLY model weights, keep fresh optimizer/schedule
@@ -1023,6 +1044,7 @@ def main():
         global_step    = ckpt.get('global_step', start_epoch * steps_per_epoch)
         best_val_loss  = ckpt.get('best_val_loss', float('inf'))
         best_oracle_r  = ckpt.get('best_oracle_r', -float('inf'))
+        best_bench     = ckpt.get('best_bench', -float('inf'))
         if is_main:
             print(f"Resumed from epoch {ckpt['epoch']}")
 
@@ -1075,6 +1097,15 @@ def main():
                 raw_model, val_loader, device,
                 n_tfs=args.oracle_r_n_tfs,
                 precision=args.precision)
+
+        # Benchmark eval on the contamination-controlled held-out set (test-like
+        # metric; the proper selector vs the lenient val-oracle-r on easy paralogs)
+        bench_r = None
+        bench_every = args.benchmark_every or args.oracle_r_every
+        if bench_loader is not None and is_main and (
+                (epoch + 1) % bench_every == 0 or epoch + 1 == args.epochs):
+            bench_r = run_oracle_r_eval(raw_model, bench_loader, device,
+                                        n_tfs=100000, precision=args.precision)
         if distributed:
             payload = torch.tensor(
                 [
@@ -1101,6 +1132,9 @@ def main():
             print(f"{epoch+1:>6}  {train_m['loss']:>10.4f}  {val_m['loss']:>10.4f}  "
                   f"{val_m['gate_loss']:>8.4f}  {val_m['pwm_loss']:>8.4f}"
                   f"{oracle_str}  {elapsed:>5.0f}s")
+            if bench_r is not None:
+                print(f"        benchmark oracle-r: {bench_r:.4f}"
+                      f"{'  *BEST*' if bench_r > best_bench else ''}")
 
         # ── determine is_best ─────────────────────────────────────────────
         if use_oracle:
@@ -1146,7 +1180,10 @@ def main():
         #   (b) new best metric  →  overwrites ckpt_best.pt only
         save_milestone = (epoch + 1) % args.save_every == 0
         save_best      = is_best and not args.no_save_best
-        if is_main and (save_milestone or save_best):
+        save_bench     = (bench_r is not None and bench_r > best_bench)
+        if save_bench:
+            best_bench = bench_r
+        if is_main and (save_milestone or save_best or save_bench):
             trainable_state = checkpoint_model_state(raw_model)
             ckpt = {
                 'epoch':         epoch,
@@ -1157,11 +1194,14 @@ def main():
                 'scheduler':     scheduler.state_dict(),
                 'best_val_loss': best_val_loss,
                 'best_oracle_r': best_oracle_r,
+                'best_bench':    best_bench,
                 'train_metrics': train_m,
                 'val_metrics':   val_m,
             }
             if oracle_r is not None:
                 ckpt['oracle_r'] = oracle_r
+            if bench_r is not None:
+                ckpt['bench_r'] = bench_r
             if save_milestone:
                 path = os.path.join(args.out, f"ckpt_epoch{epoch+1:03d}.pt")
                 torch.save(ckpt, path)
@@ -1171,6 +1211,9 @@ def main():
                     print(f"  *** New best oracle r: {best_oracle_r:.4f} ***")
                 else:
                     print(f"  *** New best val loss: {best_val_loss:.4f} ***")
+            if save_bench:
+                torch.save(ckpt, os.path.join(args.out, "ckpt_best_bench.pt"))
+                print(f"  *** New best BENCHMARK oracle-r: {best_bench:.4f} (ckpt_best_bench.pt) ***")
 
         # Early stopping (only checked on oracle-r epochs when --eval-oracle-r is set)
         check_patience = (not use_oracle) or is_oracle_epoch
