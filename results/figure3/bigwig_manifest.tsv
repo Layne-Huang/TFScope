@@ -1,0 +1,5 @@
+file	source	accession	size
+ADNP.fc.bigWig	ENCODE ENCSR440VKE (K562, fold-change/control)	ENCFF254FCX	690M
+ZHX2.fc.bigWig	ENCODE ENCSR407BEZ (HepG2, fold-change/control)	ENCFF037HXV	452M
+ZHX3.fc.bigWig	ENCODE ENCSR367KYL (HepG2, fold-change/control)	ENCFF091KOP	873M
+SOHLH1.bw	GEO GSE280248 GSM8589942 (HEK293, raw coverage)	GSM8589942	163M

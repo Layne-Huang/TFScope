@@ -3,6 +3,14 @@
 Fully reproducible, **all values from real repository / public data** — no synthetic motifs,
 coordinates, scores, or null distributions.
 
+
+## Reproducing panel b on a fresh checkout
+The ChIP bigWigs (~2.2 GB) are NOT in the repo. One command fetches them (stable accession URLs):
+```bash
+bash scripts/download_figure3_chip_bigwigs.sh   # -> /data1/leihuang/chip_bigwigs/
+```
+Provenance/accessions: `results/figure3/bigwig_manifest.tsv`. Then run the plot script.
+
 ## Regenerate
 ```bash
 python scripts/plot_figure3_orphan_tf_validation.py      # reads configs/figure3_orphan_tf_validation.yaml
