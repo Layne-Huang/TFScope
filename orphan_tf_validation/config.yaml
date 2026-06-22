@@ -1,0 +1,11 @@
+# frozen analysis config (fix before viewing results)
+genome: /data1/leihuang/WholeGenomeFasta/genome.fa
+peak_window_bp: 500          # summit +/-250
+shuffle_per_peak: 20
+fimo_pvalue_threshold: 1.0e-4
+column_shuffled_pwm_number: 100
+random_seed: 42
+tfs:
+  ADNP:  {expt: ENCSR440VKE, file: ENCFF083UZC, cell: K562_tagged, family: Homeodomain}
+  ZHX2:  {expt: ENCSR407BEZ, file: ENCFF158NBU, cell: HepG2,       family: Homeodomain}
+  ZHX3:  {expt: ENCSR367KYL, file: ENCFF982WOX, cell: HepG2_CRISPR, family: Homeodomain}
