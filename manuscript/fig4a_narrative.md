@@ -42,3 +42,25 @@ Cases shown: MyoD1 L112R (bHLH basic region) and the ER↔GR P-box swap (nuclear
 Caveats: PWM-level, sequence-only; MyoD1 L112R is a natural single substitution, the P-box swap is the
 classic engineered 3-residue determinant. The structure-based resolution of the MyoD1 switch is Fig.
 4b–c. Sweep of additional mutations in results/myod1_mut/mutation_sweep.json.
+
+---
+
+## Multi-mutant titration (answers: are larger determinant changes easier?)
+
+Builder: scripts/test_multimutant.py → results/myod1_mut/multimutant_titration.json;
+figure scripts/build_fig4a_titration.py → figures/figure4a_titration/. Progressively swapping the
+differing residues of one nuclear-receptor DBD into another (GR↔ER, AR→ER) shows that **sequence-only
+resolution scales with the size of the determinant change**: the predicted motif's correlation to the
+TARGET receptor rises monotonically from ~0.34 (0% swapped, including the single-residue / 3-residue
+P-box regime, where it does NOT switch) to 0.8–0.98 (full recognition-module swap), crossing the
+"resolved" threshold (corr ≥ 0.7) at 50–75% of differing residues. This explains the single-mutant
+limit mechanistically: a 1–3 residue change is too small a perturbation to the pooled DBD
+representation to flip the predicted specificity, whereas swapping the bulk of the recognition module
+does. (AR→ER is noisier but trends the same.)
+
+> Suggested text: "TFScope's ability to resolve an engineered specificity switch scaled with the number
+> of specificity-determining residues changed: single residues and the three-residue P-box perturbed
+> but did not redirect the predicted motif, whereas swapping the majority of the recognition module
+> switched the prediction to the target receptor's element (correlation to target rising from 0.34 to
+> >0.95; Fig. 4a). The sequence-only model thus captures specificity at the level of the recognition
+> module, not of individual de-novo substitutions."

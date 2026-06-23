@@ -1,0 +1,155 @@
+[
+ {
+  "src": "NR3C1",
+  "tgt": "ESR1",
+  "ndiff": 34,
+  "src_cons": "GGACCAATTTGTCC",
+  "tgt_cons": "AGGTCACCATGACCC",
+  "titration": [
+   {
+    "frac": 0.0,
+    "k": 0,
+    "cons": "GGACCAATTTGTCC",
+    "corr_src": 1.0,
+    "corr_tgt": 0.3352520212586289
+   },
+   {
+    "frac": 0.1,
+    "k": 3,
+    "cons": "GGAACAATTTGTCCC",
+    "corr_src": 0.9303591589788699,
+    "corr_tgt": 0.418000650636212
+   },
+   {
+    "frac": 0.25,
+    "k": 8,
+    "cons": "GGTACAGAATGTTCC",
+    "corr_src": 0.654580757951142,
+    "corr_tgt": 0.4014042390500106
+   },
+   {
+    "frac": 0.5,
+    "k": 17,
+    "cons": "GGAACATTATGTTC",
+    "corr_src": 0.7094865789869849,
+    "corr_tgt": 0.5195503516217942
+   },
+   {
+    "frac": 0.75,
+    "k": 26,
+    "cons": "GGATCACCATGTCC",
+    "corr_src": 0.6204788112176789,
+    "corr_tgt": 0.8048604793797194
+   },
+   {
+    "frac": 1.0,
+    "k": 34,
+    "cons": "AGGTCACCATGACCC",
+    "corr_src": 0.36348551298070814,
+    "corr_tgt": 0.9800830266206532
+   }
+  ]
+ },
+ {
+  "src": "AR",
+  "tgt": "ESR1",
+  "ndiff": 29,
+  "src_cons": "GGAACATTTTTTTC",
+  "tgt_cons": "AGGTCACCATGACCC",
+  "titration": [
+   {
+    "frac": 0.0,
+    "k": 0,
+    "cons": "GGAACATTTTTTTC",
+    "corr_src": 1.0,
+    "corr_tgt": 0.39366049398494274
+   },
+   {
+    "frac": 0.1,
+    "k": 3,
+    "cons": "TGACCATTGTTTTC",
+    "corr_src": 0.9855788295431189,
+    "corr_tgt": 0.37809163735573215
+   },
+   {
+    "frac": 0.25,
+    "k": 7,
+    "cons": "TGACCATTATTTCC",
+    "corr_src": 0.9504421312734158,
+    "corr_tgt": 0.4935910099538569
+   },
+   {
+    "frac": 0.5,
+    "k": 14,
+    "cons": "TGACCATTTTTTCC",
+    "corr_src": 0.8403747158043796,
+    "corr_tgt": 0.8477346988740734
+   },
+   {
+    "frac": 0.75,
+    "k": 22,
+    "cons": "TGACCATTTTTTCC",
+    "corr_src": 0.8258756691637263,
+    "corr_tgt": 0.7813673719229043
+   },
+   {
+    "frac": 1.0,
+    "k": 29,
+    "cons": "TGACCATTTTTTCC",
+    "corr_src": 0.8355749684900802,
+    "corr_tgt": 0.7929244468523545
+   }
+  ]
+ },
+ {
+  "src": "ESR1",
+  "tgt": "NR3C1",
+  "ndiff": 34,
+  "src_cons": "AGGTCACCATGACCC",
+  "tgt_cons": "GGACCAATTTGTCC",
+  "titration": [
+   {
+    "frac": 0.0,
+    "k": 0,
+    "cons": "AGGTCACCATGACCC",
+    "corr_src": 1.0,
+    "corr_tgt": 0.3352520212586289
+   },
+   {
+    "frac": 0.1,
+    "k": 3,
+    "cons": "AGGTCACCATGACC",
+    "corr_src": 0.9635262192730838,
+    "corr_tgt": 0.34989799567020446
+   },
+   {
+    "frac": 0.25,
+    "k": 8,
+    "cons": "AGGTCATTTTGTCC",
+    "corr_src": 0.8218477945350005,
+    "corr_tgt": 0.5153887238786928
+   },
+   {
+    "frac": 0.5,
+    "k": 17,
+    "cons": "AGGTCAACATGTCC",
+    "corr_src": 0.8420893279348591,
+    "corr_tgt": 0.5518399477656671
+   },
+   {
+    "frac": 0.75,
+    "k": 26,
+    "cons": "AGGACAATATGTCC",
+    "corr_src": 0.6903100699550624,
+    "corr_tgt": 0.718091886470856
+   },
+   {
+    "frac": 1.0,
+    "k": 34,
+    "cons": "GGAACAATTTGTAC",
+    "corr_src": 0.3549982110947991,
+    "corr_tgt": 0.9714670155734416
+   }
+  ]
+ }
+]
