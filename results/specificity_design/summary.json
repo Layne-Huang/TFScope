@@ -1,0 +1,102 @@
+{
+ "LHX5": {
+  "family": "Homeodomain",
+  "off_targets": [
+   "MNX1",
+   "NKX6-2",
+   "LMX1A",
+   "ESX1",
+   "al",
+   "en",
+   "PHOX2B",
+   "PHOX2A"
+  ],
+  "median_margin_exp": {
+   "proposed": 0.271,
+   "target_only": 0.271,
+   "random": -0.83,
+   "consensus": 0.069
+  },
+  "median_target_z_exp": {
+   "proposed": 3.327,
+   "target_only": 3.327,
+   "random": -0.579,
+   "consensus": 3.305
+  }
+ },
+ "MYOG": {
+  "family": "bHLH",
+  "off_targets": [
+   "Myod1",
+   "MYOD1",
+   "TCF4",
+   "MYF6",
+   "ATOH1",
+   "TWIST2",
+   "ATOH7",
+   "TAL1::TCF3"
+  ],
+  "median_margin_exp": {
+   "proposed": -0.589,
+   "target_only": -0.994,
+   "random": -0.753,
+   "consensus": -0.992
+  },
+  "median_target_z_exp": {
+   "proposed": -0.623,
+   "target_only": 2.24,
+   "random": 0.504,
+   "consensus": 2.047
+  }
+ },
+ "CREB3L2": {
+  "family": "bZIP",
+  "off_targets": [
+   "CREB3L1",
+   "CREB3L4",
+   "ATF6B",
+   "CREB3",
+   "CREB3L3",
+   "XBP1",
+   "CREBZF",
+   "JUN"
+  ],
+  "median_margin_exp": {
+   "proposed": -2.328,
+   "target_only": -1.591,
+   "random": -1.027,
+   "consensus": -0.94
+  },
+  "median_target_z_exp": {
+   "proposed": -0.754,
+   "target_only": 0.918,
+   "random": 0.182,
+   "consensus": 2.17
+  }
+ },
+ "ELK1": {
+  "family": "ETS",
+  "off_targets": [
+   "ETV1",
+   "ETV5",
+   "GABPA",
+   "ELF1",
+   "FEV",
+   "ELK4",
+   "ERF",
+   "ERG"
+  ],
+  "median_margin_exp": {
+   "proposed": -0.502,
+   "target_only": -1.593,
+   "random": -0.9,
+   "consensus": -1.593
+  },
+  "median_target_z_exp": {
+   "proposed": 0.379,
+   "target_only": 3.001,
+   "random": -0.344,
+   "consensus": 3.001
+  }
+ }
+}
