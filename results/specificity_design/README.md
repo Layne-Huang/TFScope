@@ -67,3 +67,31 @@ Keep the in-silico SELEX consensus-recovery panel as the main Fig 3d (honest, wo
 design is either (a) a Supplementary "limitation" panel — TFScope-predicted within-family PWM
 differences are not accurate/large enough to support experimentally-transferable selective design — or
 (b) dropped. Do NOT present it as validated selective design.
+
+---
+
+## Systematic scan (no hand-picked targets) — the governing law
+
+`scripts/run_specificity_scan.py` scans **166 targets** across 6 families (full TF set), caching
+predicted+experimental PWMs; per target it computes self pred-exp corr, target/off predicted &
+experimental corr, predicted-oracle separability, experimental-oracle upper bound, and the
+held-out experimental transfer margin of the TFScope-guided designs. `scripts/plot_specificity_scan.py`
+makes `figures/figure_specificity_scan/`; per-target table `scan_table.tsv`; case picks `case_selection.tsv`.
+
+**Result — a continuous law, but on a different axis than hypothesised:**
+- **Experimental transfer ∝ target self-prediction fidelity** (Spearman **ρ=+0.65, p=2e-21**), monotonic
+  across bins; only well-predicted targets (self pred-exp r >0.95) achieve positive transfer (median
+  +0.12, **61% positive**); below 0.95 transfer is reliably negative.
+- **Off-target separability is NOT the driver** (Spearman ρ=−0.16) and is confounded — apparently
+  "easy-to-separate" targets are mostly just *poorly predicted* (their predicted PWM is so wrong it
+  looks distinct), with the worst transfer.
+- The experimental-oracle margin is positive for ~95% of targets (task is feasible in PWM space
+  almost everywhere); TFScope's transfer is limited by **self-prediction accuracy**, not feasibility.
+- Design genuinely **works for well-predicted targets** (e.g. FOXP2 +3.7, FOS::JUN +3.1 experimental
+  transfer); it fails for poorly-predicted targets and for fine-grained within-family discrimination
+  (the original 4 hand-picked hard cases).
+
+**Takeaway / usable rule:** TFScope supports specificity-aware DNA design *for targets it predicts
+accurately* (a self-consistency criterion checkable a priori); fine-grained within-family selectivity
+remains beyond current resolution. This is a stronger, mechanistic explanation of the Case-B failures
+than any single success example.

@@ -1,0 +1,11 @@
+role	target	family	target_self_corr	pred_off_corr_max	exp_oracle_margin	tfscope_transfer_margin
+sanity	FOXP2	Forkhead	0.999	0.997	2.307	3.731
+sanity	FOS::JUN	bZIP	0.993	0.987	3.628	3.149
+main	MATALPHA2	Homeodomain	0.881	0.968	2.876	1.518
+main	XBP1	bZIP	0.942	0.907	1.208	0.366
+main	RXRA::VDR	Nuclear_Receptor	0.933	0.957	2.741	0.022
+main	MITF	bHLH	0.949	0.996	2.668	-0.083
+main	FOXA1	Forkhead	0.953	0.982	1.337	-0.188
+main	Foxd3	Forkhead	0.922	0.999	2.391	-0.272
+stress	CREB3L2	bZIP	0.982	0.999	1.377	-1.467
+stress	ELK1	ETS	0.952	0.997	4.077	-1.726
