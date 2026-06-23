@@ -25,9 +25,11 @@ OUT = "results/specificity_design"; os.makedirs(OUT, exist_ok=True)
 CACHE = f"{OUT}/pwm_cache.pkl"
 CKPT = "/data1/leihuang/project/TFScope/checkpoints/v19_combined_fm_deeppbs_contact/rag_seed42/ckpt_best.pt"
 PARQ = "data/processed/tf_pwm_aug_dbd.parquet"
-FAMILIES = ["Homeodomain", "bHLH", "bZIP", "ETS", "Forkhead", "Nuclear_Receptor"]
-POOL_PER_FAM = 70           # genes cached per family
-TARGETS_PER_FAM = 30        # targets scanned per family
+FAMILIES = ["Homeodomain", "bHLH", "bZIP", "ETS", "Forkhead", "Nuclear_Receptor",
+            "C2H2_short", "C2H2_medium", "C2H2_long"]
+POOL_PER_FAM = 130          # genes cached per family
+TARGETS_PER_FAM = 60        # targets scanned per family
+ENSURE = ["LHX5", "MYOG", "CREB3L2", "ELK1"]   # original hand-picked hard cases
 N_OFF = 8
 L = 24; GCMIN, GCMAX, HOMO = 0.35, 0.65, 3
 BG = 0.25; EPS = 1e-3; LAM = 1.0; NBG = 20000
@@ -78,9 +80,18 @@ def exp_pwm(b):
     return P[:, k.min():k.max() + 1] if len(k) >= 4 else P
 
 df = pd.read_parquet(PARQ)
-if os.path.exists(CACHE):
-    cache = pickle.load(open(CACHE, "rb")); print(f"loaded cache: {len(cache)} TFs")
-else:
+cache = pickle.load(open(CACHE, "rb")) if os.path.exists(CACHE) else {}
+print(f"loaded cache: {len(cache)} TFs")
+# determine genes to ensure per family (head(POOL) + ENSURE list), predict only those missing
+want_rows = []
+for fam in FAMILIES:
+    fdf = df[df.family_name == fam].drop_duplicates("gene_symbol")
+    genes = list(fdf.head(POOL_PER_FAM).gene_symbol) + [g for g in ENSURE if g in set(fdf.gene_symbol)]
+    for g in dict.fromkeys(genes):
+        if g not in cache:
+            want_rows.append(fdf[fdf.gene_symbol == g].iloc[0])
+if want_rows:
+    print(f"predicting {len(want_rows)} new PWMs ...")
     mc = TFScopeConfig()
     for k, v in json.load(open(os.path.dirname(CKPT) + "/config.json")).items():
         if hasattr(mc, k):
@@ -99,18 +110,15 @@ else:
         if len(cols) < 4:
             ic = (p * np.log2(p + 1e-9)).sum(0) + 2; a = ic.argmax(); cols = np.arange(max(0, a - 4), min(p.shape[1], a + 5))
         return p[:, cols.min():cols.max() + 1]
-    cache = {}
-    for fam in FAMILIES:
-        sub = df[df.family_name == fam].drop_duplicates("gene_symbol").head(POOL_PER_FAM)
-        for r in sub.itertuples():
-            dbd = str(r.sequence)[int(r.dbd_start):int(r.dbd_end)]
-            if not (15 <= len(dbd) <= 200): continue
-            try: Pp = predict_pwm(dbd, int(r.family_id))
-            except Exception: continue
-            cache[r.gene_symbol] = dict(family=fam, pred=Pp, exp=exp_pwm(r.pwm))
-        print(f"cached {fam}: {sum(1 for v in cache.values() if v['family']==fam)}")
+    for i, r in enumerate(want_rows):
+        dbd = str(r.sequence)[int(r.dbd_start):int(r.dbd_end)]
+        if not (15 <= len(dbd) <= 200): continue
+        try: cache[r.gene_symbol] = dict(family=r.family_name, pred=predict_pwm(dbd, int(r.family_id)), exp=exp_pwm(r.pwm))
+        except Exception: continue
+        if (i + 1) % 100 == 0: print(f"  {i+1}/{len(want_rows)}")
     pickle.dump(cache, open(CACHE, "wb"))
-    print(f"saved cache: {len(cache)} TFs")
+print(f"cache now: {len(cache)} TFs | by family: " +
+      ", ".join(f"{fam}={sum(1 for v in cache.values() if v['family']==fam)}" for fam in FAMILIES))
 
 # precompute zmodels
 for g in cache:
