@@ -1,0 +1,137 @@
+[
+ {
+  "gene": "MYOD1",
+  "label": "MyoD1 L112R (bHLH basic)",
+  "wt": "CAGCTGTT",
+  "mut": "CAGCTGGT",
+  "l1peak": 0.88,
+  "verdict": "RESPONDS",
+  "known": "CACCTG->CACGTG"
+ },
+ {
+  "gene": "NR3C1",
+  "label": "GR P-box->ER (NR)",
+  "wt": "GGACCAATTTGTCC",
+  "mut": "GGACCACATTGTCC",
+  "l1peak": 1.12,
+  "verdict": "RESPONDS",
+  "known": "GRE->ERE"
+ },
+ {
+  "gene": "AR",
+  "label": "AR P-box->ER (NR)",
+  "wt": "GGAACATTTTTTTC",
+  "mut": "TGACCATTTTTTTC",
+  "l1peak": 0.76,
+  "verdict": "RESPONDS",
+  "known": "GRE->ERE"
+ },
+ {
+  "gene": "PGR",
+  "label": "PGR P-box->ER (NR)",
+  "wt": "AGAACAAAATGTTC",
+  "mut": "AGAACAGAATGTCC",
+  "l1peak": 0.9,
+  "verdict": "RESPONDS",
+  "known": "GRE->ERE"
+ },
+ {
+  "gene": "NR3C2",
+  "label": "MR P-box->ER (NR)",
+  "wt": "GGTACATTATGTTCC",
+  "mut": "GGTACATATTGTTCC",
+  "l1peak": 0.76,
+  "verdict": "RESPONDS",
+  "known": "GRE->ERE"
+ },
+ {
+  "gene": "ESR1",
+  "label": "ER P-box->GR (NR)",
+  "wt": "AGGTCACCATGACCC",
+  "mut": "AGGTCAATGTGACCA",
+  "l1peak": 1.3,
+  "verdict": "RESPONDS",
+  "known": "ERE->GRE"
+ },
+ {
+  "gene": "ESR2",
+  "label": "ERbeta P-box->GR (NR)",
+  "wt": "AGGTCACTTTACCC",
+  "mut": "AGGCCAATTTGCCC",
+  "l1peak": 0.67,
+  "verdict": "RESPONDS",
+  "known": "ERE->GRE"
+ },
+ {
+  "gene": "Ubx",
+  "label": "Ubx Q50K (HD)",
+  "wt": "TTAATTA",
+  "mut": "TTAATTA",
+  "l1peak": 0.18,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "en",
+  "label": "en Q50K (HD)",
+  "wt": "TAATTG",
+  "mut": "TAATTG",
+  "l1peak": 0.18,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "eve",
+  "label": "eve Q50K (HD)",
+  "wt": "TAATT",
+  "mut": "TAATT",
+  "l1peak": 0.27,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "vnd",
+  "label": "vnd Q50K (HD)",
+  "wt": "TACTTGAAA",
+  "mut": "TACTTGAGA",
+  "l1peak": 0.24,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "HOXA9",
+  "label": "HOXA9 Q50K (HD)",
+  "wt": "TGATTTAT",
+  "mut": "TGATTTAT",
+  "l1peak": 0.09,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "HOXA13",
+  "label": "HOXA13 Q50K (HD)",
+  "wt": "TTTTATTGG",
+  "mut": "TTTTATTGG",
+  "l1peak": 0.67,
+  "verdict": "weak",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "GBX1",
+  "label": "GBX1 Q50K (HD)",
+  "wt": "TAATTG",
+  "mut": "TAATTG",
+  "l1peak": 0.09,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ },
+ {
+  "gene": "Scr",
+  "label": "Scr Q50K (HD)",
+  "wt": "AATGA",
+  "mut": "AATGA",
+  "l1peak": 0.05,
+  "verdict": "insensitive",
+  "known": "TAATGG->TAATCC"
+ }
+]
