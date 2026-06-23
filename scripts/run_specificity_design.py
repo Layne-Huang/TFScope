@@ -160,20 +160,22 @@ for target in TARGETS:
     g = cfg["ga"]
     # target-binding floor: a specificity design must KEEP strong target binding (plan crit. #2).
     # floor = 60% of the best achievable target Z (consensus embedding), prevents the degenerate
-    # "make everything low" margin solution.
-    cons0 = P_t_pred.argmax(0)
-    emb0 = random_valid(1, np.random.default_rng(0))[0].copy(); emb0[:len(cons0)] = cons0
-    ZT_FLOOR = 0.6 * float(Z(emb0[None], target, "pred")[0])
+    # "make everything low" margin solution. Computed separately for pred and exp score spaces.
+    def floor_for(which):
+        cons0 = (P_t_pred if which == "pred" else P_t_exp).argmax(0)
+        emb0 = random_valid(1, np.random.default_rng(0))[0].copy(); emb0[:len(cons0)] = cons0
+        return 0.6 * float(Z(emb0[None], target, which)[0])
+    ZT_FLOOR = {"pred": floor_for("pred"), "exp": floor_for("exp")}
 
-    def ga(use_off, seed):
-        r = np.random.default_rng(1000 + seed)
+    def ga(use_off, seed, which="pred"):
+        r = np.random.default_rng(1000 + seed + (5000 if which == "exp" else 0))
         pop = random_valid(g["population"], r)
         for gen in range(g["generations"]):
-            zt = Z(pop, target, "pred")
+            zt = Z(pop, target, which)
             fit = zt.copy()
             if use_off:
-                zo = np.max([Z(pop, gg, "pred") for gg in offnames], axis=0)
-                fit = np.where(zt >= ZT_FLOOR, zt - LAM * zo, -1e9)   # keep target binding high
+                zo = np.max([Z(pop, gg, which) for gg in offnames], axis=0)
+                fit = np.where(zt >= ZT_FLOOR[which], zt - LAM * zo, -1e9)   # keep target binding high
             fit = np.where(valid_mask(pop), fit, -1e9)
             order = np.argsort(-fit)
             n_el = max(1, int(g["elite_fraction"] * len(pop)))
@@ -198,11 +200,16 @@ for target in TARGETS:
         return [seqs[c] for c in chosen]
 
     methods = {}
-    # proposed + target-only GA (pool over seeds)
+    # proposed + target-only GA (pool over seeds) — optimise on PREDICTED PWMs
     for name, use_off in [("proposed", True), ("target_only", False)]:
-        allcand = np.vstack([ga(use_off, s) for s in range(g["seeds"])])
+        allcand = np.vstack([ga(use_off, s, "pred") for s in range(g["seeds"])])
         _, _, m = margin(allcand, "pred"); sc = m if use_off else Z(allcand, target, "pred")
         methods[name] = np.array(diverse_top(allcand, sc, g["final_designs"], g["min_hamming"]))
+    # EXPERIMENTAL-ORACLE upper bound: optimise directly on EXPERIMENTAL PWMs (not a TFScope result;
+    # estimates whether the selective-design task is solvable at all in PWM space for this target)
+    allcand = np.vstack([ga(True, s, "exp") for s in range(g["seeds"])])
+    _, _, mexp = margin(allcand, "exp")
+    methods["exp_oracle"] = np.array(diverse_top(allcand, mexp, g["final_designs"], g["min_hamming"]))
     # random baseline
     methods["random"] = random_valid(g["final_designs"], np.random.default_rng(99))
     # consensus-embedding baseline: target predicted-PWM argmax, embedded at all positions/strands
@@ -230,21 +237,37 @@ for target in TARGETS:
                                     margin_pred=round(float(mp[i]), 3), target_z_exp=round(float(zte[i]), 3),
                                     max_offtarget_z_exp=round(float(zoe[i]), 3), margin_exp=round(float(me[i]), 3),
                                     gc=round(float(((seqs[i] == 1) | (seqs[i] == 2)).mean()), 2), worst_offtarget=worst[i]))
-    summary[target] = dict(family=fam, off_targets=offnames,
-                           median_margin_exp={mth: round(float(np.median([d["margin_exp"] for d in design_rows
-                                              if d["target_tf"] == target and d["method"] == mth])), 3)
-                                              for mth in methods},
-                           median_target_z_exp={mth: round(float(np.median([d["target_z_exp"] for d in design_rows
-                                                if d["target_tf"] == target and d["method"] == mth])), 3)
-                                                for mth in methods})
-    print(f"  median exp margin: " + "  ".join(f"{m}={summary[target]['median_margin_exp'][m]}" for m in ["random","consensus","target_only","proposed"]))
+    mexp_med = {mth: round(float(np.median([d["margin_exp"] for d in design_rows
+                if d["target_tf"] == target and d["method"] == mth])), 3) for mth in methods}
+    tz_med = {mth: round(float(np.median([d["target_z_exp"] for d in design_rows
+              if d["target_tf"] == target and d["method"] == mth])), 3) for mth in methods}
+    upper = mexp_med["exp_oracle"]; prop = mexp_med["proposed"]
+    # feasibility classification (experimental-oracle upper bound)
+    if upper < 0.3:
+        case = "A: infeasible (even experimental PWM cannot separate target from off-targets)"
+    elif prop >= 0.5 * upper and prop > 0.1:
+        case = "C-feasible: task solvable AND TFScope captures it"
+    else:
+        case = "B: task solvable by experimental PWM but TFScope misses fine-grained difference"
+    summary[target] = dict(family=fam, off_targets=offnames, median_margin_exp=mexp_med,
+                           median_target_z_exp=tz_med, exp_oracle_upper_bound=upper, case=case)
+    print(f"  exp margin: cons={mexp_med['consensus']:+.2f} tgtonly={mexp_med['target_only']:+.2f} "
+          f"proposed={mexp_med['proposed']:+.2f} | EXP-ORACLE upper={upper:+.2f}  -> {case.split(':')[0]}")
 
 pd.DataFrame(offsel_rows).to_csv(f"{OUT}/off_target_selection.tsv", sep="\t", index=False)
 pd.DataFrame(design_rows).to_csv(f"{OUT}/final_designs.tsv", sep="\t", index=False)
 json.dump(summary, open(f"{OUT}/summary.json", "w"), indent=1)
-# primary endpoint
+# primary endpoint + feasibility breakdown
 wins = sum(1 for t in summary if summary[t]["median_margin_exp"]["proposed"] > summary[t]["median_margin_exp"]["consensus"]
            and summary[t]["median_margin_exp"]["proposed"] > summary[t]["median_margin_exp"]["target_only"])
-print(f"\nPRIMARY ENDPOINT: proposed exp-margin > consensus AND target-only in {wins}/{len(summary)} targets")
-json.dump(dict(summary=summary, primary_wins=wins, n_targets=len(summary)), open(f"{OUT}/endpoint.json", "w"), indent=1)
+feasible = [t for t in summary if summary[t]["exp_oracle_upper_bound"] >= 0.3]
+caseA = [t for t in summary if summary[t]["case"].startswith("A")]
+caseB = [t for t in summary if summary[t]["case"].startswith("B")]
+caseC = [t for t in summary if summary[t]["case"].startswith("C")]
+print(f"\nPRIMARY ENDPOINT: proposed > consensus AND target-only in {wins}/{len(summary)} targets")
+print(f"FEASIBILITY (experimental-oracle upper bound): "
+      f"A-infeasible={caseA}  B-TFScope-misses={caseB}  C-feasible&captured={caseC}")
+json.dump(dict(summary=summary, primary_wins=wins, n_targets=len(summary),
+               feasible_targets=feasible, caseA=caseA, caseB=caseB, caseC=caseC),
+          open(f"{OUT}/endpoint.json", "w"), indent=1)
 print(f"saved {OUT}/{{off_target_selection,final_designs,summary,endpoint}}")

@@ -23,6 +23,26 @@ Median specificity margin (predicted vs experimental) and experimental target bi
 | ELK1 | target_only | −0.01 | −1.59 | 3.00 |
 | ELK1 | **proposed** | **+0.99** | −0.50 | **+0.38** |
 
+## Experimental-oracle upper bound → the failure is TFScope's resolution, NOT task impossibility (Case B)
+
+Optimising directly on the curated **experimental** PWMs (an upper bound on what is achievable in PWM
+space; not a TFScope result) yields large positive experimental margins for **all four** targets:
+
+| target | oracle (exp upper bound) | TFScope-proposed | consensus | verdict |
+|---|--:|--:|--:|---|
+| LHX5 | **+0.83** | +0.27 | +0.07 | B |
+| MYOG | **+2.43** | −0.59 | −0.99 | B |
+| CREB3L2 | **+2.24** | −2.33 | −0.94 | B |
+| ELK1 | **+4.40** | −0.50 | −1.59 | B |
+
+So the selective-design task **is solvable in PWM space** even against same-family off-targets — the
+curated experimental PWMs *do* contain separating fine-grained differences. The failure is therefore
+**Case B**: TFScope-guided design fails because TFScope predicts the within-family off-targets as
+near-identical (mean predicted-PWM corr 0.89–0.99; figure panel b) and so cannot exploit the
+distinctions the experimental PWMs encode. (Caveat: the oracle optimises and is evaluated on the same
+experimental PWMs, so it is an in-sample upper bound that establishes PWM-space feasibility, not
+wet-lab achievability.) Figure: `figures/figure_specificity_design/specificity_design.{png,pdf}`.
+
 **Why it fails (consistent across targets):**
 1. **The optimization works on the oracle but does not transfer.** Proposed reliably raises the
    *predicted* margin (e.g. MYOG 0.03→1.20, ELK1 −0.01→0.99) but the *experimental* margin stays

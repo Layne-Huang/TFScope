@@ -15,15 +15,19 @@
    "median_margin_exp": {
     "proposed": 0.271,
     "target_only": 0.271,
+    "exp_oracle": 0.828,
     "random": -0.83,
     "consensus": 0.069
    },
    "median_target_z_exp": {
     "proposed": 3.327,
     "target_only": 3.327,
+    "exp_oracle": 2.073,
     "random": -0.579,
     "consensus": 3.305
-   }
+   },
+   "exp_oracle_upper_bound": 0.828,
+   "case": "B: task solvable by experimental PWM but TFScope misses fine-grained difference"
   },
   "MYOG": {
    "family": "bHLH",
@@ -40,15 +44,19 @@
    "median_margin_exp": {
     "proposed": -0.589,
     "target_only": -0.994,
+    "exp_oracle": 2.434,
     "random": -0.753,
     "consensus": -0.992
    },
    "median_target_z_exp": {
     "proposed": -0.623,
     "target_only": 2.24,
+    "exp_oracle": 2.57,
     "random": 0.504,
     "consensus": 2.047
-   }
+   },
+   "exp_oracle_upper_bound": 2.434,
+   "case": "B: task solvable by experimental PWM but TFScope misses fine-grained difference"
   },
   "CREB3L2": {
    "family": "bZIP",
@@ -65,15 +73,19 @@
    "median_margin_exp": {
     "proposed": -2.328,
     "target_only": -1.591,
+    "exp_oracle": 2.24,
     "random": -1.027,
     "consensus": -0.94
    },
    "median_target_z_exp": {
     "proposed": -0.754,
     "target_only": 0.918,
+    "exp_oracle": 2.606,
     "random": 0.182,
     "consensus": 2.17
-   }
+   },
+   "exp_oracle_upper_bound": 2.24,
+   "case": "B: task solvable by experimental PWM but TFScope misses fine-grained difference"
   },
   "ELK1": {
    "family": "ETS",
@@ -90,17 +102,35 @@
    "median_margin_exp": {
     "proposed": -0.502,
     "target_only": -1.593,
+    "exp_oracle": 4.404,
     "random": -0.9,
     "consensus": -1.593
    },
    "median_target_z_exp": {
     "proposed": 0.379,
     "target_only": 3.001,
+    "exp_oracle": 3.001,
     "random": -0.344,
     "consensus": 3.001
-   }
+   },
+   "exp_oracle_upper_bound": 4.404,
+   "case": "B: task solvable by experimental PWM but TFScope misses fine-grained difference"
   }
  },
  "primary_wins": 2,
- "n_targets": 4
+ "n_targets": 4,
+ "feasible_targets": [
+  "LHX5",
+  "MYOG",
+  "CREB3L2",
+  "ELK1"
+ ],
+ "caseA": [],
+ "caseB": [
+  "LHX5",
+  "MYOG",
+  "CREB3L2",
+  "ELK1"
+ ],
+ "caseC": []
 }
