@@ -1,0 +1,61 @@
+{
+  "note": "v24(B8 seed42) vs B0(family-avg by family_id). Single seed; B0 uses family_id taxonomy (p53->Other, POU->Homeodomain).",
+  "panelA_content_r": {
+    "metric": "A_content_r",
+    "mean_v24": 0.6293982240603404,
+    "mean_B0": 0.6015568313358725,
+    "gene_delta_v24_minus_B0": 0.02784139272446795,
+    "hier_bootstrap_95ci": [
+      -0.009352874225221734,
+      0.06384420614698327
+    ],
+    "bootstrap_frac_delta_gt0": 0.9265,
+    "ci_excludes_zero": false,
+    "n_genes": 51,
+    "n_genes_v24_better": 33,
+    "leave_one_family_out_delta": {
+      "ETS": 0.06291234351549446,
+      "Forkhead": 0.03339649527909905,
+      "Nuclear_Receptor": 0.02591252456011439,
+      "POU": 0.009266846215314484,
+      "bHLH": 0.022835121227868238,
+      "bZIP": 0.023178290358437992,
+      "p53": 0.027072795569031416
+    },
+    "drop_p53_POU": {
+      "delta": 0.006360997469469387,
+      "mean_v24": 0.6450705524773397,
+      "mean_B0": 0.6387095550078703,
+      "n_genes": 38
+    }
+  },
+  "panelB_covR": {
+    "metric": "B_covR",
+    "mean_v24": 0.5304211038638772,
+    "mean_B0": 0.5391904855002676,
+    "gene_delta_v24_minus_B0": -0.008769381636390405,
+    "hier_bootstrap_95ci": [
+      -0.03907107710611552,
+      0.020574936786848765
+    ],
+    "bootstrap_frac_delta_gt0": 0.2798,
+    "ci_excludes_zero": false,
+    "n_genes": 51,
+    "n_genes_v24_better": 26,
+    "leave_one_family_out_delta": {
+      "ETS": 0.02401485934614883,
+      "Forkhead": -0.026816475356476688,
+      "Nuclear_Receptor": -0.007432736352086522,
+      "POU": -0.0072650780927959735,
+      "bHLH": -0.010792960250298855,
+      "bZIP": -0.01623317560396509,
+      "p53": -0.012037208979166936
+    },
+    "drop_p53_POU": {
+      "delta": -0.011148516801640973,
+      "mean_v24": 0.5893062587333571,
+      "mean_B0": 0.600454775534998,
+      "n_genes": 38
+    }
+  }
+}

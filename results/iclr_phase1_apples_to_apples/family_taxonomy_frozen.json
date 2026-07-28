@@ -1,0 +1,136 @@
+{
+  "note": "Frozen train-only family taxonomy + 3 priors. No test PWM used.",
+  "global_train_prior": {
+    "n_rows": 4794,
+    "median_len": 12
+  },
+  "family_id_vs_name_mismatch_zeroshot": {
+    "p53": {
+      "family_id": 9,
+      "train_names_sharing_this_id": {
+        "Other": 880
+      },
+      "n_test_rows": 101
+    },
+    "POU": {
+      "family_id": 4,
+      "train_names_sharing_this_id": {
+        "Homeodomain": 1235
+      },
+      "n_test_rows": 46
+    }
+  },
+  "coarse_family_id_counts": {
+    "0": {
+      "n_rows": 197,
+      "n_genes": 42
+    },
+    "1": {
+      "n_rows": 332,
+      "n_genes": 63
+    },
+    "2": {
+      "n_rows": 1282,
+      "n_genes": 463
+    },
+    "3": {
+      "n_rows": 232,
+      "n_genes": 51
+    },
+    "4": {
+      "n_rows": 1235,
+      "n_genes": 192
+    },
+    "5": {
+      "n_rows": 330,
+      "n_genes": 41
+    },
+    "6": {
+      "n_rows": 280,
+      "n_genes": 45
+    },
+    "7": {
+      "n_rows": 13,
+      "n_genes": 4
+    },
+    "8": {
+      "n_rows": 13,
+      "n_genes": 4
+    },
+    "9": {
+      "n_rows": 880,
+      "n_genes": 200
+    }
+  },
+  "exact_family_name_counts": {
+    "C2H2_long": {
+      "n_rows": 1282,
+      "n_genes": 463
+    },
+    "C2H2_medium": {
+      "n_rows": 332,
+      "n_genes": 63
+    },
+    "C2H2_short": {
+      "n_rows": 197,
+      "n_genes": 42
+    },
+    "ETS": {
+      "n_rows": 13,
+      "n_genes": 4
+    },
+    "Forkhead": {
+      "n_rows": 13,
+      "n_genes": 4
+    },
+    "Homeodomain": {
+      "n_rows": 1235,
+      "n_genes": 192
+    },
+    "Nuclear_Receptor": {
+      "n_rows": 280,
+      "n_genes": 45
+    },
+    "Other": {
+      "n_rows": 880,
+      "n_genes": 200
+    },
+    "bHLH": {
+      "n_rows": 232,
+      "n_genes": 51
+    },
+    "bZIP": {
+      "n_rows": 330,
+      "n_genes": 41
+    }
+  },
+  "test_family_name_counts": {
+    "p53": 101,
+    "Forkhead": 65,
+    "ETS": 56,
+    "POU": 46,
+    "bZIP": 14,
+    "Nuclear_Receptor": 5,
+    "bHLH": 4
+  },
+  "B0_variants_scored": {
+    "B0_global": {
+      "panelA_content_r": 0.4835804369504391,
+      "panelB_covR": 0.32261919898193925,
+      "zero_shot_fallback_families": []
+    },
+    "B0_coarse_familyid": {
+      "panelA_content_r": 0.6015568311815074,
+      "panelB_covR": 0.5391904848936516,
+      "zero_shot_fallback_families": []
+    },
+    "B0_exact_family": {
+      "panelA_content_r": 0.5836494228763441,
+      "panelB_covR": 0.5184943605668657,
+      "zero_shot_fallback_families": [
+        "POU",
+        "p53"
+      ]
+    }
+  }
+}

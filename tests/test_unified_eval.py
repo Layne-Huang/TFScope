@@ -78,6 +78,35 @@ def test_length_policy_never_reads_test():
     assert baseline_pred_len(999, policy) == policy[1]  # global fallback for unseen family
 
 
+def test_shifted_motif_recovered():
+    """Motif offset inside a longer prediction is recovered by oracle shift."""
+    core = _peaky(10, 7)
+    pred = np.concatenate([_peaky(5, 55), core], axis=1)   # true motif at cols 5:15
+    A = panel_A(pred, core)
+    assert A["content_r"] > 0.9, A
+
+
+def test_zero_overlap_degenerate():
+    """A 1-column prediction cannot meet min_overlap -> score 0, no crash/NaN."""
+    core = _peaky(10, 8)
+    one = _peaky(1, 3)
+    A = panel_A(one, core)
+    B = panel_B(one, core, pred_len=1)
+    assert np.isfinite(A["content_r"]) and abs(A["content_r"]) < 1e-9
+    assert np.isfinite(B["covR"]) and B["covR"] == 0.0
+
+
+def test_perfect_content_short_and_long_gate():
+    """Perfect content but wrong gate length: Panel A high, Panel B penalised."""
+    core = _peaky(12, 9)
+    A_short = panel_A(core.copy(), core)                    # content perfect
+    B_short = panel_B(core.copy(), core, pred_len=6)        # gate too short
+    B_long = panel_B(np.concatenate([core, _peaky(6, 1)], 1), core, pred_len=18)  # too long
+    assert A_short["content_r"] > 0.99
+    assert B_short["coverage"] <= 0.6 and B_short["len_bias"] == -6
+    assert B_long["len_bias"] == 6
+
+
 def test_trimmed_core_drops_flanks():
     core = _peaky(6, 5)
     padded = np.concatenate([np.full((4, 3), 0.25, np.float32), core,
