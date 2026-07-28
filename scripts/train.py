@@ -84,6 +84,12 @@ def parse_args():
     p.add_argument("--moe-granularity", default=None, choices=["protein", "residue"],
                    help="'protein'=pooled MOEBlock (1 routing decision/protein); "
                         "'residue'=per-DBD-token ResidueMoE (DeepSeekMoE-style, emergent)")
+    p.add_argument("--no-moe", dest="use_moe", action="store_false", default=True,
+                   help="Bypass MoE entirely (ICLR necessity audit B5: 'v24 without MoE'). "
+                        "No routing / no MoE aux losses; everything else unchanged.")
+    p.add_argument("--mean-pool", dest="mean_pool", action="store_true",
+                   help="Use masked mean pooling instead of gated-attention pooling "
+                        "(ICLR baseline B2: 'frozen ESM + mean pool + MLP').")
     p.add_argument("--contact-pred-head", action="store_true",
                    help="add frozen ESM→contact probe head; its P(contact) feeds the v18 contact bias")
     p.add_argument("--contact-probe-path", default=None,
@@ -921,6 +927,9 @@ def main():
     config.tf32 = args.tf32
 
     # MoE / family taxonomy overrides (rebin run): only applied when explicitly given.
+    config.use_moe = bool(getattr(args, "use_moe", True))  # --no-moe -> False (B5)
+    if getattr(args, "mean_pool", False):
+        config.pool_type = "mean"                          # B2 baseline pooling
     if args.num_families is not None:      config.num_families = args.num_families
     if args.num_experts is not None:       config.num_experts = args.num_experts
     if args.diversity_loss_weight is not None: config.diversity_loss_weight = args.diversity_loss_weight

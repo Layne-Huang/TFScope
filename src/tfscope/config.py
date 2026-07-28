@@ -14,6 +14,9 @@ class TFScopeConfig:
     lora_n_layers: int = 6      # number of ESM-2 tail layers to inject LoRA into
 
     # Attention pooling
+    pool_type: str = "gated_attention"  # "gated_attention" (default) or "mean".
+                                        # "mean" = masked mean pool (ICLR baseline B2,
+                                        # "frozen ESM + mean pool + MLP").
     pool_n_heads: int = 8
     pool_d_query: int = 64
 
@@ -22,6 +25,12 @@ class TFScopeConfig:
     proj_dropout: float = 0.1
 
     # MOE
+    use_moe: bool = True               # False -> bypass MoE entirely (identity).
+                                       # ICLR necessity audit B5 ("v24 without MoE").
+                                       # protein granularity: moe_out = combined;
+                                       # residue granularity: dbd_emb passes through
+                                       # unrouted. No MoE aux losses are emitted, so
+                                       # the balance/diversity/route terms are skipped.
     num_experts: int = 12
     expert_hidden_dim: int = 2048      # expansion factor 4x
     top_k: int = 2                     # top-k routing

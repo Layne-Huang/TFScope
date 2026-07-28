@@ -37,13 +37,17 @@ class TFScopeModel(nn.Module):
         self.dbd_pool    = GatedAttentionPooling(config)
         self.projection  = ProjectionHead(config)
 
-        # MOE — pooled (per-protein) or per-residue (DeepSeekMoE-style, token-level)
+        # MOE — pooled (per-protein) or per-residue (DeepSeekMoE-style, token-level).
+        # use_moe=False bypasses routing entirely (ICLR necessity audit B5).
+        self.use_moe = getattr(config, "use_moe", True)
         self.moe_granularity = getattr(config, "moe_granularity", "protein")
-        if self.moe_granularity == "residue":
-            self.residue_moe = ResidueMoE(config)
-            self.moe = None
-        else:
-            self.moe = MOEBlock(config)
+        self.residue_moe = None
+        self.moe = None
+        if self.use_moe:
+            if self.moe_granularity == "residue":
+                self.residue_moe = ResidueMoE(config)
+            else:
+                self.moe = MOEBlock(config)
 
         # Output heads
         self.gate_head = PositionGateHead(config)   # replaces MotifLengthHead
@@ -132,7 +136,7 @@ class TFScopeModel(nn.Module):
         # reps into BOTH pooling and the cross-attention PWM-head keys, so the
         # MoE is a genuine bottleneck rather than an additive residual bypass.
         residue_aux = None
-        if self.moe_granularity == "residue":
+        if self.use_moe and self.moe_granularity == "residue":
             dbd_emb, residue_aux = self.residue_moe(dbd_emb, family_id, dbd_mask)
             embeddings = dbd_emb                                 # head keys = refined reps
 
@@ -140,8 +144,8 @@ class TFScopeModel(nn.Module):
         dbd_feat    = self.dbd_pool(dbd_emb, dbd_mask)           # (B, embed_dim)
         combined    = self.projection(global_feat, dbd_feat)     # (B, hidden_dim)
 
-        if self.moe_granularity == "residue":
-            moe_out = combined                                   # MoE already applied per-residue
+        if not self.use_moe or self.moe_granularity == "residue":
+            moe_out = combined              # MoE bypassed, or already applied per-residue
         else:
             moe_out = self.moe(combined, family_id)               # (B, hidden_dim)
 
@@ -189,7 +193,9 @@ class TFScopeModel(nn.Module):
             self.register_head(moe_out) if self.use_register_head else None
         )
 
-        if self.moe_granularity == "residue":
+        if not self.use_moe:
+            aux = {}                                             # MoE bypassed (B5)
+        elif self.moe_granularity == "residue":
             aux = dict(residue_aux) if isinstance(residue_aux, dict) else {}
         else:
             aux = dict(self.moe.aux_dict) if isinstance(self.moe.aux_dict, dict) else {}

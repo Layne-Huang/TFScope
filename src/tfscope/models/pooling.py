@@ -68,8 +68,22 @@ class GatedAttentionPooling(nn.Module):
         self.gate_proj  = nn.Linear(d_model, self.d_head, bias=False)  # sigmoid gate
         self.out_proj   = nn.Linear(d_model, d_model, bias=False)
         self.scale = self.d_head ** -0.5
+        # "mean" -> masked mean pool (ICLR baseline B2). Keeps out_proj so the
+        # downstream projection dimensions are unchanged.
+        self.pool_type = getattr(config, "pool_type", "gated_attention")
+        if self.pool_type == "mean":
+            self.mean_proj = nn.Linear(d_model, d_model, bias=False)
 
     def forward(self, embeddings: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+        if self.pool_type == "mean":
+            x = self.mean_proj(embeddings)                     # (B, L, d_model)
+            if mask is not None:
+                m = mask.unsqueeze(-1).to(x.dtype)
+                pooled = (x * m).sum(dim=1) / m.sum(dim=1).clamp(min=1.0)
+            else:
+                pooled = x.mean(dim=1)
+            return self.out_proj(pooled)                        # (B, d_model)
+
         q = self.query_proj(self.query)                        # (n_heads, d_head)
         k = self.key_proj(embeddings)                          # (B, L, d_head)
         v = self.value_proj(embeddings)                        # (B, L, d_head)
