@@ -155,6 +155,26 @@ class SplitHygieneTest(unittest.TestCase):
         self.assertLessEqual(max(counts.values()) - min(counts.values()), 1)
         self.assertEqual(list(GeneBalancedSampler(genes, 8, 11)), indices)
 
+    def test_gene_balanced_sampler_shards_across_ranks(self) -> None:
+        genes = ["A", "A", "A", "B", "C"]
+        shards = [
+            list(
+                GeneBalancedSampler(
+                    genes,
+                    num_samples=8,
+                    seed=11,
+                    rank=rank,
+                    world_size=3,
+                )
+            )
+            for rank in range(3)
+        ]
+
+        self.assertEqual([len(shard) for shard in shards], [3, 3, 3])
+        sampled_genes = [genes[index] for shard in shards for index in shard]
+        counts = {gene: sampled_genes.count(gene) for gene in set(genes)}
+        self.assertLessEqual(max(counts.values()) - min(counts.values()), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

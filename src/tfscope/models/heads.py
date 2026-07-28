@@ -3,22 +3,63 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from tfscope.config import TFScopeConfig
+from tfscope.models.alignment import align_batch_torch
+
+
+class ContactPredHead(nn.Module):
+    """Frozen linear probe: ESM residue embedding → P(DNA-contact) per residue.
+
+    Warm-started from the saved LogisticRegression contact probe (ESM-2 layer-33,
+    OOF AUROC 0.946). At every forward pass it reads the model's own ESM
+    embeddings and emits a per-residue contact prior, so the v18 contact bias
+    works for ANY sequence (seen, held-out, or de novo design) with no external
+    structure — the sequence-only replacement for a co-crystal-derived prior.
+    Frozen by default (matches "use the probe as-is"); the learnable bias scale
+    downstream calibrates how much the model trusts it.
+    """
+
+    def __init__(self, config: TFScopeConfig):
+        super().__init__()
+        self.linear = nn.Linear(config.esm_embed_dim, 1)
+        path = getattr(config, "contact_probe_path", "")
+        if path and __import__("os").path.isfile(path):
+            import joblib
+            d = joblib.load(path)
+            clf = d["model"]
+            W = torch.tensor(clf.coef_, dtype=torch.float32)          # (1, D)
+            b = torch.tensor(clf.intercept_, dtype=torch.float32)     # (1,)
+            with torch.no_grad():
+                self.linear.weight.copy_(W)
+                self.linear.bias.copy_(b)
+            print(f"[ContactPredHead] warm-started from {path} (dim {W.shape[1]})")
+        else:
+            print(f"[ContactPredHead] probe path not found ({path}) — random init")
+        for p in self.parameters():                                  # frozen
+            p.requires_grad = False
+
+    def forward(self, esm_embeddings: torch.Tensor) -> torch.Tensor:
+        """(B, L, D) → (B, L) per-residue contact probability in [0, 1]."""
+        return torch.sigmoid(self.linear(esm_embeddings).squeeze(-1))
 
 
 class PositionGateHead(nn.Module):
-    """Predicts a soft gate (relevance score) for each of the max_length positions.
+    """Predict motif occupancy with a legacy or contiguous-span parameterization.
 
-    Replaces the old MotifLengthHead classification approach.  Rather than
-    committing to a discrete length bin, the model learns a continuous gate
-    probability per position that is supervised by the binary pwm_mask target
-    via BCE.  An ordinal regularization term (computed in the loss) encourages
-    contiguous, left-aligned motifs, encoding the biological prior without
-    hard-coding a length.
+    ``independent`` preserves checkpoint compatibility with the original
+    per-position MLP. ``span`` predicts differentiable start and length values
+    and renders them into one contiguous soft interval. The latter removes
+    fragmented masks by construction and lets length gradients flow directly.
     """
 
     def __init__(self, config: TFScopeConfig):
         super().__init__()
         self.max_length = config.max_motif_length
+        self.min_length = min(config.min_motif_length, self.max_length)
+        self.mode = getattr(config, "gate_mode", "independent")
+        self.temperature = getattr(config, "span_gate_temperature", 0.5)
+        if self.mode not in {"independent", "span"}:
+            raise ValueError(f"Unknown gate_mode={self.mode!r}")
+        output_dim = self.max_length if self.mode == "independent" else 2
         self.net = nn.Sequential(
             nn.Linear(config.proj_hidden_dim, 256),
             nn.LayerNorm(256),
@@ -27,12 +68,39 @@ class PositionGateHead(nn.Module):
             nn.Linear(256, 128),
             nn.GELU(),
             nn.Dropout(0.1),
-            nn.Linear(128, self.max_length),
+            nn.Linear(128, output_dim),
         )
+        self._last_span = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Returns (B, max_length) gate logits (pre-sigmoid)."""
-        return self.net(x)
+        raw = self.net(x)
+        if self.mode == "independent":
+            self._last_span = None
+            return raw
+
+        # A continuous interval constrained to fit in [0, max_length].
+        max_start = max(self.max_length - self.min_length, 0)
+        start = max_start * torch.sigmoid(raw[:, 0])
+        available = self.max_length - start
+        length = self.min_length + (available - self.min_length) * torch.sigmoid(
+            raw[:, 1]
+        )
+        end = start + length
+
+        positions = torch.arange(
+            self.max_length, device=x.device, dtype=x.dtype
+        ).unsqueeze(0)
+        temp = max(float(self.temperature), 1e-3)
+        left = torch.sigmoid((positions + 0.5 - start.unsqueeze(1)) / temp)
+        right = torch.sigmoid((end.unsqueeze(1) - positions - 0.5) / temp)
+        occupancy = (left * right).clamp(1e-6, 1.0 - 1e-6)
+        self._last_span = {
+            "start": start,
+            "length": length,
+            "end": end,
+        }
+        return torch.logit(occupancy)
 
 
 class PWMRegressionHead(nn.Module):
@@ -76,6 +144,12 @@ class PWMRegressionHead(nn.Module):
 
         self.use_retrieval  = getattr(config, "use_retrieval", False)
         self.residual_prior = getattr(config, "residual_prior", False)
+        self.positionwise_retrieval_gate = getattr(
+            config, "positionwise_retrieval_gate", False
+        )
+        self.align_retrieved_pwms = getattr(
+            config, "align_retrieved_pwms", False
+        )
 
         if self.use_retrieval and not self.residual_prior:
             # v9/v10: de-novo + confidence-gated log-prior
@@ -121,7 +195,8 @@ class PWMRegressionHead(nn.Module):
                 retrieved_pwms: torch.Tensor = None,
                 retrieved_masks: torch.Tensor = None,
                 retrieved_sims: torch.Tensor = None,
-                trust_scores: torch.Tensor = None) -> torch.Tensor:
+                trust_scores: torch.Tensor = None,
+                retrieval_reference_mask: torch.Tensor = None) -> torch.Tensor:
         """
         Args:
             x:                (B, hidden_dim)            MoE output
@@ -187,6 +262,25 @@ class PWMRegressionHead(nn.Module):
         if self.use_retrieval and retrieved_pwms is not None:
             Bk, K, _, L = retrieved_pwms.shape
             assert Bk == B and L == self.max_length
+            if self.align_retrieved_pwms:
+                reference_mask = retrieval_reference_mask
+                if reference_mask is None:
+                    reference_mask = torch.ones(
+                        B, L, device=delta_logits.device, dtype=delta_logits.dtype
+                    )
+                retrieved_pwms, retrieved_masks = align_batch_torch(
+                    retrieved_pwms,
+                    retrieved_masks,
+                    F.softmax(delta_logits.detach(), dim=1),
+                    reference_mask,
+                    max_shift=getattr(
+                        self.config, "retrieval_alignment_max_shift", 10
+                    ),
+                    min_overlap=getattr(
+                        self.config, "retrieval_alignment_min_overlap", 4
+                    ),
+                    return_masks=True,
+                )
 
             # Encode each neighbour column: (B, K, L, 4) → (B, K, L, d)
             nb = self.neighbour_proj(retrieved_pwms.permute(0, 1, 3, 2))
@@ -204,6 +298,7 @@ class PWMRegressionHead(nn.Module):
             scores = torch.where(has_any_pos.unsqueeze(-1).expand_as(scores),
                                   scores, torch.zeros_like(scores))
             attn = F.softmax(scores, dim=-1)                                     # (B, L, K)
+            base_attn = attn
 
             # v10: weight attention by learned trust scores (per-neighbour).
             # Untrustworthy neighbours get down-weighted at attention time.
@@ -220,17 +315,34 @@ class PWMRegressionHead(nn.Module):
 
             # β gate: v10 uses learned trust instead of cos-sim. If no neighbour is
             # trustworthy → β → 0 → fall back on de-novo sequence/delta pathway.
-            gate_input = (trust_scores.max(dim=-1).values
-                          if trust_scores is not None
-                          else retrieved_sims.clamp(min=0.0).max(dim=-1).values)  # (B,)
+            donor_confidence = (
+                trust_scores
+                if trust_scores is not None
+                else retrieved_sims.clamp(min=0.0)
+            )
+            if self.positionwise_retrieval_gate:
+                # Expected donor confidence under the sequence-conditioned
+                # attention at each motif position. This avoids applying one
+                # strong donor's prior to unsupported columns elsewhere.
+                gate_input = torch.einsum(
+                    "blk,bk->bl", base_attn, donor_confidence
+                )                                                               # (B, L)
+                gate_input = gate_input * has_any_pos.float()
+            else:
+                gate_input = donor_confidence.max(dim=-1).values                 # (B,)
             beta_gated = self.retrieval_beta * torch.sigmoid(
-                self.conf_scale * (gate_input - self.conf_thresh))                # (B,)
-            sample_has_any = (retrieved_masks.sum(dim=(1, 2)) > 0).float()        # (B,)
-            beta_gated = beta_gated * sample_has_any                              # (B,)
+                self.conf_scale * (gate_input - self.conf_thresh))
+            if self.positionwise_retrieval_gate:
+                beta_gated = beta_gated * has_any_pos.float()                    # (B, L)
+            else:
+                sample_has_any = (retrieved_masks.sum(dim=(1, 2)) > 0).float()
+                beta_gated = beta_gated * sample_has_any                         # (B,)
 
             # stash for diagnostics (Feature 6); guard against NaN
             combined_log = torch.nan_to_num(combined_log, nan=0.0, posinf=0.0, neginf=0.0)
             self._last_beta_gated = beta_gated.detach()
+            if self.positionwise_retrieval_gate:
+                return delta_logits + beta_gated.unsqueeze(1) * combined_log
             return delta_logits + beta_gated.view(-1, 1, 1) * combined_log
 
         return delta_logits

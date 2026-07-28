@@ -6,7 +6,8 @@ set -uo pipefail
 # Usage:
 #   bash scripts/run_v19_e1_local.sh
 #   DRY_RUN=1 bash scripts/run_v19_e1_local.sh
-#   GPU_IDS=0,1,2,3,4,5 OUT_ROOT=/data/checkpoints/v19_e1 \
+#   GPU_IDS=0,1,2,3,4,5 \
+#     OUT_ROOT=/data1/leihuang/project/TFScope/checkpoints/v19_e1 \
 #     bash scripts/run_v19_e1_local.sh
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -15,10 +16,17 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_ROOT="${OUT_ROOT:-$ROOT/checkpoints/v19_e1}"
+OUT_ROOT="${OUT_ROOT:-/data1/leihuang/project/TFScope/checkpoints/v19_e1}"
 GPU_IDS="${GPU_IDS:-0,1,2,3,4,5}"
+PYTHON_BIN="${PYTHON_BIN:-/data1/leihuang/miniconda3/envs/tfscope/bin/python}"
+TORCH_HOME="${TORCH_HOME:-/data1/leihuang/.cache/torch}"
 WANDB_MODE="${WANDB_MODE:-disabled}"
 DRY_RUN="${DRY_RUN:-0}"
+
+if [[ ! -x "$PYTHON_BIN" ]]; then
+    echo "PYTHON_BIN is not executable: $PYTHON_BIN" >&2
+    exit 2
+fi
 
 IFS=',' read -r -a GPUS <<< "$GPU_IDS"
 if (( ${#GPUS[@]} < 6 )); then
@@ -26,7 +34,28 @@ if (( ${#GPUS[@]} < 6 )); then
     exit 2
 fi
 
+if (( ${#GPUS[@]} > 6 )); then
+    GPUS=("${GPUS[@]:0:6}")
+fi
+
+declare -A SEEN_GPUS=()
+for gpu in "${GPUS[@]}"; do
+    if [[ ! "$gpu" =~ ^[0-9]+$ ]]; then
+        echo "Invalid GPU ID: $gpu" >&2
+        exit 2
+    fi
+    if [[ -n "${SEEN_GPUS[$gpu]:-}" ]]; then
+        echo "Duplicate GPU ID: $gpu" >&2
+        exit 2
+    fi
+    SEEN_GPUS[$gpu]=1
+done
+
 mkdir -p "$OUT_ROOT/logs"
+if [[ ! -w "$OUT_ROOT" ]]; then
+    echo "Output root is not writable: $OUT_ROOT" >&2
+    exit 2
+fi
 cd "$ROOT"
 
 MODES=(norag norag norag rag rag rag)
@@ -61,13 +90,14 @@ for task_id in "${!MODES[@]}"; do
 
     mkdir -p "$out"
     command=(
-        python scripts/train.py
+        "$PYTHON_BIN" scripts/train.py
         --data data/processed/tf_pwm_aug_dbd_canon_trim.parquet
         --split data/processed/splits/cluster40_clean/split.json
         --out "$out"
         --seed "$seed"
         --epochs 200
-        --batch-size 128
+        --batch-size 64
+        --grad-accum-steps 2
         --lr 6e-4
         --lora-lr 1e-5
         --lora-rank 16
@@ -84,6 +114,7 @@ for task_id in "${!MODES[@]}"; do
         --oracle-r-every 5
         --oracle-r-n-tfs 100
         --pwm-head-v18
+        --family-embedding-path none
         --no-wandb
         "${rag_args[@]}"
     )
@@ -98,6 +129,7 @@ for task_id in "${!MODES[@]}"; do
     echo "Starting $name on GPU $gpu; log: $log"
     CUDA_VISIBLE_DEVICES="$gpu" \
     WANDB_MODE="$WANDB_MODE" \
+    TORCH_HOME="$TORCH_HOME" \
     PYTHONUNBUFFERED=1 \
     "${command[@]}" >"$log" 2>&1 &
 

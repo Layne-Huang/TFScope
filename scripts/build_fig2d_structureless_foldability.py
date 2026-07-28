@@ -6,13 +6,13 @@ interface confidence (ipTM).
 Inputs: /data1/leihuang/project/TFScope/structureless_af3_folding/*/*_summary_confidences.json
         results/structureless_af3_inputs/af3_sequences.json   (consensus + family)
 Outputs: results/structureless_af3_inputs/structureless_foldability.{json,csv}
-         figures/figure_structureless_foldability/structureless_foldability.{png,pdf}
+         figures/figure2d_structureless_foldability/structureless_foldability.{png,pdf}
 """
 import os, json, glob
 import numpy as np, pandas as pd
 
 ROOT = "/data1/leihuang/project/TFScope/structureless_af3_folding"
-OUTD = "figures/figure_structureless_foldability"; os.makedirs(OUTD, exist_ok=True)
+OUTD = "figures/figure2d_structureless_foldability"; os.makedirs(OUTD, exist_ok=True)
 RES = "results/structureless_af3_inputs"
 meta = {r["gene"].upper(): r for r in json.load(open(f"{RES}/af3_sequences.json"))}
 

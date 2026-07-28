@@ -47,3 +47,43 @@ train
 # OS files
 .DS_Store
 Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Large / regenerable artifacts relocated to /data1 (see TFScope_store).
+# Big files must not live on the AFS home volume (quota-limited).
+# ---------------------------------------------------------------------------
+
+# Relocated symlinks -> /data1/leihuang/TFScope_store (machine-specific)
+/checkpoints
+/outputs
+/data/raw/cisbp_v3_10
+/data/raw/pdb_cif_cache
+
+# Raw downloads / structures (huge, regenerable)
+data/raw/**/*.cif
+data/raw/**/*.zip
+data/raw/**/*.txt
+data/**/*.a3m
+
+# Processed binary tensors / tables (regenerable from raw)
+data/processed/*.parquet
+data/processed/*.parquet.*
+data/processed/*.npz
+data/processed/*.pt
+data/processed/*.jsonl
+data/processed/*.jsonl.*
+data/processed/*.pkl
+data/processed/deeppbs_cluster/
+data/processed/tf_nn_index_*.json
+data/processed/tf_nn_index_*.manifest.json
+
+# Large model/experiment output trees
+case_study/
+orphan_tf_validation/data/processed_peaks/
+
+# Regenerable manuscript archives and local backups
+*.tar.gz
+manuscript/*.zip
+manuscript/**/*.pptx
+*.prewriter.bak
+data/raw/hocomoco_v14/

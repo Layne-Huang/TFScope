@@ -14,6 +14,7 @@ learned features alone.
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class TrustPredictor(nn.Module):
@@ -95,3 +96,81 @@ def compute_true_trust(retrieved_pwms: torch.Tensor,
     cnt = joint_mask.sum(dim=-1).clamp(min=1.0)
     r_per_sample = r_sum / cnt                                       # (B, K) in [-1, 1]
     return torch.clamp((r_per_sample + 1.0) * 0.5, 0.0, 1.0)         # → [0, 1]
+
+
+def compute_aligned_true_trust(
+    retrieved_pwms: torch.Tensor,
+    retrieved_masks: torch.Tensor,
+    target_pwm: torch.Tensor,
+    pwm_mask: torch.Tensor,
+    *,
+    max_shift: int = 10,
+    min_overlap: int = 4,
+) -> torch.Tensor:
+    """Best shift/RC donor-transfer correlation, normalized to ``[0, 1]``."""
+    target = target_pwm.unsqueeze(1)
+    target_centered = target - target.mean(dim=2, keepdim=True)
+    target_norm = target_centered.norm(dim=2)
+    best_selection = target_pwm.new_full(retrieved_masks.shape[:2], -2.0)
+    best_r = target_pwm.new_full(retrieved_masks.shape[:2], -1.0)
+    target_length = pwm_mask.sum(dim=-1, keepdim=True)
+    donor_length = retrieved_masks.sum(dim=-1)
+    normalizer = torch.maximum(target_length, donor_length).clamp(min=1.0)
+
+    for orientation in (0, 1):
+        donor = retrieved_pwms
+        donor_mask = retrieved_masks
+        if orientation == 1:
+            donor = donor[:, :, [3, 2, 1, 0], :].flip(-1)
+            donor_mask = donor_mask.flip(-1)
+        donor_centered = donor - donor.mean(dim=2, keepdim=True)
+        donor_norm = donor_centered.norm(dim=2)
+        for shift in range(-max_shift, max_shift + 1):
+            if shift >= 0:
+                donor_slice = slice(0, retrieved_pwms.shape[-1] - shift)
+                target_slice = slice(shift, retrieved_pwms.shape[-1])
+            else:
+                donor_slice = slice(-shift, retrieved_pwms.shape[-1])
+                target_slice = slice(0, retrieved_pwms.shape[-1] + shift)
+            joint = (
+                donor_mask[:, :, donor_slice]
+                * pwm_mask[:, None, target_slice]
+            )
+            per_column_r = (
+                donor_centered[:, :, :, donor_slice]
+                * target_centered[:, :, :, target_slice]
+            ).sum(dim=2) / (
+                donor_norm[:, :, donor_slice]
+                * target_norm[:, :, target_slice]
+                + 1e-8
+            )
+            overlap = joint.sum(dim=-1)
+            valid = overlap >= min_overlap
+            correlation = (
+                per_column_r * joint
+            ).sum(dim=-1) / overlap.clamp(min=1.0)
+            selection = correlation * overlap / normalizer
+            better = valid & (selection > best_selection)
+            best_selection = torch.where(better, selection, best_selection)
+            best_r = torch.where(better, correlation, best_r)
+
+    return ((best_r + 1.0) * 0.5).clamp(0.0, 1.0)
+
+
+def pairwise_trust_rank_loss(
+    trust_logits: torch.Tensor,
+    trust_target: torch.Tensor,
+    valid_neighbour: torch.Tensor,
+    margin: float = 0.1,
+) -> torch.Tensor:
+    """Rank donors whose aligned transfer quality differs meaningfully."""
+    target_difference = trust_target.unsqueeze(2) - trust_target.unsqueeze(1)
+    valid_pairs = (
+        valid_neighbour.bool().unsqueeze(2)
+        & valid_neighbour.bool().unsqueeze(1)
+        & (target_difference > margin)
+    )
+    if not valid_pairs.any():
+        return trust_logits.new_zeros(())
+    logit_difference = trust_logits.unsqueeze(2) - trust_logits.unsqueeze(1)
+    return F.softplus(-logit_difference[valid_pairs]).mean()

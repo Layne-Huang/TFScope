@@ -4,8 +4,8 @@ import torch.nn as nn
 from tfscope.config import TFScopeConfig
 from tfscope.models.backbone import Backbone, DummyBackbone
 from tfscope.models.pooling import GatedAttentionPooling, ProjectionHead
-from tfscope.models.moe import MOEBlock
-from tfscope.models.heads import PositionGateHead, PWMRegressionHead
+from tfscope.models.moe import MOEBlock, ResidueMoE
+from tfscope.models.heads import PositionGateHead, PWMRegressionHead, ContactPredHead
 from tfscope.models.pwm_head_v18 import PWMHeadV18
 from tfscope.models.retrieval import TrustPredictor
 from tfscope.models.register_head import RegisterHead
@@ -25,14 +25,25 @@ class TFScopeModel(nn.Module):
 
         # DBD position indicator — learned embedding added to DBD residues before pooling
         self.dbd_indicator = nn.Parameter(torch.zeros(1, 1, config.esm_embed_dim))
+        self.use_chain_id_embedding = getattr(config, "chain_id_embedding", False)
+        self.max_chains = getattr(config, "max_chains", 2)
+        if self.use_chain_id_embedding:
+            # per-token protomer index (0=primary, 1=partner1, 2=partner2, ...);
+            # sized for the N-chain (order-aware) input, +1 slack.
+            self.chain_id_embedding = nn.Embedding(self.max_chains + 1, config.esm_embed_dim)
 
         # Dual-stream gated attention pooling (NeurIPS 2024 best paper)
         self.global_pool = GatedAttentionPooling(config)
         self.dbd_pool    = GatedAttentionPooling(config)
         self.projection  = ProjectionHead(config)
 
-        # MOE
-        self.moe = MOEBlock(config)
+        # MOE — pooled (per-protein) or per-residue (DeepSeekMoE-style, token-level)
+        self.moe_granularity = getattr(config, "moe_granularity", "protein")
+        if self.moe_granularity == "residue":
+            self.residue_moe = ResidueMoE(config)
+            self.moe = None
+        else:
+            self.moe = MOEBlock(config)
 
         # Output heads
         self.gate_head = PositionGateHead(config)   # replaces MotifLengthHead
@@ -41,6 +52,11 @@ class TFScopeModel(nn.Module):
         self.use_register_head = getattr(config, "register_head", False)
         if self.use_register_head:
             self.register_head = RegisterHead(config)
+
+        # Frozen ESM→contact probe: emits a per-residue prior for the v18 contact bias
+        self.use_contact_pred_head = getattr(config, "contact_pred_head", False)
+        if self.use_contact_pred_head:
+            self.contact_pred_head = ContactPredHead(config)
 
         self.use_retrieval = getattr(config, "use_retrieval", False)
         if self.use_retrieval:
@@ -69,12 +85,20 @@ class TFScopeModel(nn.Module):
 
     def forward(self, sequence_tokens, dbd_mask, family_id,
                 retrieved_pwms=None, retrieved_masks=None, retrieved_sims=None,
-                recog_prior=None, family_vec=None, homology=None):
+                recog_prior=None, family_vec=None, homology=None,
+                contact_override=None):
         """
         Args:
             sequence_tokens: (B, L) tokenized protein sequence
             dbd_mask: (B, L) boolean, True for DBD positions
             family_id: (B,) integer family labels
+            contact_override: (B, L) optional TRUE per-residue contact prior
+                (e.g. 4.5 A contacts from a co-crystal). When given it OVERRIDES
+                the contact head's predicted prior for the v18 contact bias —
+                "use real contacts when they exist, else predict them".
+                `recog_prior` stays purely the contact-supervision target.
+
+        Contact-bias precedence:  contact_override > predicted (head) > none.
 
         Returns:
             gate_logits: (B, max_motif_length) pre-sigmoid position gate logits
@@ -83,14 +107,43 @@ class TFScopeModel(nn.Module):
         """
         embeddings = self.backbone(sequence_tokens)               # (B, L, embed_dim)
 
+        # Contact prior for the v18 bias, precedence: TRUE contacts (if supplied)
+        # > head-predicted contacts > none. Predicted prior is computed from raw
+        # ESM (before DBD-indicator / MoE refine it) to match the probe's
+        # training distribution.
+        bias_prior = None
+        if contact_override is not None:
+            bias_prior = contact_override                         # (B, L) real contacts
+        elif self.use_contact_pred_head:
+            bias_prior = self.contact_pred_head(embeddings)       # (B, L) in [0,1]
+
+        if self.use_chain_id_embedding:
+            # protomer index per token = number of <eos> separators at-or-before
+            # it: chain1=0, partner1=1, partner2=2, ... (N-chain, order-aware).
+            # Clamp to the embedding size so extra chains share the last slot.
+            separator = sequence_tokens.eq(2)
+            chain_ids = separator.long().cumsum(dim=1).clamp(max=self.max_chains)
+            embeddings = embeddings + self.chain_id_embedding(chain_ids)
+
         # Inject DBD indicator: signal to pooling which residues are in the DBD
         dbd_emb = embeddings + dbd_mask.unsqueeze(-1).float() * self.dbd_indicator
+
+        # Per-residue MoE: route each DBD token, then feed the refined residue
+        # reps into BOTH pooling and the cross-attention PWM-head keys, so the
+        # MoE is a genuine bottleneck rather than an additive residual bypass.
+        residue_aux = None
+        if self.moe_granularity == "residue":
+            dbd_emb, residue_aux = self.residue_moe(dbd_emb, family_id, dbd_mask)
+            embeddings = dbd_emb                                 # head keys = refined reps
 
         global_feat = self.global_pool(dbd_emb)                  # (B, embed_dim)
         dbd_feat    = self.dbd_pool(dbd_emb, dbd_mask)           # (B, embed_dim)
         combined    = self.projection(global_feat, dbd_feat)     # (B, hidden_dim)
 
-        moe_out = self.moe(combined, family_id)                   # (B, hidden_dim)
+        if self.moe_granularity == "residue":
+            moe_out = combined                                   # MoE already applied per-residue
+        else:
+            moe_out = self.moe(combined, family_id)               # (B, hidden_dim)
 
         gate_logits = self.gate_head(moe_out)                     # (B, max_length)
 
@@ -129,13 +182,21 @@ class TFScopeModel(nn.Module):
                 homology = retrieved_sims.clamp(min=0.0).max(dim=1, keepdim=True).values
             head_kwargs.update(sequence_tokens=sequence_tokens,
                                recog_prior=recog_prior, family_id=family_id,
-                               homology=homology, family_vec=family_vec)
+                               homology=homology, family_vec=family_vec,
+                               bias_prior=bias_prior)
         pwm_logits = self.pwm_head(moe_out, **head_kwargs)        # internal frame
         register_logits = (
             self.register_head(moe_out) if self.use_register_head else None
         )
 
-        aux = dict(self.moe.aux_dict) if isinstance(self.moe.aux_dict, dict) else {}
+        if self.moe_granularity == "residue":
+            aux = dict(residue_aux) if isinstance(residue_aux, dict) else {}
+        else:
+            aux = dict(self.moe.aux_dict) if isinstance(self.moe.aux_dict, dict) else {}
+        if self.gate_head._last_span is not None:
+            aux["span_start"] = self.gate_head._last_span["start"]
+            aux["span_length"] = self.gate_head._last_span["length"]
+            aux["span_end"] = self.gate_head._last_span["end"]
         if self.use_v18 and self.pwm_head._last_attn is not None:
             aux['attn']         = self.pwm_head._last_attn        # (B, Lq, Lk)
             aux['attn_key_mask'] = self.pwm_head._last_key_mask   # (B, Lk)

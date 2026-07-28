@@ -219,7 +219,14 @@ class PWMHeadV18(nn.Module):
                 nn.LayerNorm(d + dcond), nn.Linear(d + dcond, d), nn.GELU(), nn.Linear(d, 4))
 
         self.log_lambda = nn.Parameter(torch.tensor(math.log(config.v18_delta_scale_init)))
-        self.bias_scale = float(config.v18_contact_bias_scale)
+        # contact-bias scale: fixed float, or a learnable scalar (init = configured value)
+        self.bias_learnable = bool(getattr(config, "v18_contact_bias_learnable", False))
+        _init = float(config.v18_contact_bias_scale)
+        if self.bias_learnable:
+            self.bias_scale_param = nn.Parameter(torch.tensor(_init if _init > 0 else 1.0))
+            self.bias_scale = None
+        else:
+            self.bias_scale = _init
 
         # diagnostics
         self._last_attn = None
@@ -229,7 +236,7 @@ class PWMHeadV18(nn.Module):
                 recog_prior=None, family_id=None,
                 retrieved_pwms=None, retrieved_masks=None, retrieved_sims=None,
                 trust_scores=None, retrieval_reference_mask=None,
-                homology=None, family_vec=None):
+                homology=None, family_vec=None, bias_prior=None):
         B = x.shape[0]
 
         # 1) prior logits from the legacy head (de-novo + optional RAG log-prior)
@@ -248,9 +255,15 @@ class PWMHeadV18(nn.Module):
         xq = x.unsqueeze(1).expand(B, self.max_length, -1)
         q = self.q_build(torch.cat([xq, self.q_pos.expand(B, -1, -1)], dim=-1))
 
+        # contact bias: prefer the predicted prior from the contact head (bias_prior);
+        # fall back to the supervision recog_prior. recog_prior itself stays the
+        # (true-contact) target for the supervision loss — kept separate on purpose.
         contact_bias = None
-        if self.bias_scale > 0 and recog_prior is not None:
-            contact_bias = self.bias_scale * recog_prior
+        prior_for_bias = bias_prior if bias_prior is not None else recog_prior
+        bs = self.bias_scale_param if self.bias_learnable else self.bias_scale
+        use_bias = (self.bias_learnable or (self.bias_scale is not None and self.bias_scale > 0))
+        if use_bias and prior_for_bias is not None:
+            contact_bias = bs * prior_for_bias
 
         if sequence_tokens is None:
             sequence_tokens = torch.zeros(B, esm_embeddings.shape[1],

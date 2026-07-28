@@ -23,7 +23,7 @@ retrieval index.
 
 ## Implementation Status
 
-As of June 11, 2026, E0 is implemented:
+As of June 13, 2026, E0 through E3 are implemented:
 
 - `scripts/build_cluster40_split.py` creates deterministic connected groups
   across genes, UniProt accessions, 40%-identity clusters, exact sequences,
@@ -40,6 +40,15 @@ As of June 11, 2026, E0 is implemented:
   baselines for seeds 42, 43, and 44 on the clean benchmark.
 - `--gene-balanced-sampling` enables the deterministic E2 sampler while
   retaining the original number of training examples per epoch.
+- E2 seed-42 no-RAG and K=16 RAG models were trained with three-GPU DDP,
+  BF16, and TF32. RAG improved gene-macro aligned r from 0.4963 to 0.5092 and
+  reduced aligned DeepPBS-scale MAE from 0.8358 to 0.8201.
+- `scripts/audit_pwm_registration.py` implements E3 and emits pair-level
+  offset/RC alignments, gene classifications, and train-only consensus-relative
+  registration labels.
+- E3 found median aligned r 0.9706 versus fixed-frame r 0.2665 across 6,005
+  valid same-gene pairs. The train-only label artifact contains 1,746 labels
+  across 565 genes.
 
 Generated benchmark artifacts:
 
@@ -50,6 +59,8 @@ Generated benchmark artifacts:
 | Full hygiene audit | `data/processed/splits/cluster40_clean/full_hygiene_report.json` |
 | Train-only K=16 index | `data/processed/tf_nn_index_cluster40_clean.json` |
 | Index exclusion manifest | `data/processed/tf_nn_index_cluster40_clean.json.manifest.json` |
+| E3 audit summary | `results/v19_e3_registration/audit_summary.json` |
+| E3 train-only relative labels | `results/v19_e3_registration/relative_registration_anchors_train.tsv` |
 
 The resulting split contains 2,947 training rows, 686 validation rows, and 614
 test rows. The audit reports zero cross-split gene, UniProt, specific-source,
@@ -504,6 +515,25 @@ single-protein, single-PWM representation.
 
 Each experiment must use the same clean split, donor policy, evaluation code,
 and gene-level reporting.
+
+### Execution status, June 15, 2026
+
+- Corrected E2 and E5b checkpoints now include trained LoRA tensors.
+- E6 improves aligned donor reranking but not final PWM fusion.
+- E7 position-wise retrieval gating was rejected on validation
+  (`0.5683` best oracle-r versus E6 `0.5703`).
+- A de-novo-frame donor-alignment variant was also rejected
+  (`0.5656` best through epoch 6).
+- The current candidate is a validation-locked, family-specific composition of
+  the corrected E2 frame and E5b motif content. Held-out test gene-macro
+  panel-r improves from `0.4945` to `0.5454`; paired gene bootstrap 95% CI for
+  the delta is `[+0.0305, +0.0724]`.
+- This candidate is an ensemble and must be reported alongside its two-model
+  inference cost and the corrected single-model E2 baseline.
+- The user fixed the final experiment scope to seed 42. The general multi-seed
+  recommendation below remains scientifically preferable, but no additional
+  seeds should be launched without a new user decision; the manuscript must
+  state the single-seed limitation.
 
 ---
 

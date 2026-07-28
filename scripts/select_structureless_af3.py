@@ -17,7 +17,7 @@ from tfscope.data.dataset import AA_TO_TOKEN
 
 CKPT = "/data1/leihuang/project/TFScope/checkpoints/v19_combined_fm_deeppbs_contact/rag_seed42/ckpt_best.pt"
 PARQ = "data/processed/tf_pwm_aug_dbd.parquet"
-OUT = "results/fig2d_af3_inputs"
+OUT = "results/structureless_af3_inputs"
 os.makedirs(OUT, exist_ok=True)
 dev = "cuda:0" if torch.cuda.is_available() else "cpu"
 DIMERIC = {"bHLH", "bZIP", "Nuclear_Receptor"}

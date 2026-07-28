@@ -35,8 +35,8 @@ def logo(ax, pwm, title):
     logomaker.Logo(df, ax=ax, color_scheme="classic", show_spines=False, vpad=0.02)
     ax.set_xticks([]); ax.set_yticks([]); ax.set_ylim(0, 2); ax.set_title(title, fontsize=8, pad=3)
 
-fig = plt.figure(figsize=(11.5, 6.6))
-gs = fig.add_gridspec(3, 6, height_ratios=[0.8, 1.1, 1.1], hspace=0.55, wspace=0.35)
+fig = plt.figure(figsize=(11.5, 7.4))
+gs = fig.add_gridspec(3, 6, height_ratios=[0.8, 1.1, 1.1], hspace=0.95, wspace=0.35)
 
 # (a) predicted orphan motifs
 for i, t in enumerate(ORDER):
@@ -60,8 +60,9 @@ def bars(ax, get, title, sub, stars=None):
                             fontsize=13, color="#c00", fontweight="bold")
     ax.set_xticks(x); ax.set_xticklabels([f"{t}\n({FAM[t]})" for t in ORDER], fontsize=7.5)
     ax.set_ylabel("log2 enrichment", fontsize=9)
-    ax.set_title(title, fontsize=10, fontweight="bold", loc="left")
-    ax.text(0.0, 1.005, sub, transform=ax.transAxes, fontsize=8, color="#555")
+    ax.set_title(title, fontsize=10, fontweight="bold", loc="left", pad=22)
+    ax.text(0.0, 1.03, sub, transform=ax.transAxes, fontsize=8, color="#555",
+            va="bottom")
     ax.legend(fontsize=7.5, frameon=False, loc="upper right", ncol=2)
 
 # (b) naive vs whole genome

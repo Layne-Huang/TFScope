@@ -27,7 +27,16 @@ class TFScopeConfig:
     top_k: int = 2                     # top-k routing
     capacity_factor: float = 1.25
     n_shared_experts: int = 1          # DeepSeek-style always-active shared experts
+    moe_residual: bool = True          # add the input skip (x+...) around the MoE block.
+                                       # False -> output = shared+routed+proto only (forces the
+                                       # router to carry signal; tests expert specialization).
+    route_supervision_weight: float = 0.0  # CE(gate_logits, family_id) routing supervision —
+                                           # with a mode-relabeled parquet (family_id == mode),
+                                           # pushes expert i to own recognition-mode i.
     n_prototypes: int = 32             # interpretable prototype dictionary (ProtoT, arXiv 2602.11852)
+    moe_granularity: str = "protein"   # "protein" -> pooled MOEBlock (1 routing decision/protein);
+                                       # "residue" -> per-DBD-token ResidueMoE (DeepSeekMoE-style,
+                                       # ~50-70 decisions/protein so specialization can emerge).
 
     # Family conditioning
     num_families: int = 10             # 8 core + "other" + "multi-domain"
@@ -42,6 +51,9 @@ class TFScopeConfig:
     # Output heads
     max_motif_length: int = 20         # all outputs are padded to this length
     min_motif_length: int = 4          # kept for data validation only
+    gate_mode: str = "independent"     # "independent" (legacy) or contiguous "span"
+    span_gate_temperature: float = 0.5
+    motif_overflow_policy: str = "warn"  # "error", "warn", or explicit "truncate"
     pwm_attn_heads: int = 4
     pwm_pos_embed_dim: int = 64
     pwm_hidden_dim: int = 128
@@ -68,6 +80,11 @@ class TFScopeConfig:
     contact_targets_path: str = "data/contact_maps/contact_targets.json"
     v18_aa_value: bool = True          # add amino-acid-identity embedding to values (mutation signal)
     v18_delta_scale_init: float = 0.1  # initial residual gate λ (exp(log_lambda))
+    # ── integrated contact-predictor head → contact bias (sequence-only) ──
+    contact_pred_head: bool = False        # add frozen ESM→contact linear probe; its per-residue
+                                           # P(contact) feeds the v18 contact bias (works on unseen TFs)
+    contact_probe_path: str = ""           # joblib LogisticRegression to warm-start the head
+    v18_contact_bias_learnable: bool = False  # learn the bias scale (init = v18_contact_bias_scale)
     v18_row_div_weight: float = 0.05   # row-diversity loss (penalise rank-1 collapse)
     v18_hub_weight: float = 0.05       # hub penalty (penalise residues over-attended across columns)
     v18_hub_frac: float = 0.34         # u_max = hub_frac * (#valid motif columns)
@@ -111,6 +128,26 @@ class TFScopeConfig:
     # Loss
     gate_loss_weight: float = 1.0      # weight on position gate BCE loss
     gate_ordinal_weight: float = 0.05  # penalty for non-monotone gates
+    # Couples the gate to the EVAL protocol. At eval (train.py) the gate picks
+    # which columns are scored (`active = gate > 0.5` -> pred_core -> align_pwm),
+    # and align_pwm reports per-column r over the overlap only -- so a SHORTER
+    # gate is scored on fewer, easier columns and gets a higher r. BCE against
+    # the GT mask alone does not counter that. This penalises |soft_len - gt_len|
+    # directly. Suggested range 0.05-0.1; 0.0 keeps the old behaviour.
+    gate_length_weight: float = 0.0
+    pwm_cov_r_weight: float = 0.0       # differentiable full-core r x soft-coverage objective
+    pwm_core_ic_thresh: float = 0.25    # bits; shared train/eval informative-core threshold
+    # Two-chain (heterodimer) input: when True and a row has a partner_sequence,
+    # feed ESM `chain1 + <eos> separator + partner_DBD` and mark BOTH chains'
+    # residues in dbd_mask, so the PWM head can attend to both protomers and
+    # place a two-half-site motif (NR direct repeats, bZIP/MAF, POU-SOX). Only
+    # heterodimer rows are affected; every other row is unchanged single-chain.
+    two_chain_input: bool = False
+    require_multichain_eligible: bool = False  # legacy checkpoints used every available partner
+    chain_id_embedding: bool = False
+    # Max protomers fed (self + up to max_chains-1 partners). 2 = dimer (legacy);
+    # 4 = tetramer, needed for p53 and HSF/NF-Y/IRF multimers (order-aware v23).
+    max_chains: int = 2
     balance_loss_weight: float = 0.05
     diversity_loss_weight: float = 0.01
     pwm_l1_weight: float = 1.0         # primary PWM loss: plain L1 matching DeepPBS formula

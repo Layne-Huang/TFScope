@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from tfscope.config import TFScopeConfig
 from tfscope.losses.balance import load_balance_loss, family_diversity_loss
+from tfscope.losses.registration import latent_registration_loss
 
 
 class TFScopeLoss(nn.Module):
@@ -103,6 +104,38 @@ class TFScopeLoss(nn.Module):
         w = ic * mask
         w = w / w.sum(dim=1, keepdim=True).clamp(min=1e-8)    # IC-normalised weights
         return ((1.0 - r) * w).sum(dim=1).mean()
+
+    @staticmethod
+    def _pwm_coverage_r(
+        pred_log_probs: torch.Tensor,
+        pred_gate: torch.Tensor,
+        target_pwm: torch.Tensor,
+        mask: torch.Tensor,
+        ic_thresh_bits: float,
+    ) -> torch.Tensor:
+        """Differentiable analogue of full-core coverage-aware column r.
+
+        Correlation is computed for every informative target column, multiplied
+        by the soft gate occupancy, and divided by the number of target-core
+        columns. A missed column therefore contributes zero, matching ``r_cov``
+        instead of disappearing from the denominator.
+        """
+        pred = pred_log_probs.exp()
+        pc = pred - pred.mean(dim=1, keepdim=True)
+        tc = target_pwm - target_pwm.mean(dim=1, keepdim=True)
+        r = (pc * tc).sum(dim=1) / (
+            pc.norm(dim=1) * tc.norm(dim=1)
+        ).clamp(min=1e-8)
+        target = target_pwm.clamp(1e-8, 1.0)
+        ic_bits = 2.0 + (target * torch.log2(target)).sum(dim=1)
+        core = mask * (ic_bits >= ic_thresh_bits).to(mask.dtype)
+        # If no column crosses the IC threshold, retain the valid target span.
+        has_core = core.sum(dim=1, keepdim=True) > 0
+        core = torch.where(has_core, core, mask)
+        score = (
+            r * pred_gate.sigmoid() * core
+        ).sum(dim=1) / core.sum(dim=1).clamp(min=1.0)
+        return (1.0 - score).mean()
 
     @staticmethod
     def _pwm_topbase_margin(pred_pwm: torch.Tensor, target_pwm: torch.Tensor,
@@ -231,7 +264,12 @@ class TFScopeLoss(nn.Module):
                 gate_logits=None, top_indices=None, family_id=None,
                 trust_logits=None, retrieved_pwms=None, retrieved_masks=None,
                 attn=None, attn_key_mask=None, recog_prior=None,
-                contact_target=None, contact_base_mask=None):
+                contact_target=None, contact_base_mask=None,
+                registration_anchor_mask=None,
+                registration_anchor_mode=None,
+                registration_orientation=None,
+                registration_offset=None,
+                register_logits=None):
         """
         Args:
             pred_gate:  (B, max_length) gate logits (pre-sigmoid)
@@ -244,57 +282,135 @@ class TFScopeLoss(nn.Module):
             total_loss: scalar
             metrics: dict of individual losses for logging
         """
-        # ── Gate loss ─────────────────────────────────────────────────────────
-        L_gate = F.binary_cross_entropy_with_logits(pred_gate, pwm_mask)
-
-        gate_probs = pred_gate.sigmoid()
-        ordinal_violation = F.relu(
-            gate_probs[:, 1:] - gate_probs[:, :-1]
-        ).mean()
-        L_gate = L_gate + self.config.gate_ordinal_weight * ordinal_violation
-
-        # ── PWM loss (three complementary terms) ──────────────────────────────
         pred_log_probs = F.log_softmax(pred_pwm, dim=1)    # (B, 4, L)
-
-        L_l1      = self._pwm_l1(pred_log_probs, target_pwm, pwm_mask)
-        L_ic      = self._pwm_ic(pred_log_probs, target_pwm, pwm_mask)
-        L_entropy = self._pwm_entropy(pred_log_probs, pwm_mask)
-
-        # Primary loss: plain L1 matching DeepPBS (no KL — KL has a degenerate
-        # flat-prediction minimum that prevents nucleotide specificity from being learned)
-        L_pwm = (self.config.pwm_l1_weight    * L_l1
-                 + self.config.pwm_ic_weight    * L_ic
-                 + self.config.pwm_entropy_weight * L_entropy)
-
-        # v14: IC-weighted per-column Pearson + top-base margin (target base composition)
-        if getattr(self.config, "pwm_ic_pcc_weight", 0.0) > 0:
-            L_ic_pcc = self._pwm_ic_pcc(pred_log_probs, target_pwm, pwm_mask)
-            L_pwm = L_pwm + self.config.pwm_ic_pcc_weight * L_ic_pcc
+        registration_metrics = {}
+        if getattr(self.config, "latent_registration", False):
+            total, registration_metrics, loss_target_pwm, loss_pwm_mask = (
+                latent_registration_loss(
+                    pred_gate,
+                    pred_pwm,
+                    target_pwm,
+                    pwm_mask,
+                    max_shift=self.config.registration_max_shift,
+                    min_overlap=self.config.registration_min_overlap,
+                    temperature=self.config.registration_temperature,
+                    coverage_penalty=self.config.registration_coverage_penalty,
+                    gate_weight=self.config.gate_loss_weight,
+                    l1_weight=self.config.pwm_l1_weight,
+                    ic_weight=self.config.pwm_ic_weight,
+                    ic_pcc_weight=self.config.pwm_ic_pcc_weight,
+                    topbase_weight=self.config.pwm_topbase_weight,
+                    topbase_margin=self.config.pwm_topbase_margin,
+                    topbase_ic_thresh_bits=self.config.pwm_topbase_ic_thresh,
+                    anchor_mask=registration_anchor_mask,
+                    anchor_mode=registration_anchor_mode,
+                    anchor_orientation=registration_orientation,
+                    anchor_offset=registration_offset,
+                    register_logits=register_logits,
+                    register_loss_weight=getattr(
+                        self.config, "register_loss_weight", 0.0
+                    ),
+                )
+            )
+            L_gate = registration_metrics["registration_gate"]
+            L_l1 = registration_metrics["registration_l1"]
+            L_ic = registration_metrics["registration_ic"]
+            L_ic_pcc = registration_metrics["registration_ic_pcc"]
+            L_top = registration_metrics["registration_topbase"]
+            ordinal_violation = pred_pwm.new_zeros(())
+            L_entropy = self._pwm_entropy(
+                pred_log_probs, loss_pwm_mask
+            )
+            L_pwm = (
+                registration_metrics["registration_pwm"]
+                + self.config.pwm_entropy_weight * L_entropy
+            )
+            total = total + self.config.pwm_entropy_weight * L_entropy
             metrics_ic_pcc = L_ic_pcc.item()
-        else:
-            metrics_ic_pcc = 0.0
-        if getattr(self.config, "pwm_topbase_weight", 0.0) > 0:
-            L_top = self._pwm_topbase_margin(
-                pred_pwm, target_pwm, pwm_mask,
-                margin=self.config.pwm_topbase_margin,
-                ic_thresh_nats=self.config.pwm_topbase_ic_thresh * math.log(2.0))
-            L_pwm = L_pwm + self.config.pwm_topbase_weight * L_top
             metrics_top = L_top.item()
         else:
-            metrics_top = 0.0
+            loss_target_pwm = target_pwm
+            loss_pwm_mask = pwm_mask
+            L_gate = F.binary_cross_entropy_with_logits(pred_gate, pwm_mask)
+            gate_probs = pred_gate.sigmoid()
+            ordinal_violation = F.relu(
+                gate_probs[:, 1:] - gate_probs[:, :-1]
+            ).mean()
+            L_gate = L_gate + self.config.gate_ordinal_weight * ordinal_violation
+
+            L_l1 = self._pwm_l1(pred_log_probs, target_pwm, pwm_mask)
+            L_ic = self._pwm_ic(pred_log_probs, target_pwm, pwm_mask)
+            L_entropy = self._pwm_entropy(pred_log_probs, pwm_mask)
+            L_pwm = (
+                self.config.pwm_l1_weight * L_l1
+                + self.config.pwm_ic_weight * L_ic
+                + self.config.pwm_entropy_weight * L_entropy
+            )
+            if getattr(self.config, "pwm_ic_pcc_weight", 0.0) > 0:
+                L_ic_pcc = self._pwm_ic_pcc(
+                    pred_log_probs, target_pwm, pwm_mask
+                )
+                L_pwm = L_pwm + self.config.pwm_ic_pcc_weight * L_ic_pcc
+                metrics_ic_pcc = L_ic_pcc.item()
+            else:
+                metrics_ic_pcc = 0.0
+            if getattr(self.config, "pwm_topbase_weight", 0.0) > 0:
+                L_top = self._pwm_topbase_margin(
+                    pred_pwm,
+                    target_pwm,
+                    pwm_mask,
+                    margin=self.config.pwm_topbase_margin,
+                    ic_thresh_nats=(
+                        self.config.pwm_topbase_ic_thresh * math.log(2.0)
+                    ),
+                )
+                L_pwm = L_pwm + self.config.pwm_topbase_weight * L_top
+                metrics_top = L_top.item()
+            else:
+                metrics_top = 0.0
+            total = self.config.gate_loss_weight * L_gate + L_pwm
+
+        # ── B2: length coupling (applies to BOTH branches) ───────────────────
+        # `pwm_mask` is always the GT mask, so gt_len is well defined in either
+        # branch. soft_len uses the sigmoid sum (differentiable) rather than a
+        # hard >0.5 count, so gradients reach the gate head.
+        soft_len = pred_gate.sigmoid().sum(dim=1)          # (B,)
+        gt_len = pwm_mask.sum(dim=1)                       # (B,)
+        L_length = F.smooth_l1_loss(soft_len, gt_len)
+        if getattr(self.config, "gate_length_weight", 0.0) > 0:
+            total = total + self.config.gate_length_weight * L_length
+
+        cov_r_weight = getattr(self.config, "pwm_cov_r_weight", 0.0)
+        if cov_r_weight > 0:
+            L_cov_r = self._pwm_coverage_r(
+                pred_log_probs,
+                pred_gate,
+                loss_target_pwm,
+                loss_pwm_mask,
+                getattr(self.config, "pwm_core_ic_thresh", 0.25),
+            )
+            total = total + cov_r_weight * L_cov_r
+            L_pwm = L_pwm + cov_r_weight * L_cov_r
+        else:
+            L_cov_r = pred_pwm.new_zeros(())
+
+        # B1: length observability -- reported regardless of whether the
+        # penalty is enabled, so the baseline length error is always visible.
+        with torch.no_grad():
+            pred_len_hard = (pred_gate.sigmoid() > 0.5).float().sum(dim=1)
+            length_mae = (pred_len_hard - gt_len).abs().mean()
+            length_bias = (pred_len_hard - gt_len).mean()   # signed: <0 = too short
 
         # DPAC-style in-batch contrastive (anti family-collapse)
         if getattr(self.config, "pwm_contrastive_weight", 0.0) > 0:
             L_contrast = self._pwm_contrastive(
-                pred_log_probs, target_pwm, pwm_mask,
+                pred_log_probs, loss_target_pwm, loss_pwm_mask,
                 tau=getattr(self.config, "pwm_contrastive_tau", 0.1))
             L_pwm = L_pwm + self.config.pwm_contrastive_weight * L_contrast
+            total = total + self.config.pwm_contrastive_weight * L_contrast
             metrics_contrast = L_contrast.item()
         else:
             metrics_contrast = 0.0
-
-        # ── Fixed-weight combination ──────────────────────────────────────────
-        total = self.config.gate_loss_weight * L_gate + L_pwm
 
         metrics = {
             'gate_loss':         L_gate.item(),
@@ -306,17 +422,43 @@ class TFScopeLoss(nn.Module):
             'pwm_topbase':       metrics_top,
             'pwm_contrastive':   metrics_contrast,
             'ordinal_violation': ordinal_violation.item(),
+            'length_loss':       L_length.item(),
+            'length_mae':        length_mae.item(),
+            'length_bias':       length_bias.item(),
+            'pwm_cov_r':         L_cov_r.item(),
         }
+        metrics.update(
+            {key: value.item() for key, value in registration_metrics.items()}
+        )
 
         # ── Trust predictor auxiliary loss (v10) ──────────────────────────────
         # Supervise the learned PWM-transfer-quality scorer using actual
         # per-position Pearson r between each retrieved PWM and the target.
         if (trust_logits is not None and retrieved_pwms is not None
             and retrieved_masks is not None):
-            from tfscope.models.retrieval import compute_true_trust
+            from tfscope.models.retrieval import (
+                compute_aligned_true_trust,
+                compute_true_trust,
+                pairwise_trust_rank_loss,
+            )
             with torch.no_grad():
-                trust_target = compute_true_trust(
-                    retrieved_pwms, retrieved_masks, target_pwm, pwm_mask)        # (B, K) ∈ [0,1]
+                if getattr(self.config, "aligned_trust_target", False):
+                    trust_target = compute_aligned_true_trust(
+                        retrieved_pwms,
+                        retrieved_masks,
+                        loss_target_pwm,
+                        loss_pwm_mask,
+                        max_shift=getattr(
+                            self.config, "registration_max_shift", 10
+                        ),
+                        min_overlap=getattr(
+                            self.config, "registration_min_overlap", 4
+                        ),
+                    )
+                else:
+                    trust_target = compute_true_trust(
+                        retrieved_pwms, retrieved_masks,
+                        loss_target_pwm, loss_pwm_mask)                          # (B, K) ∈ [0,1]
             # Only supervise on actually-present neighbours
             valid_neighbour = (retrieved_masks.sum(dim=-1) > 0).float()           # (B, K)
             L_trust_per = F.binary_cross_entropy_with_logits(
@@ -324,6 +466,18 @@ class TFScopeLoss(nn.Module):
             L_trust = (L_trust_per * valid_neighbour).sum() / valid_neighbour.sum().clamp(min=1.0)
             total = total + self.config.trust_loss_weight * L_trust
             metrics['trust_loss'] = L_trust.item()
+            rank_weight = getattr(
+                self.config, "trust_rank_loss_weight", 0.0
+            )
+            if rank_weight > 0:
+                L_trust_rank = pairwise_trust_rank_loss(
+                    trust_logits,
+                    trust_target,
+                    valid_neighbour,
+                    margin=getattr(self.config, "trust_rank_margin", 0.1),
+                )
+                total = total + rank_weight * L_trust_rank
+                metrics["trust_rank_loss"] = L_trust_rank.item()
             with torch.no_grad():
                 metrics['trust_mean']   = trust_logits.sigmoid().mean().item()
                 metrics['trust_target'] = (trust_target * valid_neighbour).sum().item() \
@@ -332,7 +486,7 @@ class TFScopeLoss(nn.Module):
         # ── v18 attention-repair + contact supervision ────────────────────────
         if attn is not None and attn_key_mask is not None:
             row_div, hub, contact = self._v18_attn_terms(
-                attn, attn_key_mask, pwm_mask,
+                attn, attn_key_mask, loss_pwm_mask,
                 recog_prior if getattr(self.config, "v18_contact_supervision", False) else None,
                 getattr(self.config, "v18_hub_frac", 0.34),
             )
@@ -370,5 +524,14 @@ class TFScopeLoss(nn.Module):
             total = total + L_balance + L_diversity
             metrics['balance_loss']   = L_balance.item()
             metrics['diversity_loss'] = L_diversity.item()
+
+            # ── routing supervision: push expert i to own recognition-mode i ──
+            # (use with a mode-relabeled parquet where family_id == mode_id and
+            #  num_experts == num_families == num_modes)
+            w_route = getattr(self.config, "route_supervision_weight", 0.0)
+            if w_route > 0 and gate_logits.shape[-1] == self.config.num_families:
+                L_route = F.cross_entropy(gate_logits, family_id.long())
+                total = total + w_route * L_route
+                metrics['route_loss'] = L_route.item()
 
         return total, metrics

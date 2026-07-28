@@ -36,12 +36,108 @@ def trimmed_core(T_i, M_i, thresh=0.25):
     return c / c.sum(0, keepdims=True)
 
 
-def aligned_cols(pred, core, max_shift=10):
+def aligned_cols(pred, core, max_shift=10, min_overlap=2):
     """Align pred to core; return (aligned core-frame pred, covered col indices)."""
-    aligned, shift, orient, score = align_pwm(pred, core, max_shift=max_shift, consider_revcomp=True)
+    aligned, shift, orient, score = align_pwm(
+        pred,
+        core,
+        max_shift=max_shift,
+        consider_revcomp=True,
+        min_overlap=min_overlap,
+    )
+    if score <= -1.5:
+        return aligned, np.array([], dtype=int), score
     o = revcomp_pwm_np(pred) if orient == "rc" else pred
     cols = [i + shift for i in range(o.shape[1]) if 0 <= i + shift < core.shape[1]]
     return aligned, np.array(sorted(cols)), score
+
+
+def panel_full(core, aligned, cols, pred_ncols=None):
+    """Coverage-aware panel: scores ALL ground-truth columns, not just the overlap.
+
+    Why this exists
+    ---------------
+    `panel()` scores only `cols` (where the aligned prediction overlaps the
+    core), so a prediction covering 3 of 14 core columns is scored on those 3
+    alone. A perfect 3-column fragment therefore gets r=1.000 / top1=1.00 /
+    mae=0.000 -- identical to a perfect full-length prediction -- and a RANDOM
+    3-column prediction scores r=0.57 vs 0.27 for a random full-length one,
+    because a short prediction also enjoys more alignment freedom per column.
+    At eval time the gate chooses this width (train.py: `active = gate > 0.5`),
+    so the old panel actively rewards gate collapse.
+
+    Here an uncovered core column is treated as what it actually is: no
+    prediction, i.e. a uniform 0.25 column. It contributes zero correlation and
+    its MAE against the target, so coverage is paid for rather than forgiven.
+
+    Adds (does not replace) keys; `panel()` is untouched for reproducibility.
+    """
+    Lg = core.shape[1]
+    if Lg == 0:
+        return None
+    d = {}
+    cols = np.asarray(cols, dtype=int)
+    cov = len(cols) / Lg
+    d["coverage"] = cov
+    d["len_gt"] = Lg
+    d["len_pred"] = int(pred_ncols) if pred_ncols is not None else len(cols)
+    d["len_mae"] = abs(d["len_pred"] - Lg)
+
+    # per-column r: covered columns get their true r, uncovered contribute 0
+    rs = np.zeros(Lg, dtype=float)
+    if len(cols):
+        t = core[:, cols]
+        p = np.clip(aligned[:, cols], 1e-8, 1.0)
+        p = p / p.sum(0, keepdims=True)
+        for k, j in enumerate(cols):
+            if t[:, k].std() == 0 or p[:, k].std() == 0:
+                rs[j] = 0.0
+            else:
+                rs[j] = pearsonr(t[:, k], p[:, k])[0]
+    d["r_full"] = float(np.nanmean(rs))
+
+    # MAE / top-1 with uncovered columns filled by a uniform prediction
+    full = np.full_like(core, 0.25, dtype=float)
+    if len(cols):
+        pp = np.clip(aligned[:, cols], 1e-8, 1.0)
+        full[:, cols] = pp / pp.sum(0, keepdims=True)
+    d["mae_full"] = float(np.abs(full - core).mean())
+    tc = core.argmax(0)
+    hit = (full.argmax(0) == tc).astype(float)
+    uncovered = np.ones(Lg, dtype=bool); uncovered[cols] = False
+    hit[uncovered] = 0.25          # uniform column -> chance-level, not a free win
+    d["top1_full"] = float(hit.mean())
+
+    # coverage-scaled version of the legacy overlap-only r, for comparison
+    base = panel(core, aligned, cols)
+    d["r_overlap"] = base["r"] if base else float("nan")
+    d["r_cov"] = (base["r"] * cov) if base else float("nan")
+    return d
+
+
+def uniform_floor(core):
+    """Score of a no-information (uniform) full-length prediction on this core.
+
+    Report alongside every number: with oracle alignment the floor is far above
+    zero (uniform-random reaches panel-r ~0.42 on this benchmark), so a raw
+    0.65 is not '0.65 of the way to perfect'.
+    """
+    u = np.full_like(core, 0.25, dtype=float)
+    cols = np.arange(core.shape[1])
+    return panel_full(core, u, cols, pred_ncols=core.shape[1])
+
+
+def aligned_cols_fixed(pred, core):
+    """Fixed-frame alignment: no shift, no reverse-complement.
+
+    Matches how the model is trained when latent_registration=False, and is the
+    honest lower bound next to the oracle-aligned numbers.
+    """
+    Lg = core.shape[1]
+    aligned = np.full((4, Lg), 0.25, dtype=float)
+    n = min(pred.shape[1], Lg)
+    aligned[:, :n] = pred[:, :n]
+    return aligned, np.arange(n), None
 
 
 def panel(core, aligned, cols):
@@ -85,10 +181,27 @@ def canon_fixed_r(core, pred):
     return float(np.mean(rs))
 
 
+def grouped_r_cov(rows, metadata, column):
+    """Equal-weight groups: mean within group, then expose each group value."""
+    if metadata is None or column not in metadata.columns:
+        return {}
+    lookup = metadata.drop_duplicates("filename").set_index("filename")[column].to_dict()
+    grouped = {}
+    for row in rows:
+        value = lookup.get(row["filename"], "unknown")
+        grouped.setdefault(str(value), []).append(row["r_cov"])
+    return {
+        key: float(np.nanmean(values))
+        for key, values in sorted(grouped.items())
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=["v17", "v18a", "deeppbs"])
     ap.add_argument("--ic-thresh", type=float, default=0.25)
+    ap.add_argument("--metadata", default=None,
+                    help="optional parquet with filename/gene_symbol/family_name")
     args = ap.parse_args()
 
     tfs = [m for m in args.models if m != "deeppbs"]
@@ -111,18 +224,33 @@ def main():
         return preds[name].get(fn)
 
     names = [n for n in tfs if n in preds] + (["DeepPBS"] if "deeppbs" in args.models else [])
-    agg = {n: {} for n in names}; rmed = {n: [] for n in names}; cfix = {n: [] for n in names}
+    metadata = None
+    if args.metadata:
+        import pandas as pd
+        metadata = pd.read_parquet(args.metadata)
+    agg = {n: {} for n in names}
+    agg_full = {n: {} for n in names}
+    per_sample = {n: [] for n in names}
+    rmed = {n: [] for n in names}; cfix = {n: [] for n in names}
     for n in names:
-        rows = []
+        rows, full_rows = [], []
         for fn in shared:
             pv = get_pred(n, fn)
             if pv is None or pv.shape[1] == 0: continue
             aligned, cols, _ = aligned_cols(pv, cores[fn])
             d = panel(cores[fn], aligned, cols)
             if d: rows.append(d); rmed[n].append(d["r"])
+            full = panel_full(cores[fn], aligned, cols, pred_ncols=pv.shape[1])
+            if full:
+                full_rows.append(full)
+                per_sample[n].append({"filename": fn, **full})
             cfix[n].append(canon_fixed_r(cores[fn], pv))
-        for k in rows[0]:
-            agg[n][k] = np.nanmean([r[k] for r in rows])
+        if rows:
+            for k in rows[0]:
+                agg[n][k] = np.nanmean([r[k] for r in rows])
+        if full_rows:
+            for k in full_rows[0]:
+                agg_full[n][k] = np.nanmean([r[k] for r in full_rows])
 
     keys = [("Mean Pearson r","r"),("Median Pearson r","med"),("IC-weighted r","icr"),
             ("MAE","mae"),("RMSE","rmse"),("Cross-entropy","ce"),("KL divergence","kl"),
@@ -142,9 +270,36 @@ def main():
         best = min(vals, key=vals.get) if k in lower_better else max(vals, key=vals.get)
         print(f"{label:<32}" + "".join(f"{vals[n]:>10.4f}" for n in names) + f"   {best}")
 
+    print("\n=== Coverage-aware full-core metrics ===")
+    for n in names:
+        f = agg_full[n]
+        print(
+            f"{n:<16} r_overlap={f.get('r_overlap', float('nan')):.4f}  "
+            f"coverage={f.get('coverage', float('nan')):.4f}  "
+            f"r_cov={f.get('r_cov', float('nan')):.4f}  "
+            f"r_full={f.get('r_full', float('nan')):.4f}  "
+            f"len_mae={f.get('len_mae', float('nan')):.3f}"
+        )
+
     os.makedirs("results/full_metrics", exist_ok=True)
-    json.dump({n: {k: float(v) for k, v in agg[n].items()} for n in names},
-              open("results/full_metrics/panel.json", "w"), indent=2)
+    payload = {}
+    for n in names:
+        gene_groups = grouped_r_cov(per_sample[n], metadata, "gene_symbol")
+        payload[n] = {
+            "legacy_overlap": {k: float(v) for k, v in agg[n].items()},
+            "coverage_aware": {k: float(v) for k, v in agg_full[n].items()},
+            "canonical_fixed_r": float(np.nanmean(cfix[n])),
+            "gene_balanced_r_cov": (
+                float(np.nanmean(list(gene_groups.values())))
+                if gene_groups else None
+            ),
+            "by_gene_r_cov": gene_groups,
+            "by_family_r_cov": grouped_r_cov(
+                per_sample[n], metadata, "family_name"
+            ),
+            "per_sample": per_sample[n],
+        }
+    json.dump(payload, open("results/full_metrics/panel.json", "w"), indent=2)
     print("\nSaved results/full_metrics/panel.json")
 
 

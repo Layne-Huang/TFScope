@@ -7,16 +7,16 @@ For each TF we folded protein + TFScope-consensus-DNA and protein + DeepPBS-cons
 the ipTM gap is uncorrelated with DNA-length difference and unchanged on same-length pairs.
 
 Inputs: /data1/leihuang/project/TFScope/AF3_consensus_folding/{tfscope,deeppbs}/*/*summary_confidences.json
-Outputs: results/fig2d_af3_inputs/fig2d_foldability.{json,csv}
-         figures/figure2d_af3_foldability/figure2d_af3_foldability.{png,pdf}
+Outputs: results/fig1f_af3_foldability/fig1f_foldability.{json,csv}
+         figures/figure1f_af3_foldability/figure1f_af3_foldability.{png,pdf}
 """
 import os, json
 import numpy as np, pandas as pd
 from scipy.stats import wilcoxon, spearmanr
 
 ROOT = "/data1/leihuang/project/TFScope/AF3_consensus_folding"
-OUTD = "figures/figure2d_af3_foldability"; os.makedirs(OUTD, exist_ok=True)
-RES = "results/fig2d_af3_inputs"; os.makedirs(RES, exist_ok=True)
+OUTD = "figures/figure1f_af3_foldability"; os.makedirs(OUTD, exist_ok=True)
+RES = "results/fig1f_af3_foldability"; os.makedirs(RES, exist_ok=True)
 
 m = pd.read_csv(f"{ROOT}/jobs_manifest.csv"); m["dnalen"] = m.strand1.str.len()
 rows = []
@@ -47,8 +47,8 @@ summary = dict(n_tf=n, tfscope_mean_iptm=round(float(P.iptm_TFScope.mean()), 3),
                delta_len_rho=round(float(rho), 3), delta_len_p=round(float(p_len), 3),
                samelen_n=len(S), samelen_delta=round(float(S.d_iptm.mean()), 3),
                samelen_wins=int((S.d_iptm > 0).sum()))
-json.dump(summary, open(f"{RES}/fig2d_foldability.json", "w"), indent=1)
-P.round(3).to_csv(f"{RES}/fig2d_foldability.csv", index=False)
+json.dump(summary, open(f"{RES}/fig1f_foldability.json", "w"), indent=1)
+P.round(3).to_csv(f"{RES}/fig1f_foldability.csv", index=False)
 print("=== Fig 2d foldability summary ==="); [print(f"  {k}: {v}") for k, v in summary.items()]
 
 # ── figure ──
@@ -100,6 +100,6 @@ ax[1].text(1.5, lim[0] - 0.0, f"length-controlled: Δ={summary['samelen_delta']:
 fig.suptitle("AlphaFold3 judges TFScope's sequence-only predicted motifs as more foldable than DeepPBS's",
              fontsize=11.5, fontweight="bold", y=1.02)
 fig.tight_layout()
-out = f"{OUTD}/figure2d_af3_foldability"
+out = f"{OUTD}/figure1f_af3_foldability"
 fig.savefig(out + ".png", dpi=300, bbox_inches="tight"); fig.savefig(out + ".pdf", bbox_inches="tight")
 print(f"  saved {out}.png/.pdf")

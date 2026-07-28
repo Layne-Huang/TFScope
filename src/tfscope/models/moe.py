@@ -224,6 +224,7 @@ class MOEBlock(nn.Module):
         self.config      = config
         self.num_experts = config.num_experts
         self.top_k       = config.top_k
+        self.moe_residual = bool(getattr(config, "moe_residual", True))
 
         # Routed experts (SwiGLU, DeepSeek-V2/V3)
         self.experts = nn.ModuleList([
@@ -286,7 +287,9 @@ class MOEBlock(nn.Module):
         if self.proto is not None:
             proto_out, proto_weights = self.proto(x)          # (B, hidden), (B, n_proto)
 
-        output = x + shared_out + routed_out + proto_out
+        output = shared_out + routed_out + proto_out
+        if self.moe_residual:
+            output = output + x
 
         self._aux = {
             'gate_logits':    gate_logits,
@@ -295,6 +298,128 @@ class MOEBlock(nn.Module):
             'proto_weights':  proto_weights,               # (B, n_proto) or None
         }
         return output
+
+    @property
+    def aux_dict(self):
+        return self._aux
+
+
+# ── Per-residue fine-grained MoE (DeepSeekMoE-style) ──────────────────────────
+
+class ResidueMoE(nn.Module):
+    """Token-level Mixture-of-Experts applied to DBD residue embeddings.
+
+    Motivation (vs the pooled MOEBlock): the pooled MoE makes ONE routing
+    decision per protein (~881 total on our data), which is far too few for
+    specialization to emerge — every past pooled-MoE run either collapsed to
+    uniform routing or, when forced to specialize by CE supervision, LOST
+    accuracy. Real MoE (Mixtral, DeepSeek-V2/V3, AIDO.Protein) routes PER TOKEN
+    over the sequence, i.e. thousands of decisions per example. This block moves
+    the MoE into a per-residue FFN over the DBD so routing has signal to learn
+    from, and lets specialization emerge instead of being supervised.
+
+    DeepSeekMoE recipe:
+      - `n_shared` always-on shared experts absorb universal base-readout
+        chemistry so routed experts stop being redundant (shared isolation).
+      - `num_experts` fine-grained routed SwiGLU experts, top-k per token.
+      - Router sees the token feature + the protein's family embedding as a soft
+        bias (no CE routing supervision — emergent).
+      - Standard FFN residual (out = x + shared + routed).
+
+    Load balance is computed at the TOKEN level (defensible, unlike the 41x
+    protein-imbalanced pooled case) via the existing load_balance_loss, fed the
+    flattened DBD-token gate logits through the model aux dict.
+    """
+
+    def __init__(self, config: TFScopeConfig):
+        super().__init__()
+        d = config.esm_embed_dim
+        eh = config.expert_hidden_dim
+        self.num_experts = config.num_experts
+        self.top_k = config.top_k
+        self.n_shared = config.n_shared_experts
+
+        self.experts = nn.ModuleList(
+            [SwiGLUExpert(d, eh) for _ in range(self.num_experts)]
+        )
+        self.shared_experts = nn.ModuleList(
+            [SwiGLUExpert(d, eh) for _ in range(self.n_shared)]
+        )
+        self.norm = nn.LayerNorm(d)
+
+        self.family_embed = build_family_embedding(config)
+        fam_dim = config.family_embed_dim
+        # Per-token router: token feature ++ family embedding -> expert logits.
+        self.router = nn.Sequential(
+            nn.Linear(d + fam_dim, 256), nn.GELU(),
+            nn.Linear(256, self.num_experts),
+        )
+        # Semantic bias — cosine(family_emb, expert prototype); generalises to
+        # unseen families (same idea as FamilyAwareGating).
+        self.expert_prototypes = nn.Parameter(
+            torch.randn(self.num_experts, fam_dim) * 0.02
+        )
+        self._aux = {}
+
+    def forward(self, x: torch.Tensor, family_id: torch.Tensor,
+                dbd_mask: torch.Tensor):
+        """
+        x:         (B, L, D) residue embeddings (DBD-indicator already added)
+        family_id: (B,) integer family labels
+        dbd_mask:  (B, L) bool — True at DBD residues
+
+        Returns (refined (B, L, D), aux dict). Only DBD residues are routed and
+        updated; non-DBD tokens pass through unchanged.
+        """
+        B, L, D = x.shape
+        xn = self.norm(x)
+        fam = self.family_embed(family_id)                       # (B, fam_dim)
+        fam_tok = fam.unsqueeze(1).expand(B, L, -1)              # (B, L, fam_dim)
+
+        # Router logits per token (feature + family bias)
+        logits = self.router(torch.cat([xn, fam_tok], dim=-1))  # (B, L, E)
+        sem_bias = (F.normalize(fam_tok, dim=-1)
+                    @ F.normalize(self.expert_prototypes, dim=-1).T)  # (B, L, E)
+        logits = logits + sem_bias
+
+        gate_w, top_idx = torch.topk(logits, self.top_k, dim=-1)     # (B, L, k)
+        gate_w = F.softmax(gate_w, dim=-1)
+
+        # Shared experts (always on)
+        shared_out = torch.zeros_like(x)
+        for e in self.shared_experts:
+            shared_out = shared_out + e(xn)
+
+        # Routed experts — flatten tokens, process per-expert on its assigned set.
+        xf = xn.reshape(B * L, D)
+        top_flat = top_idx.reshape(B * L, self.top_k)
+        w_flat = gate_w.reshape(B * L, self.top_k)
+        routed = torch.zeros_like(xf)
+        for k in range(self.top_k):
+            for i in range(self.num_experts):
+                m = (top_flat[:, k] == i)
+                if m.any():
+                    routed[m] += w_flat[m, k:k+1] * self.experts[i](xf[m])
+        routed = routed.reshape(B, L, D)
+
+        out = x + shared_out + routed                            # FFN residual
+        # Only DBD residues are refined; leave the rest as the raw input.
+        m = dbd_mask.unsqueeze(-1).to(out.dtype)
+        out = m * out + (1.0 - m) * x
+
+        # ── aux for token-level balance loss + interpretability ──────────────
+        dm = dbd_mask.reshape(B * L)
+        sel = dm.nonzero(as_tuple=True)[0]
+        gate_logits_dbd = logits.reshape(B * L, self.num_experts)[sel]  # (N, E)
+        top_idx_dbd = top_flat[sel]                                     # (N, k)
+        fam_flat = family_id.view(B, 1).expand(B, L).reshape(B * L)[sel]
+        self._aux = {
+            'gate_logits': gate_logits_dbd,
+            'top_indices': top_idx_dbd,
+            'family_id':   fam_flat,
+            'token_family_id': fam_flat,       # explicit alias for post-hoc analysis
+        }
+        return out, self._aux
 
     @property
     def aux_dict(self):

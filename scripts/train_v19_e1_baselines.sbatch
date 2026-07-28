@@ -6,13 +6,11 @@
 #SBATCH --mem=64G
 #SBATCH -t 0-16:00:00
 #SBATCH --array=0-5
-#SBATCH -o /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/v19_e1/logs/train_%A_%a.out
-#SBATCH -e /n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/v19_e1/logs/train_%A_%a.err
 
 set -eo pipefail
 
-ROOT=/n/home13/leihuang/project/TFScope
-BASE=/n/holylabs/lpinello_lab/Lab/leihuang/TFScope/checkpoints/v19_e1
+ROOT=${TFSCOPE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
+BASE=${TFSCOPE_E1_BASE:-$ROOT/checkpoints/v19_e1}
 SEEDS=(42 43 44)
 MODES=(norag rag)
 MODE=${MODES[$((SLURM_ARRAY_TASK_ID / 3))]}
@@ -22,8 +20,10 @@ OUT=$BASE/${MODE}_seed${SEED}
 mkdir -p "$BASE/logs" "$OUT"
 cd "$ROOT"
 
-export PATH="/n/home13/leihuang/.conda/envs/tfscope/bin:$PATH"
-export TORCH_HOME="/n/holylabs/lpinello_lab/Lab/leihuang/.cache/torch"
+if [[ -n "${TFSCOPE_ENV_BIN:-}" ]]; then
+    export PATH="$TFSCOPE_ENV_BIN:$PATH"
+fi
+export TORCH_HOME=${TORCH_HOME:-$HOME/.cache/torch}
 export PYTHONUNBUFFERED=1
 
 RAG_ARGS=()
@@ -42,7 +42,8 @@ python scripts/train.py \
     --out "$OUT" \
     --seed "$SEED" \
     --epochs 200 \
-    --batch-size 128 \
+    --batch-size 64 \
+    --grad-accum-steps 2 \
     --lr 6e-4 \
     --lora-lr 1e-5 \
     --lora-rank 16 \

@@ -23,8 +23,13 @@ python scripts/audit_split_hygiene.py \
   --fail-on-leakage
 ```
 
-Current next step: run and evaluate E1 clean no-RAG/RAG baselines before
-implementing registration or larger architecture changes.
+Current state: the seed-42 V19 publication candidate is the validation-locked
+E2-frame/E5b-content family composition documented in
+`results/v19_e9_publication/`. E7 position-wise gating and de-novo-frame donor
+alignment were rejected on validation. Do not retune the frozen family policy
+on test. The user explicitly chose one seed; do not launch seeds 43/44 unless
+that decision changes. The next work is manuscript/external-baseline reporting,
+with protocol differences stated explicitly.
 
 PyTorch is intentionally excluded from `environment.yml` and
 `requirements.txt`; install the build appropriate for the current machine.

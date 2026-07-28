@@ -178,6 +178,10 @@ All numbers below use the **same protocol** on the cluster40 test set, with the 
 
 ## 4. Results — cluster40 OOD test (n=636, one protocol)
 
+> **Historical benchmark warning:** the table in this section predates the V19
+> clean grouped split and corrected LoRA checkpoint saving. Do not use it as
+> evidence for a V19 gain.
+
 | model | gate-r ↑ | gate-med | panel-r ↑ | MAE ↓ | top1 ↑ | AUC ↑ | MCC ↑ | canon-r ↑ |
 |---|---|---|---|---|---|---|---|---|
 | **TFScope-RAG** (10-fam/12-exp) | **0.592** | **0.563** | **0.545** | **0.191** | **0.631** | 0.781 | 0.441 | 0.136 |
@@ -189,6 +193,42 @@ All numbers below use the **same protocol** on the cluster40 test set, with the 
 
 **Headline:** TFScope-**RAG is the best model** — wins all correlation metrics + MAE/top1.
 Retrieval adds **+0.057 gate-r** over the identical no-retrieval baseline (0.592 vs 0.535).
+
+### 4.1 V19 clean-split seed-42 publication candidate
+
+V19 uses:
+
+- `data/processed/splits/cluster40_clean/split.json`;
+- `data/processed/tf_nn_index_cluster40_clean.json`;
+- train-only validation/test retrieval;
+- corrected checkpoints that retain trained LoRA tensors.
+
+The validation-locked candidate composes the corrected E2 fixed-frame model
+with E5b motif content using family-specific weights. On the held-out test set
+over 195 evaluable genes:
+
+| metric | corrected E2 | composition | paired delta | paired-gene 95% CI |
+|---|---:|---:|---:|---:|
+| panel-r | 0.4938 | **0.5454** | **+0.0516** | **[+0.0312, +0.0740]** |
+| canon-r | 0.1573 | 0.1527 | -0.0046 | [-0.0228, +0.0125] |
+| aligned DeepPBS-scale MAE | 0.8392 | 0.8361 | -0.0031 | [-0.0208, +0.0135] |
+| fixed-frame MAE | 1.1444 | **1.1168** | **-0.0276** | **[-0.0446, -0.0111]** |
+| RMSE | 0.3186 | **0.3070** | **-0.0115** | **[-0.0180, -0.0059]** |
+| CE | 1.5619 | **1.4309** | **-0.1310** | **[-0.1738, -0.0916]** |
+| KL | 1.1015 | **0.9729** | **-0.1285** | **[-0.1703, -0.0894]** |
+
+The panel-r gain is primarily `C2H2_long` (`+0.2045`, 95% CI
+`[+0.1384,+0.2730]`, paired permutation `p<1e-4`), with a smaller significant
+`bHLH` gain (`p=0.0117`). Overall panel-r, fixed MAE, RMSE, CE, and KL pass
+paired sign-flip permutation tests. Canon-r, aligned MAE, AUC, top1, F1, and
+MCC do not show statistically supported improvements.
+
+This is a two-model composition, not a single-model replacement. Report its
+inference cost and the corrected E2 baseline. The user-fixed scope uses only
+seed 42, which must be disclosed as a limitation.
+
+DeepPBS's published MAE `0.553` and r `0.70` use its own structure-based split
+and are not directly comparable to this sequence-only clean split.
 
 ### Key findings (ablations)
 1. **Retrieval is the lever, not capacity.** RAG > baseline by +0.057. Every attempt to improve the

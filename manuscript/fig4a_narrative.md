@@ -1,9 +1,65 @@
-# Fig. 4a — sequence localizes/responds but does not resolve mutation-induced specificity switches
+# Fig. 4a — TFScope reproduces the directional specificity switch of MyoD1 L122R
 
-Builders: scripts/build_fig4a.py (figure), scripts/test_mutation_cases.py (sweep across literature
+Builder: **scripts/build_fig4a_switch.py** → figures/figure4a_switch/figure4a_switch.{png,pdf,svg};
+results/myod1_mut/switch_score_tfscope.json. Combined no-RAG model (same as Figs 1–3); DBD input
+(TFScope is a DBD-level model — full-length input is out-of-distribution and must not be used).
+
+## The directional switch score (use this, NOT a consensus-string comparison)
+
+Comparing argmax consensus strings is misleading: a single noisy column can flip the consensus to a
+spurious base even when the *predicted distribution* moves in the correct direction. We therefore score
+the two competing E-boxes under each predicted PWM and form a difference-in-differences. For a PWM `P`
+and an E-box `s`, let `S(s | P)` be the best PWM log-odds score (background 0.25, taken as the maximum
+over all offsets and both strands). Then
+
+    Δ_switch = [ S_mut(CACGTG) − S_mut(CACCTG) ] − [ S_WT(CACGTG) − S_WT(CACCTG) ]
+
+    Δ_switch > 0  → L122R pushes the predicted preference toward the MYC-like CACGTG (switch reproduced)
+    Δ_switch ≤ 0  → the expected switch is not reproduced.
+
+**Result (MyoD1 WT vs L122R, bHLH DBD):**
+
+| protein | S(CACGTG) | S(CACCTG) | S_G − S_C |
+|---|---|---|---|
+| WT    | −0.43 | 11.38 | −11.81  (strongly prefers the WT myogenic CACCTG) |
+| L122R | 5.84  | 8.47  | −2.64   (gap nearly closed) |
+
+**Δ_switch = (−2.64) − (−11.81) = +9.17 > 0 → the switch is reproduced.** L122R lifts CACGTG from
+disfavored (−0.43) to favored (+5.84) — a +6.3 log-odds gain — and collapses the CACCTG-vs-CACGTG
+preference gap from −11.8 to −2.6. The mutant still marginally favors CACCTG (−2.6 < 0), so this is a
+strong *directional* shift rather than a complete flip, but its sign and magnitude are unambiguous.
+
+> **Subsection text:** A practical test of a specificity model is whether it tracks mutations known to
+> redirect DNA recognition. The myogenic bHLH factor MyoD1 carries a basic-region substitution (L122R;
+> L112R in DBD numbering) reported to shift its preference from the myogenic E-box CACCTG toward the
+> MYC-like CACGTG. Rather than read off consensus letters — which are unstable to single-column noise —
+> we scored both E-boxes under the wild-type and mutant *predicted* PWMs and formed a directional
+> difference-in-differences (Δ_switch). From sequence alone, TFScope reproduced the switch: the mutation
+> raised the CACGTG log-odds from −0.43 to +5.84 and reduced the CACCTG preference gap from −11.8 to
+> −2.6, giving Δ_switch = +9.17 (>0; Fig. 4a). Thus the predicted distribution moves in the correct,
+> experimentally documented direction, even though the mutant motif's single most-probable base does not
+> by itself flip — a distinction that a consensus-only readout would have missed.
+
+> **Figure caption.** **(a)** Directional specificity-switch score for MyoD1 L122R (combined model,
+> sequence only, bHLH DBD). Left, wild-type and L122R predicted E-box logos. Right, PWM log-odds score
+> S(E-box | predicted PWM) for CACGTG (MYC-like) and CACCTG (WT myogenic) under the wild-type (grey) and
+> L122R (red) PWMs; the arrow marks the +6.3 gain on CACGTG. The difference-in-differences
+> Δ_switch = +9.17 (>0) indicates the mutation pushes the predicted preference toward CACGTG, reproducing
+> the documented switch.
+
+Caveat: PWM-level, sequence-only; the experimental switch is well documented for the bHLH basic-region
+substitution. Structure-based cross-validation of the same switch (AF3 refold + Rosetta interface ddG)
+is in Fig. 4b–c.
+
+---
+
+# (superseded) earlier consensus-based framing and the ER P-box / titration analyses
+
+Earlier builder: scripts/build_fig4a.py (figure), scripts/test_mutation_cases.py (sweep across literature
 switches → results/myod1_mut/mutation_sweep.json). Combined no-RAG model (same as Figs 1–3).
 Cases shown: MyoD1 L112R (bHLH basic region) and the ER↔GR P-box swap (nuclear-receptor, the textbook
-3-residue specificity determinant; Umesono & Evans 1989).
+3-residue specificity determinant; Umesono & Evans 1989). NOTE: the "predicts A, not G" reading below is
+the consensus-argmax view that the Δ_switch score above supersedes for MyoD1.
 
 ## Sweep result (which switches TFScope responds to)
 | mutation | family | TFScope behavior |

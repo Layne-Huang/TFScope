@@ -68,7 +68,28 @@ def parse_args():
     p.add_argument("--num-families", type=int, default=None,
                    help="family-embedding size; match the parquet's family_id range (e.g. 34 for rebin)")
     p.add_argument("--num-experts", type=int, default=None, help="MoE expert count")
+    p.add_argument("--diversity-loss-weight", type=float, default=None,
+                   help="weight on family_diversity_loss (entropy-maximizing; set 0 to disable "
+                        "and let experts specialize)")
+    p.add_argument("--balance-loss-weight", type=float, default=None,
+                   help="weight on load_balance_loss (set 0 to stop forcing uniform expert usage)")
+    p.add_argument("--n-shared-experts", type=int, default=None,
+                   help="DeepSeek-style always-active shared experts (set 0 to force routing)")
+    p.add_argument("--moe-residual", type=int, default=None,
+                   help="1=keep input skip x+MoE (default); 0=non-residual (output=shared+routed+proto)")
+    p.add_argument("--route-supervision-weight", type=float, default=None,
+                   help="weight on CE(gate_logits, family_id) routing supervision; use with a "
+                        "mode-relabeled parquet so family_id==mode and num_experts==num_modes")
     p.add_argument("--top-k", type=int, default=None, help="MoE top-k routing")
+    p.add_argument("--moe-granularity", default=None, choices=["protein", "residue"],
+                   help="'protein'=pooled MOEBlock (1 routing decision/protein); "
+                        "'residue'=per-DBD-token ResidueMoE (DeepSeekMoE-style, emergent)")
+    p.add_argument("--contact-pred-head", action="store_true",
+                   help="add frozen ESM→contact probe head; its P(contact) feeds the v18 contact bias")
+    p.add_argument("--contact-probe-path", default=None,
+                   help="joblib LogisticRegression contact probe to warm-start the head")
+    p.add_argument("--v18-contact-bias-learnable", type=int, default=None,
+                   help="1=learn the contact-bias scale (init=--v18-contact-bias-scale); 0=fixed")
     p.add_argument("--expert-hidden-dim", type=int, default=None,
                    help="per-expert hidden width (shrink when adding experts to hold total params)")
     p.add_argument("--family-embedding-path", default=None,
@@ -112,6 +133,11 @@ def parse_args():
         help="Sample genes uniformly, then choose one motif record per sampled gene.",
     )
     p.add_argument(
+        "--group-balanced-sampling",
+        action="store_true",
+        help="Sample group_id values uniformly (gene+sequence+motif source).",
+    )
+    p.add_argument(
         "--precision",
         choices=("fp32", "bf16"),
         default="fp32",
@@ -133,6 +159,9 @@ def parse_args():
                    help="Directory for checkpoints and logs")
     p.add_argument("--save-every", type=int, default=20,
                    help="Save checkpoint every N epochs")
+    p.add_argument("--save-epochs", default=None,
+                   help="Comma-separated exact epochs to save (e.g. '150,175,200,225,250'); "
+                        "when set, overrides --save-every for milestone saves")
     p.add_argument("--resume", default=None, help="Path to checkpoint to resume from")
     p.add_argument("--init-from", default=None,
                    help="Load ONLY model weights from this checkpoint (fresh optimizer/"
@@ -153,8 +182,25 @@ def parse_args():
                         "best-checkpoint selection and early stopping")
     p.add_argument("--oracle-r-every", type=int, default=5,
                    help="Compute oracle r every N epochs (default 5)")
-    p.add_argument("--oracle-r-n-tfs", type=int, default=100,
-                   help="Number of val TFs to use for oracle-r eval (default 100)")
+    p.add_argument("--oracle-r-n-tfs", type=int, default=0,
+                   help="Number of val TFs for oracle-r (0 = complete validation set)")
+    p.add_argument("--oracle-aggregation", choices=["row", "gene"], default="gene",
+                   help="Aggregate checkpoint-selection covR by row or equally by gene")
+    p.add_argument("--two-chain-input", action="store_true",
+                   help="Feed heterodimer partner DBD as a second chain "
+                        "(chain1 + <eos> + partner) with dbd_mask over both; "
+                        "requires a partner_sequence column in --data.")
+    p.add_argument("--allow-unannotated-multichain", action="store_true",
+                   help="Use any available partner sequence, bypassing multichain_eligible")
+    p.add_argument("--chain-id-embedding", action="store_true",
+                   help="Add per-protomer chain-identity embeddings (order-aware)")
+    p.add_argument("--max-chains", type=int, default=2,
+                   help="Max protomers fed (self + max_chains-1 partners). "
+                        "2=dimer, 4=tetramer (p53/HSF/NF-Y/IRF); needs partner_seqs in --data")
+    p.add_argument("--legacy-oracle-r", action="store_true",
+                   help="Select on the LEGACY length-blind gate-oracle-r (overlap "
+                        "only). Default is coverage-aware (r x coverage), matching "
+                        "eval_full_metrics.panel_full so a collapsed gate cannot win.")
     # Benchmark eval: periodic oracle-r on a held-out, contamination-controlled set
     # (e.g. cluster40 test). val-oracle-r is lenient + on easy paralogs, so it's a poor
     # selector; this selects ckpt_best_bench on the hard test-like metric instead.
@@ -187,6 +233,17 @@ def parse_args():
     p.add_argument("--registration-min-overlap", type=int, default=4)
     p.add_argument("--registration-temperature", type=float, default=0.1)
     p.add_argument("--registration-coverage-penalty", type=float, default=0.5)
+    p.add_argument("--gate-length-weight", type=float, default=0.0,
+                   help="penalty on |soft_len - gt_len|; couples the gate to the "
+                        "eval protocol, where a shorter gate is scored on fewer "
+                        "columns and gets an inflated r. Try 0.05-0.1.")
+    p.add_argument("--gate-mode", choices=["independent", "span"], default="independent")
+    p.add_argument("--max-motif-length", type=int, default=20)
+    p.add_argument("--motif-overflow-policy",
+                   choices=["error", "warn", "truncate"], default="warn")
+    p.add_argument("--pwm-cov-r-weight", type=float, default=0.0,
+                   help="weight on differentiable full-core r x soft-coverage loss")
+    p.add_argument("--pwm-core-ic-thresh", type=float, default=0.25)
     p.add_argument(
         "--registration-anchor-path",
         default="",
@@ -291,6 +348,8 @@ def init_wandb(args, config):
             "top_k":              config.top_k,
             "proj_hidden_dim":    config.proj_hidden_dim,
             "max_motif_length":   config.max_motif_length,
+            "gate_mode":          config.gate_mode,
+            "pwm_cov_r_weight":   config.pwm_cov_r_weight,
             # training
             "epochs":             args.epochs,
             "batch_size":         args.batch_size,
@@ -304,6 +363,8 @@ def init_wandb(args, config):
             "split":              args.split,
             "dummy":              args.dummy,
             "gene_balanced_sampling": args.gene_balanced_sampling,
+            "group_balanced_sampling": args.group_balanced_sampling,
+            "oracle_aggregation": args.oracle_aggregation,
             "latent_registration": args.latent_registration,
             "registration_anchor_path": args.registration_anchor_path,
         },
@@ -388,9 +449,21 @@ def make_loaders(args, config, rank=0, world_size=1):
     val_ds   = TFDataset(config, args.data, args.split, split="val",
                          max_seq_len=args.max_seq_len)
     train_sampler = None
+    if args.gene_balanced_sampling and args.group_balanced_sampling:
+        raise ValueError(
+            "--gene-balanced-sampling and --group-balanced-sampling are mutually exclusive"
+        )
     if args.gene_balanced_sampling:
         train_sampler = GeneBalancedSampler(
             train_ds.df["gene_symbol"].tolist(),
+            num_samples=len(train_ds),
+            seed=args.seed,
+            rank=rank,
+            world_size=world_size,
+        )
+    elif args.group_balanced_sampling:
+        train_sampler = GeneBalancedSampler(
+            train_ds.group_ids,
             num_samples=len(train_ds),
             seed=args.seed,
             rank=rank,
@@ -520,7 +593,11 @@ def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
                     "train/pwm_l1":           metrics.get('pwm_l1', 0),
                     "train/pwm_ic":           metrics.get('pwm_ic', 0),
                     "train/pwm_entropy":      metrics.get('pwm_entropy', 0),
+                    "train/pwm_cov_r":        metrics.get('pwm_cov_r', 0),
                     "train/ordinal_violation":metrics.get('ordinal_violation', 0),
+                    "train/length_mae":       metrics.get('length_mae', 0),
+                    "train/length_bias":      metrics.get('length_bias', 0),
+                    "train/length_loss":      metrics.get('length_loss', 0),
                     "train/registration_loss": metrics.get('registration_loss', 0),
                     "train/registration_entropy": metrics.get('registration_entropy', 0),
                     "train/registration_coverage": metrics.get('registration_coverage', 0),
@@ -601,13 +678,20 @@ def run_val_epoch(model, loss_fn, loader, device, precision="fp32"):
 
 
 @torch.no_grad()
-def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
-                      ic_thresh=0.25, max_shift=10, precision="fp32"):
+def run_oracle_r_eval(model, val_loader, device, n_tfs=0,
+                      ic_thresh=0.25, max_shift=10, precision="fp32",
+                      coverage_aware=True, aggregation="gene"):
     """Oracle-aligned Pearson r on up to n_tfs val TFs.
 
     For each TF: extract gate-predicted active columns, align vs the trimmed
     informative core of the target (offset + RC freedom), record per-col r.
-    Returns mean r (higher = better motif content).
+
+    coverage_aware (default True): scale the overlap r by coverage
+    (n_overlap / L_target_core), matching eval_full_metrics.panel_full's r_cov.
+    Without it the gate-based r has a length blind spot -- a short gate is
+    scored on fewer, easier columns and gets an inflated r, so a plain-r
+    selector rewards gate collapse. The coverage-scaled r removes that, so
+    ckpt_best is chosen on the same honest quantity we report at eval.
     """
     def _ic(pwm):
         p = np.clip(pwm, 1e-8, 1.0)
@@ -621,10 +705,17 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
         return pwm[:, inf[0]:inf[-1] + 1]
 
     model.eval()
-    preds, targets, masks, gates_list = [], [], [], []
+    dataset_size = len(val_loader.dataset)
+    limit = dataset_size if n_tfs is None or n_tfs <= 0 else min(n_tfs, dataset_size)
+    dataset_df = getattr(val_loader.dataset, "df", None)
+    if dataset_df is not None and "gene_symbol" in dataset_df:
+        all_genes = dataset_df["gene_symbol"].fillna("").astype(str).str.upper().tolist()
+    else:
+        all_genes = [f"ROW_{i}" for i in range(dataset_size)]
+    preds, targets, masks, gates_list, genes = [], [], [], [], []
     collected = 0
     for batch in val_loader:
-        if collected >= n_tfs:
+        if collected >= limit:
             break
         batch = {k: v.to(device, dtype=torch.float32 if v.is_floating_point() else torch.long)
                  for k, v in batch.items()}
@@ -642,15 +733,18 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
         gate_prob = torch.sigmoid(gate_logits).float().cpu().numpy()  # (B, L)
         target    = batch['target_pwm'].cpu().numpy()             # (B, 4, L)
         mask      = batch['pwm_mask'].cpu().numpy()               # (B, L)
-        take = min(pwm_prob.shape[0], n_tfs - collected)
+        take = min(pwm_prob.shape[0], limit - collected)
         preds.extend(pwm_prob[:take])
         targets.extend(target[:take])
         masks.extend(mask[:take])
         gates_list.extend(gate_prob[:take])
+        genes.extend(all_genes[collected:collected + take])
         collected += take
 
-    rs = []
-    for pred, tgt, msk, gate in zip(preds, targets, masks, gates_list):
+    scored = []
+    for pred, tgt, msk, gate, gene in zip(
+        preds, targets, masks, gates_list, genes
+    ):
         active = gate > 0.5
         if not active.any():
             active = gate > gate.max() * 0.5
@@ -663,11 +757,29 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=100,
         tgt_core = _trim_core(tgt_valid, ic_thresh)
         if tgt_core.shape[1] == 0:
             continue
-        _, _, _, r = align_pwm(pred_core, tgt_core, max_shift=max_shift,
-                                consider_revcomp=True)
-        rs.append(r)
+        _, shift, _, r = align_pwm(pred_core, tgt_core, max_shift=max_shift,
+                                    consider_revcomp=True)
+        if coverage_aware:
+            # coverage = fraction of the target core covered by the aligned
+            # prediction (neighbour col i -> reference col i+shift). Scaling r
+            # by this is exactly panel_full's r_cov: a short/collapsed gate
+            # that only overlaps a few easy columns is penalised for the GT
+            # columns it leaves uncovered, so it can no longer win selection.
+            wp, lr = pred_core.shape[1], tgt_core.shape[1]
+            n_overlap = sum(1 for i in range(wp) if 0 <= i + shift < lr)
+            cov = n_overlap / lr if lr > 0 else 0.0
+            scored.append((gene, r * cov))
+        else:
+            scored.append((gene, r))
 
-    return float(np.mean(rs)) if rs else 0.0
+    if not scored:
+        return 0.0
+    if aggregation == "row":
+        return float(np.mean([score for _, score in scored]))
+    by_gene = {}
+    for gene, score in scored:
+        by_gene.setdefault(gene, []).append(score)
+    return float(np.mean([np.mean(values) for values in by_gene.values()]))
 
 
 def main():
@@ -686,6 +798,12 @@ def main():
         raise ValueError("--registration-temperature must be positive")
     if args.registration_coverage_penalty < 0:
         raise ValueError("--registration-coverage-penalty must be non-negative")
+    if args.gate_length_weight < 0:
+        raise ValueError("--gate-length-weight must be non-negative")
+    if args.pwm_cov_r_weight < 0:
+        raise ValueError("--pwm-cov-r-weight must be non-negative")
+    if args.max_motif_length < 4:
+        raise ValueError("--max-motif-length must be at least 4")
     if args.register_head and not args.latent_registration:
         raise ValueError("--register-head requires --latent-registration")
     if args.register_loss_weight < 0:
@@ -759,6 +877,16 @@ def main():
         registration_min_overlap=args.registration_min_overlap,
         registration_temperature=args.registration_temperature,
         registration_coverage_penalty=args.registration_coverage_penalty,
+        gate_length_weight=args.gate_length_weight,
+        gate_mode=args.gate_mode,
+        max_motif_length=args.max_motif_length,
+        motif_overflow_policy=args.motif_overflow_policy,
+        pwm_cov_r_weight=args.pwm_cov_r_weight,
+        pwm_core_ic_thresh=args.pwm_core_ic_thresh,
+        two_chain_input=args.two_chain_input,
+        require_multichain_eligible=not args.allow_unannotated_multichain,
+        chain_id_embedding=args.chain_id_embedding,
+        max_chains=args.max_chains,
         registration_anchor_path=args.registration_anchor_path,
         register_head=args.register_head,
         register_loss_weight=args.register_loss_weight,
@@ -778,6 +906,12 @@ def main():
         v18_contact_code=args.v18_contact_code,
         recognition_prior_path=args.recognition_prior_path,
     )
+    if args.contact_pred_head:
+        config.contact_pred_head = True
+    if args.contact_probe_path is not None:
+        config.contact_probe_path = args.contact_probe_path
+    if args.v18_contact_bias_learnable is not None:
+        config.v18_contact_bias_learnable = bool(args.v18_contact_bias_learnable)
     config.grad_accum_steps = args.grad_accum_steps
     config.world_size = world_size
     config.effective_batch_size = (
@@ -789,7 +923,13 @@ def main():
     # MoE / family taxonomy overrides (rebin run): only applied when explicitly given.
     if args.num_families is not None:      config.num_families = args.num_families
     if args.num_experts is not None:       config.num_experts = args.num_experts
+    if args.diversity_loss_weight is not None: config.diversity_loss_weight = args.diversity_loss_weight
+    if args.balance_loss_weight is not None:   config.balance_loss_weight = args.balance_loss_weight
+    if args.n_shared_experts is not None:      config.n_shared_experts = args.n_shared_experts
+    if args.moe_residual is not None:          config.moe_residual = bool(args.moe_residual)
+    if args.route_supervision_weight is not None: config.route_supervision_weight = args.route_supervision_weight
     if args.top_k is not None:             config.top_k = args.top_k
+    if args.moe_granularity is not None:   config.moe_granularity = args.moe_granularity
     if args.expert_hidden_dim is not None: config.expert_hidden_dim = args.expert_hidden_dim
     if args.family_embedding_path is not None:
         # 'none' -> force LearnedFamilyEmbedding (precomputed semantic file is fixed at 10 families)
@@ -956,10 +1096,21 @@ def main():
         ("global_pool",           model.global_pool),
         ("dbd_pool",              model.dbd_pool),
         ("projection",            model.projection),
-        ("moe.family_embed",      model.moe.family_embed),
-        ("moe.gating",            model.moe.gating),
-        ("moe.experts (×12)",     model.moe.experts),
-        ("moe.film",              model.moe.film),
+    ]
+    if getattr(model, "moe_granularity", "protein") == "residue":
+        rows += [
+            ("residue_moe.experts",   model.residue_moe.experts),
+            ("residue_moe.shared",    model.residue_moe.shared_experts),
+            ("residue_moe.router",    model.residue_moe.router),
+        ]
+    else:
+        rows += [
+            ("moe.family_embed",      model.moe.family_embed),
+            ("moe.gating",            model.moe.gating),
+            ("moe.experts (×12)",     model.moe.experts),
+            ("moe.film",              model.moe.film),
+        ]
+    rows += [
         ("gate_head",             model.gate_head),
         ("pwm_head",              model.pwm_head),
     ]
@@ -1063,7 +1214,8 @@ def main():
             print(f"W&B init failed ({e}) — continuing without logging")
 
     use_oracle = args.eval_oracle_r and not args.dummy
-    oracle_hdr = f"  {'Oracle-r':>9}" if use_oracle else ""
+    oracle_label = "Oracle-r" if args.legacy_oracle_r else "CovR"
+    oracle_hdr = f"  {oracle_label:>9}" if use_oracle else ""
     if is_main:
         print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Val Loss':>10}  "
               f"{'L_gate':>8}  {'L_pwm':>8}{oracle_hdr}  {'Time':>6}")
@@ -1096,7 +1248,10 @@ def main():
             oracle_r = run_oracle_r_eval(
                 raw_model, val_loader, device,
                 n_tfs=args.oracle_r_n_tfs,
-                precision=args.precision)
+                precision=args.precision,
+                coverage_aware=not args.legacy_oracle_r,
+                aggregation=args.oracle_aggregation,
+                ic_thresh=args.pwm_core_ic_thresh)
 
         # Benchmark eval on the contamination-controlled held-out set (test-like
         # metric; the proper selector vs the lenient val-oracle-r on easy paralogs)
@@ -1105,7 +1260,10 @@ def main():
         if bench_loader is not None and is_main and (
                 (epoch + 1) % bench_every == 0 or epoch + 1 == args.epochs):
             bench_r = run_oracle_r_eval(raw_model, bench_loader, device,
-                                        n_tfs=100000, precision=args.precision)
+                                        n_tfs=100000, precision=args.precision,
+                                        coverage_aware=not args.legacy_oracle_r,
+                                        aggregation=args.oracle_aggregation,
+                                        ic_thresh=args.pwm_core_ic_thresh)
         if distributed:
             payload = torch.tensor(
                 [
@@ -1178,7 +1336,11 @@ def main():
         # Two independent triggers:
         #   (a) milestone save at exact multiples of --save-every  →  ckpt_epoch{N}.pt
         #   (b) new best metric  →  overwrites ckpt_best.pt only
-        save_milestone = (epoch + 1) % args.save_every == 0
+        if getattr(args, "save_epochs", None):
+            _save_set = {int(x) for x in str(args.save_epochs).split(",") if x.strip()}
+            save_milestone = (epoch + 1) in _save_set
+        else:
+            save_milestone = (epoch + 1) % args.save_every == 0
         save_best      = is_best and not args.no_save_best
         save_bench     = (bench_r is not None and bench_r > best_bench)
         if save_bench:

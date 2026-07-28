@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -63,6 +64,16 @@ class SyntheticTFDataset(Dataset):
             'family_id': family_id,
             'target_pwm': target_pwm,
             'pwm_mask': pwm_mask,
+            **(
+                {
+                    "registration_anchor_mask": torch.tensor(0.0),
+                    "registration_anchor_mode": torch.tensor(0),
+                    "registration_orientation": torch.tensor(0),
+                    "registration_offset": torch.tensor(0),
+                }
+                if getattr(self.config, "latent_registration", False)
+                else {}
+            ),
         }
 
 
@@ -102,6 +113,19 @@ def collate_variable_length(batch):
         out['retrieved_pwms']  = torch.stack([item['retrieved_pwms']  for item in batch])
         out['retrieved_masks'] = torch.stack([item['retrieved_masks'] for item in batch])
         out['retrieved_sims']  = torch.stack([item['retrieved_sims']  for item in batch])
+    if "registration_anchor_mask" in batch[0]:
+        out["registration_anchor_mask"] = torch.stack(
+            [item["registration_anchor_mask"] for item in batch]
+        )
+        out["registration_anchor_mode"] = torch.stack(
+            [item["registration_anchor_mode"] for item in batch]
+        )
+        out["registration_orientation"] = torch.stack(
+            [item["registration_orientation"] for item in batch]
+        )
+        out["registration_offset"] = torch.stack(
+            [item["registration_offset"] for item in batch]
+        )
     if has_recog:
         out['recog_prior'] = recog_prior
     if has_contact:
@@ -136,9 +160,13 @@ class GeneBalancedSampler(Sampler[int]):
         gene_symbols,
         num_samples: int | None = None,
         seed: int = 42,
+        rank: int = 0,
+        world_size: int = 1,
     ):
-        self.num_samples = num_samples or len(gene_symbols)
+        self.requested_samples = num_samples or len(gene_symbols)
         self.seed = seed
+        self.rank = rank
+        self.world_size = world_size
         self.epoch = 0
         self.indices_by_gene = {}
         for index, gene_symbol in enumerate(gene_symbols):
@@ -146,23 +174,31 @@ class GeneBalancedSampler(Sampler[int]):
             self.indices_by_gene.setdefault(gene, []).append(index)
         if not self.indices_by_gene:
             raise ValueError("GeneBalancedSampler requires at least one gene")
+        if not 0 <= rank < world_size:
+            raise ValueError(f"Invalid distributed rank {rank}/{world_size}")
         self.genes = sorted(self.indices_by_gene)
+        self.num_samples = int(np.ceil(self.requested_samples / world_size))
+        self.total_size = self.num_samples * world_size
+
+    def set_epoch(self, epoch: int):
+        self.epoch = epoch
 
     def __iter__(self):
         rng = np.random.RandomState(self.seed + self.epoch)
-        self.epoch += 1
 
         n_genes = len(self.genes)
-        repeats, remainder = divmod(self.num_samples, n_genes)
+        repeats, remainder = divmod(self.total_size, n_genes)
         gene_positions = np.repeat(np.arange(n_genes), repeats)
         if remainder:
             extra = rng.choice(n_genes, size=remainder, replace=False)
             gene_positions = np.concatenate([gene_positions, extra])
         rng.shuffle(gene_positions)
 
+        indices = []
         for gene_position in gene_positions:
             candidates = self.indices_by_gene[self.genes[int(gene_position)]]
-            yield int(candidates[rng.randint(len(candidates))])
+            indices.append(int(candidates[rng.randint(len(candidates))]))
+        yield from indices[self.rank:self.total_size:self.world_size]
 
     def __len__(self):
         return self.num_samples
@@ -226,9 +262,76 @@ class TFDataset(Dataset):
         self.df = df
         self.sequences = df["sequence"].tolist()
         self.filenames = df["filename"].tolist()
+        self.gene_symbols = df.get(
+            "gene_symbol", pd.Series(self.filenames)
+        ).fillna("").astype(str).tolist()
+        self.group_ids = df.get(
+            "group_id", pd.Series(self.gene_symbols)
+        ).fillna("").astype(str).tolist()
+        self.multichain_eligible = df.get(
+            "multichain_eligible", pd.Series([False] * len(df))
+        ).fillna(False).astype(bool).tolist()
+        # heterodimer partner DBD sequences (two-chain input); "" = single chain
+        if "partner_sequence" in df.columns:
+            self.partner_sequences = df["partner_sequence"].fillna("").astype(str).tolist()
+        else:
+            self.partner_sequences = [""] * len(df)
+        # N-chain: ordered list of ALL protomers on the duplex (v23). Falls back
+        # to the single partner_sequence as a 1-element list when absent.
+        if "partner_seqs" in df.columns:
+            self.partner_seqs = [
+                [str(s) for s in (x if x is not None else []) if str(s)]
+                for x in df["partner_seqs"].tolist()
+            ]
+        else:
+            self.partner_seqs = [[s] if s else [] for s in self.partner_sequences]
+        self.registration_anchors = {}
+        if getattr(config, "latent_registration", False):
+            anchor_path = getattr(config, "registration_anchor_path", "")
+            if anchor_path and split == "train":
+                if not os.path.exists(anchor_path):
+                    raise FileNotFoundError(
+                        f"registration_anchor_path={anchor_path!r} not found"
+                    )
+                anchors = pd.read_csv(anchor_path, sep="\t")
+                required = {
+                    "filename",
+                    "split",
+                    "orientation_to_reference",
+                    "offset_to_reference",
+                }
+                missing = required - set(anchors.columns)
+                if missing:
+                    raise ValueError(
+                        f"Registration anchor file is missing columns: {sorted(missing)}"
+                    )
+                if not (anchors["split"] == "train").all():
+                    raise ValueError(
+                        "Registration anchor file must contain training rows only"
+                    )
+                if anchors["filename"].duplicated().any():
+                    raise ValueError(
+                        "Registration anchor file contains duplicate filenames"
+                    )
+                valid_filenames = set(self.filenames)
+                anchors = anchors[anchors["filename"].isin(valid_filenames)]
+                self.registration_anchors = {
+                    str(row["filename"]): (
+                        1 if str(row["orientation_to_reference"]) == "rc" else 0,
+                        int(row["offset_to_reference"]),
+                        (
+                            1
+                            if str(row.get("anchor_mode", "state"))
+                            == "orientation"
+                            else 2
+                        ),
+                    )
+                    for _, row in anchors.iterrows()
+                }
 
         # Pre-load all PWMs from binary blobs
         self.pwms = []
+        overflow = []
         for _, row in df.iterrows():
             pwm_bytes = row["pwm"]
             if isinstance(pwm_bytes, bytes):
@@ -236,6 +339,21 @@ class TFDataset(Dataset):
             else:
                 pwm = np.zeros((4, config.min_motif_length), dtype=np.float32)
             self.pwms.append(pwm)
+            if pwm.shape[1] > self.max_motif_length:
+                overflow.append((str(row["filename"]), int(pwm.shape[1])))
+        policy = getattr(config, "motif_overflow_policy", "warn")
+        if policy not in {"error", "warn", "truncate"}:
+            raise ValueError(f"Unknown motif_overflow_policy={policy!r}")
+        if overflow:
+            message = (
+                f"{len(overflow)} motifs exceed max_motif_length="
+                f"{self.max_motif_length}; maximum observed length is "
+                f"{max(length for _, length in overflow)}"
+            )
+            if policy == "error":
+                raise ValueError(message)
+            if policy == "warn":
+                warnings.warn(message + "; targets will be truncated", RuntimeWarning)
 
         # Pre-extract fields for fast __getitem__
         self.family_ids = df["family_id"].tolist()
@@ -340,18 +458,55 @@ class TFDataset(Dataset):
         sequence = self.sequences[idx]
         seq_len = min(len(sequence), self.max_seq_len)
 
-        # Tokenize sequence
-        sequence_tokens = self._tokenize(sequence)
-
-        # DBD mask
         dbd_start = int(self.dbd_starts[idx])
         dbd_end = int(self.dbd_ends[idx])
-        dbd_mask = torch.zeros(len(sequence_tokens), dtype=torch.bool)
-        # Clamp to sequence length
-        dbd_start = min(dbd_start, len(sequence_tokens) - 1)
-        dbd_end = min(dbd_end, len(sequence_tokens))
-        if dbd_end > dbd_start:
-            dbd_mask[dbd_start:dbd_end] = True
+
+        partners = []
+        if getattr(self.config, "two_chain_input", False):
+            eligible = (
+                self.multichain_eligible[idx]
+                or not getattr(self.config, "require_multichain_eligible", True)
+            )
+            if eligible:
+                max_chains = getattr(self.config, "max_chains", 2)
+                partners = self.partner_seqs[idx][: max(max_chains - 1, 0)]
+        # first partner kept as `partner` for the recog/contact remap below
+        partner = partners[0] if partners else ""
+
+        chain1 = self._tokenize(sequence)
+        if partners:
+            # N-chain input: chain1 + <eos> + protomer1 + <eos> + protomer2 + ...
+            # Each protomer is a DNA-contacting DBD crop; mark ALL protomer
+            # residues in dbd_mask (separators stay False). Supports trimers/
+            # tetramers (p53, HSF, NF-Y, IRF) not just dimers.
+            sep = torch.tensor([2], dtype=torch.long)   # ESM <eos> as chain break
+            toks = [chain1]
+            blocks = []                                 # (start, end) per partner block
+            pos = len(chain1)
+            for p in partners:
+                ptok = self._tokenize(p)
+                toks.append(sep); pos += 1
+                toks.append(ptok)
+                blocks.append((pos, pos + len(ptok)))
+                pos += len(ptok)
+            sequence_tokens = torch.cat(toks)[:self.max_seq_len]
+            L = len(sequence_tokens)
+            dbd_mask = torch.zeros(L, dtype=torch.bool)
+            ds = min(dbd_start, len(chain1) - 1)
+            de = min(dbd_end, len(chain1))
+            if de > ds:
+                dbd_mask[ds:de] = True
+            for s, e in blocks:
+                s, e = min(s, L), min(e, L)
+                if e > s:
+                    dbd_mask[s:e] = True
+        else:
+            sequence_tokens = self._tokenize(sequence)
+            dbd_mask = torch.zeros(len(sequence_tokens), dtype=torch.bool)
+            dbd_start = min(dbd_start, len(sequence_tokens) - 1)
+            dbd_end = min(dbd_end, len(sequence_tokens))
+            if dbd_end > dbd_start:
+                dbd_mask[dbd_start:dbd_end] = True
 
         # Family label
         family_id = int(self.family_ids[idx])
@@ -374,6 +529,20 @@ class TFDataset(Dataset):
             "target_pwm": target_pwm,
             "pwm_mask": pwm_mask,
         }
+        if getattr(self.config, "latent_registration", False):
+            anchor = self.registration_anchors.get(self.filenames[idx])
+            out["registration_anchor_mask"] = torch.tensor(
+                float(anchor is not None), dtype=torch.float32
+            )
+            out["registration_anchor_mode"] = torch.tensor(
+                anchor[2] if anchor is not None else 0, dtype=torch.long
+            )
+            out["registration_orientation"] = torch.tensor(
+                anchor[0] if anchor is not None else 0, dtype=torch.long
+            )
+            out["registration_offset"] = torch.tensor(
+                anchor[1] if anchor is not None else 0, dtype=torch.long
+            )
 
         # Recognition-residue prior (v18): soft per-residue target over the sequence.
         if self.recog_prior is not None:
@@ -381,8 +550,17 @@ class TFDataset(Dataset):
             my_fn = self.filenames[idx]
             residues = self.recog_prior.get(my_fn) or \
                 self.recog_prior.get(my_fn.replace(".txt", ""))
-            if residues:
-                for p in residues:
+            primary_residues = (
+                residues.get("primary", []) if isinstance(residues, dict) else residues
+            )
+            if primary_residues:
+                for p in primary_residues:
+                    if 0 <= p < len(recog):
+                        recog[p] = 1.0
+            if isinstance(residues, dict) and partner:
+                partner_start = len(chain1) + 1
+                for p in residues.get("partner", []):
+                    p = partner_start + int(p)
                     if 0 <= p < len(recog):
                         recog[p] = 1.0
             out["recog_prior"] = recog
@@ -404,6 +582,18 @@ class TFDataset(Dataset):
                             ct[c, ridx] = w
                     if ct[c].sum() > 0:
                         cbm[c] = 1.0
+                if partner and "partner_cols" in entry:
+                    partner_start = len(chain1) + 1
+                    for col, rows in entry["partner_cols"].items():
+                        c = int(col)
+                        if not (0 <= c < self.max_motif_length):
+                            continue
+                        for ridx, w in rows:
+                            ridx = partner_start + int(ridx)
+                            if 0 <= ridx < ct.shape[1]:
+                                ct[c, ridx] = w
+                        if ct[c].sum() > 0:
+                            cbm[c] = 1.0
             out["contact_target"] = ct
             out["contact_base_mask"] = cbm
 

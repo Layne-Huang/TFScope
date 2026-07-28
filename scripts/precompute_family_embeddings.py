@@ -37,7 +37,7 @@ import pandas as pd
 import torch
 
 # ── paths ─────────────────────────────────────────────────────────────────────
-CACHE_DIR = "/n/holylabs/lpinello_lab/Lab/leihuang/.cache"
+CACHE_DIR = os.environ.get("TFSCOPE_CACHE_DIR", "/data1/leihuang/.cache")
 os.environ["HF_HOME"]            = CACHE_DIR
 os.environ["TORCH_HOME"]         = CACHE_DIR
 os.environ["TRANSFORMERS_CACHE"] = os.path.join(CACHE_DIR, "transformers")
@@ -243,6 +243,24 @@ FAMILY_DESCRIPTIONS = {
         "de-novo designed HTH binders that lie outside the natural eukaryotic TF families."
     ),
 }
+
+FAMILY_DESCRIPTIONS.update({
+ "POU": "POU-domain transcription factor (OCT, BRN, PIT1 classes); a bipartite POU-specific subdomain plus a POU-type homeodomain clamping an octamer ATGCAAAT-like DNA element.",
+ "HSF": "Heat-shock transcription factor; a winged helix-turn-helix domain that trimerizes and binds heat-shock elements, inverted nGAAn repeats.",
+ "EBF": "Early B-cell factor / COE family; a zinc-knuckle plus IPT/TIG DNA-binding region binding palindromic ATTCCC..GGGAAT sites.",
+ "CSL": "CSL/RBPJ (Suppressor of Hairless), the DNA-binding effector of Notch signaling; a Rel-like plus beta-trefoil fold binding GTGGGAA.",
+ "TBP": "TATA-box binding protein and TBP-associated factors; a saddle-shaped fold binding the TATA box in the DNA minor groove.",
+ "CxxC": "CXXC-domain / MLL-family protein; a zinc-coordinating CXXC domain binding unmethylated CpG-rich DNA.",
+ "CENPB/THAP-like": "Centromere protein B and pogo/THAP transposase-derived DNA-binding domains; helix-turn-helix and THAP zinc-finger folds binding specific boxes such as the CENP-B box.",
+ "SAND": "SAND-domain transcription factor (SP100, SP140, AIRE, DEAF1) binding GGAA-core DNA.",
+ "AP-2": "Activator protein 2 family (TFAP2A/B/C/E); a basic helix-span-helix domain binding GCC-N3-GGC palindromic elements.",
+ "NFI": "Nuclear factor I / CTF family; a dimeric domain binding the palindromic dyad TTGGC-N5-GCCAA.",
+ "SMAD": "SMAD/MH1-domain transcription factor, the DNA-binding effector of TGF-beta/BMP signaling, binding the SMAD-binding element CAGAC/GTCT.",
+ "WRKY": "Plant WRKY-domain transcription factor binding the W-box element TTGAC(C/T).",
+ "CAMTA": "Calmodulin-binding transcription activator; a CG-1 DNA-binding domain binding (A/C)CGCGT/(G/C) elements.",
+ "ARID": "AT-rich interaction domain (ARID) transcription factor binding AT-rich DNA through a helix-turn-helix-related fold in the minor groove.",
+ "Myb/SANT": "MYB/SANT-domain transcription factor; tandem helix-turn-helix MYB repeats binding the MYB element (C/T)AAC(G/T)G.",
+})
 
 N_REP = 8
 
