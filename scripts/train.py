@@ -1106,7 +1106,9 @@ def main():
         ("dbd_pool",              model.dbd_pool),
         ("projection",            model.projection),
     ]
-    if getattr(model, "moe_granularity", "protein") == "residue":
+    if not getattr(model, "use_moe", True):
+        pass  # MoE bypassed (B5): no MoE submodules to report
+    elif getattr(model, "moe_granularity", "protein") == "residue":
         rows += [
             ("residue_moe.experts",   model.residue_moe.experts),
             ("residue_moe.shared",    model.residue_moe.shared_experts),
