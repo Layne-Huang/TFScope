@@ -89,9 +89,26 @@ panels see the actual predicted motif. Re-running B8 with the fix.
 Panel B (0.530) had matched the documented covR (0.523) because the span is
 near-left-anchored, but the extraction is now made explicit for both panels.
 
-**Trustworthy so far (same harness, single seed):** Panel B end-to-end covR —
-B0 0.539, B1 0.384, v24 0.530. i.e. v24 ≈ B0 on end-to-end covR. This is NOT a
-final ranking (single seed, B0 family_id confound §2, Panel A pending, no CIs).
+**Same harness, single seed (Panel A bug now FIXED — A ≥ B holds for all):**
+
+| model | Panel A content_r | Panel B covR | coverage | gate_len_mae |
+|---|---|---|---|---|
+| B0 family-avg | 0.602 | 0.539 | 0.764 | 2.69 |
+| B1 nearest | 0.519 | 0.384 | 0.811 | 2.69 |
+| v24 (B8, seed42) | **0.629** | 0.530 | 0.795 | 3.52 |
+
+Decomposition (the reason the two panels exist):
+- **Content (Panel A): v24 (0.629) > B0 (0.602) > B1** — v24's learned motif
+  content DOES beat the family-average floor once the length/coverage confound is
+  removed. v24's Panel A (0.629) is consistent with the documented overlap-r 0.592.
+- **End-to-end (Panel B): B0 (0.539) ≳ v24 (0.530)** — v24's better content is
+  offset by a worse gate-length error (3.52 vs 2.69 bp), so end-to-end it only
+  ties the family prior.
+
+Still NOT a decision: single seed; B0 `family_id` confound (§2) inflates B0;
+param-matched B2/B3 and the v24 ablations B5–B7 are not done; no multi-seed or
+paired-bootstrap CIs yet; family-residual (§7 of the plan) not computed.
+`CURRENT_DECISION = PENDING_FULL_AUDIT` (B8 single-seed now done).
 
 ## 5. Actions gated on B8 / running jobs
 
