@@ -118,3 +118,31 @@ paired-bootstrap CIs yet; family-residual (§7 of the plan) not computed.
 - No architecture work (Set Transformer / interface mixer / mutation head / v25)
   until: fixed B0/B1 eval, B2/B3 done, B5–B7 done, real B8 same-harness, family-
   residual metrics, and paired-bootstrap CIs are all complete.
+
+## 6. Gate-swap, family_id shortcut, family-residual (from saved v24 preds)
+
+**2x2 gate-swap** (gene_covR; B0 = exact-family content):
+
+| content | length | gene_covR | coverage | len_mae | kind |
+|---|---|---|---|---|---|
+| v24 | v24 | 0.530 | 0.795 | 3.52 | deployable (v24 e2e) |
+| v24 | B0  | 0.513 | 0.807 | 2.69 | diagnostic |
+| B0  | v24 | 0.505 | 0.698 | 3.52 | diagnostic |
+| B0  | B0  | 0.518 | 0.774 | 2.69 | deployable (B0 e2e) |
+
+- Giving v24's content B0's length does NOT help (0.530 -> 0.513): v24's gate
+  length is already well-matched to its own content. The gate-swap does **not**
+  reveal a hidden end-to-end advantage; end-to-end v24 (0.530) ~ exact-B0 (0.518)
+  (the +0.012 is n.s. per §5 CI).
+
+**family_id shortcut:** corrupting family_id (rolled) leaves predictions almost
+unchanged — pred corr true-vs-rolled = **0.995**, L1 = 0.003, covR 0.530 -> 0.518.
+=> **v24 does NOT use family_id at inference; it is effectively metadata-free**
+(the family-conditioning component is inert). B0, which DOES use the family
+label, is therefore a *generous* comparator. A dedicated no-family-embedding
+ablation is redundant (rolled-id already shows no effect).
+
+**family-residual:** mean corr(v24 deviation-from-family-mean, true
+deviation-from-family-mean) = **0.39** (n=272) => v24 DOES add within-family
+specificity beyond the family prior. Whether this is ESM alone or v24's
+specialized parts is unresolved until B2/B3 (simple ESM) and B5-B7 report.

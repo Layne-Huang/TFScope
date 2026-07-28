@@ -1,0 +1,44 @@
+{
+  "gate_swap_2x2": {
+    "v24content_v24len": {
+      "kind": "deployable (=v24 end-to-end)",
+      "gene_covR": 0.5304211038638772,
+      "mean_coverage": 0.7947883111542905,
+      "mean_len_mae": 3.5189003436426116,
+      "n": 291
+    },
+    "v24content_B0len": {
+      "kind": "diagnostic",
+      "gene_covR": 0.5133915024906379,
+      "mean_coverage": 0.8068480583944502,
+      "mean_len_mae": 2.6872852233676974,
+      "n": 291
+    },
+    "B0content_v24len": {
+      "kind": "diagnostic",
+      "gene_covR": 0.5052506567073359,
+      "mean_coverage": 0.6979001191630058,
+      "mean_len_mae": 3.5189003436426116,
+      "n": 291
+    },
+    "B0content_B0len": {
+      "kind": "deployable (=B0 end-to-end)",
+      "gene_covR": 0.5184943605668657,
+      "mean_coverage": 0.7744978580030127,
+      "mean_len_mae": 2.6872852233676974,
+      "n": 291
+    }
+  },
+  "family_id_shortcut": {
+    "pred_corr_true_vs_rolled_familyid_mean": 0.994766171232427,
+    "pred_L1_true_vs_rolled_mean": 0.0030342519313256958,
+    "v24_gene_covR_true": 0.5304211038638772,
+    "v24_gene_covR_rolled_familyid": 0.5183068724767343,
+    "interpretation": "corr~1 and covR unchanged => family_id is NOT used at inference (v24 is effectively metadata-free); large change => metadata shortcut."
+  },
+  "family_residual": {
+    "mean_residual_corr_v24_dev_vs_true_dev": 0.3905807360199282,
+    "n": 272,
+    "interpretation": "positive => v24 captures within-family specificity beyond the family-mean prior; ~0 => v24 adds little over the prior."
+  }
+}
