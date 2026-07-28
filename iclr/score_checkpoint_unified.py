@@ -51,14 +51,27 @@ def predict_full_and_gate(ckpt, test_data, test_split, device):
                 retrieved_pwms=b.get("retrieved_pwms"), retrieved_masks=b.get("retrieved_masks"),
                 retrieved_sims=b.get("retrieved_sims"))
             P = F.softmax(pwm_logits, dim=1).cpu().numpy()               # (B,4,42) full content
-            if "span_length" in aux and aux["span_length"] is not None:
-                glen = np.asarray(aux["span_length"].detach().cpu()).reshape(-1)
-            else:
-                glen = (gate_logits.sigmoid() > 0.5).sum(dim=1).cpu().numpy()
+            gate = (gate_logits.sigmoid() > 0.5)                          # (B,42)
+            has_span = ("span_start" in aux and aux["span_start"] is not None
+                        and "span_length" in aux and aux["span_length"] is not None)
+            if has_span:
+                st = np.asarray(aux["span_start"].detach().cpu()).reshape(-1)
+                ln = np.asarray(aux["span_length"].detach().cpu()).reshape(-1)
+            L42 = P.shape[2]
             for j in range(P.shape[0]):
                 fn = ds.filenames[i0 + j]
-                preds[fn] = P[j]
-                gate_lens[fn] = int(round(float(glen[j])))
+                if has_span:
+                    s = int(round(float(st[j]))); l = int(round(float(ln[j])))
+                    s = max(0, min(s, L42 - 1)); l = max(1, min(l, L42 - s))
+                    core = P[j][:, s:s + l]
+                else:
+                    idx = np.where(gate[j].cpu().numpy())[0]
+                    core = P[j][:, idx] if len(idx) else P[j][:, :1]
+                    l = core.shape[1]
+                # EXTRACT the predicted motif span (not the full 42-col tensor) so
+                # align_pwm's +/-shift can reach it and Panel A measures real content.
+                preds[fn] = core
+                gate_lens[fn] = int(l)
             i0 += P.shape[0]
     return preds, gate_lens
 

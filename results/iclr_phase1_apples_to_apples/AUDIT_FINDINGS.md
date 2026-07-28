@@ -67,6 +67,32 @@ confirm), gene aggregation (equal-weight mean over gene groups — consistent).
   global-train median length); coverage, gate-length MAE, and length bias are
   reported **separately** rather than folded silently into one number.
 
+## 4b. v24 checkpoint FOUND — B8 unblocked (corrects earlier note)
+
+The canonical v24 checkpoint **is on this node**:
+`/data1/leihuang/project/TFScope/checkpoints/v24_contact/contact_v24_seed42/`
+with both `ckpt_best.pt` and `config.json` (loadable, epoch 59, best oracle-r
+0.4576, recipe matches the run script: v18 head + contact supervision +
+N-chain max_chains=4 + residue MoE 8 experts + LoRA16). Earlier I had only
+checked the AFS-symlinked `checkpoints/` tree (a different store). B8 can be run
+via `iclr.score_checkpoint_unified --device cpu` (no GPU preemption).
+
+## 4c. Panel-A evaluator bug for GATED models (caught via first B8 run)
+
+First B8 run gave Panel A content_r=0.453 — LOWER than its Panel B covR=0.530,
+which is impossible (covR = content_r x coverage ≤ content_r), and contradicts
+v24's documented overlap-r 0.592. Cause: the adapter fed v24's **full 42-column**
+PWM to the panels; `align_pwm`'s ±10 shift cannot reach a motif that sits late in
+the padded tensor, so Panel A scored a wrong window. **Fix:** extract the
+predicted gate span (`span_start:span_start+span_length`) before scoring, so both
+panels see the actual predicted motif. Re-running B8 with the fix.
+Panel B (0.530) had matched the documented covR (0.523) because the span is
+near-left-anchored, but the extraction is now made explicit for both panels.
+
+**Trustworthy so far (same harness, single seed):** Panel B end-to-end covR —
+B0 0.539, B1 0.384, v24 0.530. i.e. v24 ≈ B0 on end-to-end covR. This is NOT a
+final ranking (single seed, B0 family_id confound §2, Panel A pending, no CIs).
+
 ## 5. Actions gated on B8 / running jobs
 
 - B5–B7 not started yet (wave-2). Currently running: B2/B3/B4 (frozen ESM).
