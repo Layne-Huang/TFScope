@@ -1,0 +1,35 @@
+{
+  "v24_seed42": {
+    "canonical_fixed_gene_covR": 0.1267743815728995,
+    "n_genes": 51
+  },
+  "B0_exact_family": {
+    "canonical_fixed_gene_covR": 0.056863493076083176,
+    "n_genes": 51
+  },
+  "B0_coarse_familyid": {
+    "canonical_fixed_gene_covR": 0.06471549403323856,
+    "n_genes": 51
+  },
+  "B0_global": {
+    "canonical_fixed_gene_covR": -0.006649160064260601,
+    "n_genes": 51
+  },
+  "B1_nearest": {
+    "canonical_fixed_gene_covR": 0.08706674475576352,
+    "n_genes": 51
+  },
+  "_variants_v24_B0exact_B1": {
+    "canon_pred_only": {
+      "v24": 0.0451,
+      "B0_exact": -0.015,
+      "B1": 0.0704
+    },
+    "canon_symmetric": {
+      "v24": 0.1268,
+      "B0_exact": 0.0569,
+      "B1": 0.0871
+    },
+    "note": "canonical-fixed (no-peeking) collapses vs oracle (~4-10x lower) and is unstable across a minor target-canonicalization choice (3x for v24) => dominated by registration artifacts, not content. Ranking NOT robust: B1(nearest) > v24 under pred-only canonical."
+  }
+}

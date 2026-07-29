@@ -179,3 +179,33 @@ via score_wave1.sh; relaunched B5/B6/B7 via run_wave2.sh (commands captured once
 at launch to survive AFS hiccups). Dead CUDA device is index 9 (use pool 0-8).
 
 `CURRENT_DECISION = PENDING_FULL_AUDIT` (need B5-B7 + multi-seed v24 + CIs).
+
+## 8. Registration sensitivity: oracle-r naming + canonical-fixed cross-check
+
+"oracle-r" (validation selector, `run_oracle_r_eval`) = coverage-aware,
+gene-balanced covR with the PREDICTED gate, aligned by best offset + RC (peeks at
+target for registration only). It is NOT oracle-length; misleading name — should
+be "registration-oracle covR". Selection uses this (offset+RC) frame, but the
+deployable frame is canonical-fixed (no peeking) — an inconsistency.
+
+Canonical-fixed (no-peeking) cross-check on the SAME predictions (gene_covR):
+
+| model | oracle Panel B | canon (pred-only) | canon (symmetric) |
+|---|---|---|---|
+| v24 (seed42) | 0.530 | 0.045 | 0.127 |
+| B1 nearest | 0.384 | 0.070 | 0.087 |
+| B0 exact-family | 0.518 | -0.015 | 0.057 |
+| B0 coarse | 0.539 | — | 0.065 |
+| B0 global | 0.323 | — | -0.007 |
+
+Findings:
+- Canonical-fixed collapses ~4-10x vs oracle and is UNSTABLE (3x for v24 between
+  two reasonable target-canonicalization choices) => dominated by residual
+  offset/strand misregistration, not motif content. This is why the harness uses
+  oracle offset+RC (nuisance removal applied equally), not to inflate.
+- Ranking is NOT robust to registration: under pred-only canonical, B1 (nearest
+  training PWM) BEATS v24 (0.070 vs 0.045); v24's oracle lead does not survive the
+  honest deployable frame.
+- Implication: v24's apparent advantage over baselines is substantially a product
+  of oracle registration on a registration-hard benchmark. Strong evidence that
+  v24's complexity is not deployably justified. Reinforces PENDING_FULL_AUDIT.
