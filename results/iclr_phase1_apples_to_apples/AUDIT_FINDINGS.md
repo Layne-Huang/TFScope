@@ -146,3 +146,36 @@ ablation is redundant (rolled-id already shows no effect).
 deviation-from-family-mean) = **0.39** (n=272) => v24 DOES add within-family
 specificity beyond the family prior. Whether this is ESM alone or v24's
 specialized parts is unresolved until B2/B3 (simple ESM) and B5-B7 report.
+
+## 7. Wave-1 simple baselines scored (frozen unified evaluator)
+
+B2/B3/B4 finished 225 epochs and were scored through the frozen Panel A/B
+evaluator (ckpt_best.pt = validation-selected; no test-best re-selection):
+
+| model | Panel A content_r | Panel B covR | gate_len_mae |
+|---|---|---|---|
+| v24 (B8, seed42) | **0.629** | **0.530** | 3.52 |
+| B0 coarse (family_id) | 0.602 | 0.539 | 2.69 |
+| B0 exact-family (fair) | 0.584 | 0.518 | 2.69 |
+| B3 frozen ESM + attn-pool (n=3) | 0.558±0.039 | 0.455±0.035 | 3.99 |
+| B4 frozen ESM + span-gate (n=2*) | 0.538±0.028 | 0.457±0.038 | 3.85 |
+| B1 nearest PWM | 0.519 | 0.384 | 2.69 |
+| B2 frozen ESM + mean-pool (n=3) | 0.485±0.023 | 0.395±0.027 | 2.88 |
+| B0 global | 0.484 | 0.323 | 2.69 |
+
+(*B4 seed7 re-scoring on CPU; B4 n=3 shortly.)
+
+**Q3 — does simple ESM match v24? NO.** v24 (0.629/0.530) is clearly above every
+frozen-ESM readout (best B3 0.558/0.455) on both panels. The frozen-ESM heads
+even fall below the family-average prior => v24's LoRA-tuning + structure add
+value over a frozen readout. End-to-end, v24 still only ties the family prior
+(0.530 vs B0 0.518-0.539; earlier CI n.s.), and its content edge over the prior
+is p53/POU-driven.
+
+**Operational note:** the detached driver died ~02:00 on a transient AFS glitch
+("No module named iclr.variants" + "Permission denied"); wave-1 checkpoints were
+intact but the driver's eval + wave-2 launch failed. Recovered: scored B2/B3/B4
+via score_wave1.sh; relaunched B5/B6/B7 via run_wave2.sh (commands captured once
+at launch to survive AFS hiccups). Dead CUDA device is index 9 (use pool 0-8).
+
+`CURRENT_DECISION = PENDING_FULL_AUDIT` (need B5-B7 + multi-seed v24 + CIs).
