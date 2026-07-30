@@ -1,0 +1,52 @@
+{
+  "decision": "KEEP_V24  (do NOT proceed to new architecture / Candidate A or B on current evidence)",
+  "primary_endpoint": "gene_covR (oracle Panel B) + canonical-fixed cross-check",
+  "single_seed_v24_caveat": "v24 scored at seed42 only; no CI on v24 itself. All ablations are 3-seed. A formal \u00a77 promotion CI requires >=3 v24 seeds (not run). Decision made on point estimates + ablation SDs.",
+  "results_oracle_panelB_covR": {
+    "v24_seed42": 0.5304211038638772,
+    "B5_noMoE": 0.4379447888411567,
+    "B6_noContacts": 0.4767925898697283,
+    "B7_Nchain_minimal": 0.48485441705250915,
+    "B3_simpleESM_attn": 0.4545459134895253,
+    "B2_simpleESM_mean": 0.39532473264411117,
+    "B0_exact": 0.5184943605668657,
+    "B0_coarse": 0.5391904848936516,
+    "B1_nearest": 0.38353054322785796
+  },
+  "phase1_questions": {
+    "simple_ESM_matches_v24": {
+      "answer": "NO in oracle frame (v24 0.530 > best simple B3 0.455); BUT v24 not deployably robust",
+      "best_simple": [
+        "B3",
+        0.4545459134895253
+      ]
+    },
+    "MoE_reproducible_benefit": {
+      "answer": "NO (non-monotonic: B7 removes MoE+contacts+v18=0.485 > B5 removes only MoE=0.438). Co-dependent stack, not clean component justification"
+    },
+    "contacts_help_seqonly": {
+      "answer": "Ambiguous: B6(-contacts) 0.477 < v24 0.530, but single-seed v24 + co-dependence; and content edge over prior is p53/POU-driven & n.s."
+    },
+    "Nchain_helps_multimers": {
+      "answer": "Not cleanly testable: no 'v24 without N-chain' ablation (B5/B6/B7 all keep N-chain). Recorded as a design gap."
+    },
+    "any_variant_beats_family_prior_deployably": {
+      "answer": "NO. Every trained variant (incl. ablations) <= family prior (B0 0.518-0.539) on end-to-end covR; only single-seed v24 reaches it."
+    },
+    "advantage_robust_to_registration": {
+      "answer": "NO. Under canonical (no-peeking) registration everything collapses ~4-10x and B1(nearest) > v24 (0.070 vs 0.045 pred-only). v24's lead is oracle-registration-dependent."
+    }
+  },
+  "recommendation": "Keep v24 as the current model. Do NOT start Set-Transformer / interface-mixer / v25 work: the necessity audit shows no component provides a robust, reproducible, deployable gain, and no variant beats a family-average prior under an honest (canonical) registration. If revisited: (1) train >=3 v24 seeds, (2) adopt a canonical/deployable primary metric (oracle registration masks the real gap), (3) fix the benchmark's registration difficulty before claiming architecture gains.",
+  "artifacts": [
+    "running_jobs_manifest.json",
+    "leakage_audit.json",
+    "family_taxonomy_frozen.json",
+    "unified_models.json",
+    "unified_baselines.json",
+    "paired_stats_v24_vs_*.json",
+    "analyze_dumped.json",
+    "canonical_fixed.json",
+    "AUDIT_FINDINGS.md"
+  ]
+}

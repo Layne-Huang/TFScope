@@ -209,3 +209,27 @@ Findings:
 - Implication: v24's apparent advantage over baselines is substantially a product
   of oracle registration on a registration-hard benchmark. Strong evidence that
   v24's complexity is not deployably justified. Reinforces PENDING_FULL_AUDIT.
+
+## 9. FINAL Phase-I decision (single-seed-v24 caveat recorded)
+
+DECISION: **KEEP_V24. Do NOT proceed to new architecture (Candidate A/B / v25).**
+
+Endpoint (oracle Panel B covR): v24(1 seed) 0.530 | B7 0.485 | B6 0.477 | B3 0.455 |
+B5 0.438 | B2 0.395. Family prior B0 0.518-0.539. Monomer/multimer: v24
+0.564/0.494 vs B0_exact 0.535/0.483 (single seed).
+
+Why keep v24 (no robust, reproducible, deployable component gain):
+- No trained variant beats the family-average prior end-to-end; only single-seed
+  v24 reaches it.
+- Advantage is oracle-registration-dependent: under canonical (no-peeking) frame
+  everything collapses ~4-10x and B1(nearest) > v24.
+- MoE benefit non-monotonic (B7 removes more than B5 yet scores higher) =>
+  co-dependent stack, not clean necessity.
+- Content edge over prior is p53/POU zero-shot-driven & not significant; family
+  head inert (family_id ignored at inference).
+CAVEAT: v24 is single-seed (no CI on v24 itself); ablations are 3-seed. A formal
+§7 CI needs >=3 v24 seeds (not run). Decision on point estimates + ablation SDs.
+
+There is NO v25. Candidate A (chain_set_encoder) / B (interface_pair) remain
+untrained module scaffolds; the gate to promote them did not pass. See
+phase1_decision.json.
