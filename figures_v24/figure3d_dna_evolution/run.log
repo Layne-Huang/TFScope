@@ -1,0 +1,5 @@
+Homeodomain  LHX5      evolved consensus=AATTAGC      recovery r(vs curated)=0.903
+bHLH         MYOG      evolved consensus=CAGCTGTTCG   recovery r(vs curated)=0.843
+bZIP         CREB3L2   evolved consensus=CCTGACGCAACA recovery r(vs curated)=0.417
+ETS          ELK1      evolved consensus=ACTTCCTCTTTCT recovery r(vs curated)=0.512
+saved figures_v24/figure3d_dna_evolution/figure3d_dna_evolution.png/.pdf + results/fig3d_evolution/fig3d_evolution.json
