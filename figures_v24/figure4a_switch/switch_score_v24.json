@@ -1,0 +1,11 @@
+{
+ "WT": {
+  "CACGTG": 4.779,
+  "CACCTG": 8.383
+ },
+ "mut": {
+  "CACGTG": 7.567,
+  "CACCTG": 9.469
+ },
+ "delta_switch": 1.701
+}
