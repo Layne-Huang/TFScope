@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from tfscope.config import TFScopeConfig
-from tfscope.models.backbone import Backbone, DummyBackbone
+from tfscope.models.backbone import Backbone, CachedESMCBackbone, DummyBackbone
 from tfscope.models.pooling import GatedAttentionPooling, ProjectionHead
 from tfscope.models.moe import MOEBlock, ResidueMoE
 from tfscope.models.heads import PositionGateHead, PWMRegressionHead, ContactPredHead
@@ -18,7 +18,9 @@ class TFScopeModel(nn.Module):
         self.config = config
 
         # Encoder
-        if use_dummy_backbone:
+        if getattr(config, "use_cached_esmc", False):
+            self.backbone = CachedESMCBackbone(config)
+        elif use_dummy_backbone:
             self.backbone = DummyBackbone(config)
         else:
             self.backbone = Backbone(config)
@@ -90,7 +92,7 @@ class TFScopeModel(nn.Module):
     def forward(self, sequence_tokens, dbd_mask, family_id,
                 retrieved_pwms=None, retrieved_masks=None, retrieved_sims=None,
                 recog_prior=None, family_vec=None, homology=None,
-                contact_override=None):
+                contact_override=None, esmc_emb=None):
         """
         Args:
             sequence_tokens: (B, L) tokenized protein sequence
@@ -109,7 +111,10 @@ class TFScopeModel(nn.Module):
             pwm_logits:  (B, 4, max_motif_length) nucleotide logits (all positions)
             aux: dict with gate_logits, top_indices, family_id
         """
-        embeddings = self.backbone(sequence_tokens)               # (B, L, embed_dim)
+        if getattr(self.config, "use_cached_esmc", False):
+            embeddings = self.backbone(sequence_tokens, esmc_emb=esmc_emb)
+        else:
+            embeddings = self.backbone(sequence_tokens)           # (B, L, embed_dim)
 
         # Contact prior for the v18 bias, precedence: TRUE contacts (if supplied)
         # > head-predicted contacts > none. Predicted prior is computed from raw

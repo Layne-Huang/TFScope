@@ -34,6 +34,11 @@ def predict_full_and_gate(ckpt, test_data, test_split, device):
             if hasattr(cfg, k):
                 try: setattr(cfg, k, type(getattr(cfg, k))(v))
                 except Exception: setattr(cfg, k, v)
+    if getattr(cfg, "use_cached_esmc", False):
+        cfg.esm_embed_dim = 1152
+        cfg.two_chain_input = False
+        cfg.chain_id_embedding = False
+        cfg.lora_rank = 0
     model = TFScopeModel(cfg).to(device)
     sd = torch.load(ckpt, map_location=device, weights_only=False)
     model.load_state_dict(sd.get("model", sd), strict=False)
@@ -49,7 +54,7 @@ def predict_full_and_gate(ckpt, test_data, test_split, device):
             gate_logits, pwm_logits, aux = model(
                 b["sequence_tokens"], b["dbd_mask"], b["family_id"],
                 retrieved_pwms=b.get("retrieved_pwms"), retrieved_masks=b.get("retrieved_masks"),
-                retrieved_sims=b.get("retrieved_sims"))
+                retrieved_sims=b.get("retrieved_sims"), esmc_emb=b.get("esmc_emb"))
             P = F.softmax(pwm_logits, dim=1).cpu().numpy()               # (B,4,42) full content
             gate = (gate_logits.sigmoid() > 0.5)                          # (B,42)
             has_span = ("span_start" in aux and aux["span_start"] is not None

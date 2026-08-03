@@ -12,6 +12,8 @@ class TFScopeConfig:
     lora_rank: int = 0          # 0 = disabled; >0 injects LoRA into last lora_n_layers
     lora_alpha: float = 16.0    # LoRA scaling: delta = (alpha/rank) * B @ A @ x
     lora_n_layers: int = 6      # number of ESM-2 tail layers to inject LoRA into
+    use_cached_esmc: bool = False
+    esmc_cache_dir: str = "/data1/leihuang/TFScope_store/esmc_emb"
 
     # Attention pooling
     pool_type: str = "gated_attention"  # "gated_attention" (default) or "mean".

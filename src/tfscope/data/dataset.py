@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import warnings
 
@@ -84,6 +85,9 @@ def collate_variable_length(batch):
 
     sequence_tokens = torch.full((B, max_len), ESM2_PAD_TOKEN, dtype=torch.long)
     dbd_mask = torch.zeros(B, max_len, dtype=torch.bool)
+    has_esmc = 'esmc_emb' in batch[0]
+    esmc_dim = batch[0]['esmc_emb'].shape[-1] if has_esmc else None
+    esmc_emb = torch.zeros(B, max_len, esmc_dim, dtype=torch.float16) if has_esmc else None
     has_recog = 'recog_prior' in batch[0]
     recog_prior = torch.zeros(B, max_len, dtype=torch.float32) if has_recog else None
     has_contact = 'contact_target' in batch[0]
@@ -96,6 +100,9 @@ def collate_variable_length(batch):
         L = item['sequence_tokens'].shape[0]
         sequence_tokens[i, :L] = item['sequence_tokens']
         dbd_mask[i, :L] = item['dbd_mask']
+        if has_esmc:
+            E = min(L, item['esmc_emb'].shape[0])
+            esmc_emb[i, :E] = item['esmc_emb'][:E]
         if has_recog:
             recog_prior[i, :L] = item['recog_prior']
         if has_contact:
@@ -113,6 +120,8 @@ def collate_variable_length(batch):
         out['retrieved_pwms']  = torch.stack([item['retrieved_pwms']  for item in batch])
         out['retrieved_masks'] = torch.stack([item['retrieved_masks'] for item in batch])
         out['retrieved_sims']  = torch.stack([item['retrieved_sims']  for item in batch])
+    if has_esmc:
+        out['esmc_emb'] = esmc_emb
     if "registration_anchor_mask" in batch[0]:
         out["registration_anchor_mask"] = torch.stack(
             [item["registration_anchor_mask"] for item in batch]
@@ -258,6 +267,45 @@ class TFDataset(Dataset):
             df = df_full[df_full["filename"].isin(split_ids)].reset_index(drop=True)
         else:
             df = df_full.reset_index(drop=True)
+
+        self.use_cached_esmc = getattr(config, "use_cached_esmc", False)
+        self.esmc_cache_dir = getattr(config, "esmc_cache_dir", "")
+        self._esmc_paths = {}
+        self._esmc_missing = []
+        if self.use_cached_esmc:
+            if not self.esmc_cache_dir:
+                raise ValueError("use_cached_esmc=True requires esmc_cache_dir")
+            kept_rows = []
+            kept_paths = {}
+            for _, row in df.iterrows():
+                sequence = str(row["sequence"])
+                full_key = hashlib.md5(sequence.encode()).hexdigest()
+                trunc_key = hashlib.md5(sequence[:1022].encode()).hexdigest()
+                full_path = os.path.join(self.esmc_cache_dir, f"{full_key}.pt")
+                trunc_path = os.path.join(self.esmc_cache_dir, f"{trunc_key}.pt")
+                if os.path.exists(full_path):
+                    kept_rows.append(row)
+                    kept_paths[str(row["filename"])] = full_path
+                elif os.path.exists(trunc_path):
+                    kept_rows.append(row)
+                    kept_paths[str(row["filename"])] = trunc_path
+                else:
+                    self._esmc_missing.append((str(row["filename"]), full_path))
+            if self._esmc_missing:
+                preview = ", ".join(fn for fn, _ in self._esmc_missing[:5])
+                warnings.warn(
+                    f"use_cached_esmc=True: skipping {len(self._esmc_missing)} "
+                    f"{split} rows with missing cached ESM-C embeddings under "
+                    f"{self.esmc_cache_dir}. First missing: {preview}",
+                    RuntimeWarning,
+                )
+            if not kept_rows:
+                raise FileNotFoundError(
+                    f"No cached ESM-C embeddings found for split={split!r} "
+                    f"under {self.esmc_cache_dir!r}"
+                )
+            df = pd.DataFrame(kept_rows).reset_index(drop=True)
+            self._esmc_paths = kept_paths
 
         self.df = df
         self.sequences = df["sequence"].tolist()
@@ -473,6 +521,25 @@ class TFDataset(Dataset):
         # first partner kept as `partner` for the recog/contact remap below
         partner = partners[0] if partners else ""
 
+        esmc_emb = None
+        if self.use_cached_esmc:
+            esmc_path = self._esmc_paths.get(self.filenames[idx])
+            if esmc_path is None:
+                raise FileNotFoundError(
+                    f"Missing cached ESM-C embedding for {self.filenames[idx]}"
+                )
+            esmc_emb = torch.load(esmc_path, map_location="cpu")
+            if not torch.is_tensor(esmc_emb):
+                raise TypeError(f"Cached ESM-C file {esmc_path} did not contain a tensor")
+            if esmc_emb.ndim != 2 or esmc_emb.shape[1] != self.config.esm_embed_dim:
+                raise ValueError(
+                    f"Cached ESM-C file {esmc_path} has shape {tuple(esmc_emb.shape)}, "
+                    f"expected (L, {self.config.esm_embed_dim})"
+                )
+            seq_len = min(seq_len, esmc_emb.shape[0])
+            sequence = sequence[:seq_len]
+            esmc_emb = esmc_emb[:seq_len].to(dtype=torch.float16).contiguous()
+
         chain1 = self._tokenize(sequence)
         if partners:
             # N-chain input: chain1 + <eos> + protomer1 + <eos> + protomer2 + ...
@@ -529,6 +596,8 @@ class TFDataset(Dataset):
             "target_pwm": target_pwm,
             "pwm_mask": pwm_mask,
         }
+        if esmc_emb is not None:
+            out["esmc_emb"] = esmc_emb[: len(sequence_tokens)]
         if getattr(self.config, "latent_registration", False):
             anchor = self.registration_anchors.get(self.filenames[idx])
             out["registration_anchor_mask"] = torch.tensor(

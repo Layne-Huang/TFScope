@@ -167,6 +167,39 @@ class Backbone(nn.Module):
         return embeddings
 
 
+class CachedESMCBackbone(nn.Module):
+    """Frozen ESM-C cache reader.
+
+    The dataset loads per-residue ESM-C tensors from disk and the model receives
+    them as ``esmc_emb``. This module only validates and returns those features;
+    it never instantiates an ESM model or exposes trainable encoder parameters.
+    """
+
+    def __init__(self, config: TFScopeConfig):
+        super().__init__()
+        self.embed_dim = config.esm_embed_dim
+
+    def build(self, device: torch.device):
+        return None
+
+    def forward(self, sequence_tokens: torch.Tensor, esmc_emb: torch.Tensor = None) -> torch.Tensor:
+        if esmc_emb is None:
+            raise ValueError("CachedESMCBackbone requires esmc_emb in the batch")
+        if esmc_emb.ndim != 3:
+            raise ValueError(f"Expected esmc_emb with shape (B, L, D), got {tuple(esmc_emb.shape)}")
+        if esmc_emb.shape[:2] != sequence_tokens.shape:
+            raise ValueError(
+                f"Cached ESM-C embedding shape {tuple(esmc_emb.shape)} does not align "
+                f"to sequence_tokens shape {tuple(sequence_tokens.shape)}"
+            )
+        if esmc_emb.shape[-1] != self.embed_dim:
+            raise ValueError(
+                f"Cached ESM-C embedding dim {esmc_emb.shape[-1]} != config.esm_embed_dim "
+                f"{self.embed_dim}"
+            )
+        return esmc_emb.to(device=sequence_tokens.device, dtype=torch.float32)
+
+
 class DummyBackbone(nn.Module):
     """Random-output backbone for fast architecture testing (no ESM weights needed)."""
 
