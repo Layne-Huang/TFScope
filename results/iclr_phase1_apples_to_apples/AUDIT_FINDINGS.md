@@ -233,3 +233,15 @@ CAVEAT: v24 is single-seed (no CI on v24 itself); ablations are 3-seed. A formal
 There is NO v25. Candidate A (chain_set_encoder) / B (interface_pair) remain
 untrained module scaffolds; the gate to promote them did not pass. See
 phase1_decision.json.
+
+## 10. DeepPBS on the primary 291 benchmark — documented limitation
+
+The primary ICLR audit (291-test) compares v24 to B0-B8 but NOT to DeepPBS.
+Adding a FAIR DeepPBS (retrained on train_v22, gene-disjoint) was attempted 3x
+detached and failed on DeepPBS-side pipeline crashes (torch segfault in its
+multiflow env; float32-JSON scoring bug). It is also structure-limited (only
+20/51 test genes have a usable co-crystal). DECISION (user): accept as a
+documented limitation and rely on the fair comparison we already have —
+the leakage-clean cluster40 subset where TFScope 0.630 ~ DeepPBS 0.633 (tie,
+p=0.92). The leaky pretrained-DeepPBS 291 number (0.806) is reference-only and
+must NOT be quoted (DeepPBS trained on those structures).

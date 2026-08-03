@@ -1,0 +1,12 @@
+{
+  "status": "documented_limitation",
+  "decision": "Fair DeepPBS-vs-v24 on the primary 291 benchmark was NOT completed; accepted as a documented limitation.",
+  "reason": "Retraining DeepPBS on the train_v22 split (to avoid leakage) crashed repeatedly in DeepPBS's multiflow env (torch segfault during training; run.sh permission error; float32 JSON bug at scoring). 3 detached attempts failed. Also structure-limited: only 20/51 primary-test genes have a co-crystal DeepPBS can use.",
+  "fair_deeppbs_comparison_we_DO_have": {
+    "benchmark": "cluster40 leakage-clean subset (64 TFs)",
+    "TFScope": 0.630, "DeepPBS": 0.633, "verdict": "tie (Δ=-0.003, p=0.92)",
+    "note": "This is a genuine leakage-clean TFScope-vs-DeepPBS result and answers 'does TFScope match DeepPBS fairly' (yes). Uses combined model, not v24, on the 84/41 cluster40 set."
+  },
+  "leaky_pretrained_291_reference_only": {"DeepPBS": 0.806, "v24": 0.631, "n_genes": 20,
+    "warning": "DeepPBS pretrained on these structures -> leakage; NOT a valid comparison."}
+}
