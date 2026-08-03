@@ -1,12 +1,120 @@
 {
-  "status": "documented_limitation",
-  "decision": "Fair DeepPBS-vs-v24 on the primary 291 benchmark was NOT completed; accepted as a documented limitation.",
-  "reason": "Retraining DeepPBS on the train_v22 split (to avoid leakage) crashed repeatedly in DeepPBS's multiflow env (torch segfault during training; run.sh permission error; float32 JSON bug at scoring). 3 detached attempts failed. Also structure-limited: only 20/51 primary-test genes have a co-crystal DeepPBS can use.",
-  "fair_deeppbs_comparison_we_DO_have": {
-    "benchmark": "cluster40 leakage-clean subset (64 TFs)",
-    "TFScope": 0.630, "DeepPBS": 0.633, "verdict": "tie (Δ=-0.003, p=0.92)",
-    "note": "This is a genuine leakage-clean TFScope-vs-DeepPBS result and answers 'does TFScope match DeepPBS fairly' (yes). Uses combined model, not v24, on the 84/41 cluster40 set."
+  "status": "ok",
+  "protocol": "gene-disjoint retrain (test20 genes removed from training); 5-model ensemble; dedicated deeppbs env torch2.3.0+cu121/PyG2.5.0",
+  "n_genes_scored": 20,
+  "n_rows_scored": 152,
+  "DeepPBS_retrained": {
+    "gene_content_r": 0.7195571665980823,
+    "gene_covR": 0.7195571665980823
   },
-  "leaky_pretrained_291_reference_only": {"DeepPBS": 0.806, "v24": 0.631, "n_genes": 20,
-    "warning": "DeepPBS pretrained on these structures -> leakage; NOT a valid comparison."}
+  "v24_same_genes": {
+    "gene_content_r": 0.6852027027252416,
+    "gene_covR": 0.6309678266727548
+  },
+  "leaky_pretrained_reference": {
+    "gene_covR_or_r": 0.806,
+    "note": "run_deeppbs_291.py pretrained ckpts saw all 20 test genes -> not valid"
+  },
+  "per_gene": [
+    {
+      "gene": "CLOCK",
+      "DeepPBS_content_r": 0.7985390993101952,
+      "DeepPBS_covR": 0.7985390993101952
+    },
+    {
+      "gene": "ELF3",
+      "DeepPBS_content_r": 0.5978344909361705,
+      "DeepPBS_covR": 0.5978344909361705
+    },
+    {
+      "gene": "ELK4",
+      "DeepPBS_content_r": 0.5524980507308277,
+      "DeepPBS_covR": 0.5524980507308277
+    },
+    {
+      "gene": "ERG",
+      "DeepPBS_content_r": 0.8202336600343907,
+      "DeepPBS_covR": 0.8202336600343907
+    },
+    {
+      "gene": "ETS1",
+      "DeepPBS_content_r": 0.5986598408247255,
+      "DeepPBS_covR": 0.5986598408247255
+    },
+    {
+      "gene": "ETS2",
+      "DeepPBS_content_r": 0.8293908555623982,
+      "DeepPBS_covR": 0.8293908555623982
+    },
+    {
+      "gene": "ETV1",
+      "DeepPBS_content_r": 0.8310498409616354,
+      "DeepPBS_covR": 0.8310498409616354
+    },
+    {
+      "gene": "ETV5",
+      "DeepPBS_content_r": 0.7497388053981974,
+      "DeepPBS_covR": 0.7497388053981974
+    },
+    {
+      "gene": "ETV6",
+      "DeepPBS_content_r": 0.7397000109598061,
+      "DeepPBS_covR": 0.7397000109598061
+    },
+    {
+      "gene": "FEV",
+      "DeepPBS_content_r": 0.819528702826483,
+      "DeepPBS_covR": 0.819528702826483
+    },
+    {
+      "gene": "FLI1",
+      "DeepPBS_content_r": 0.7824040996863468,
+      "DeepPBS_covR": 0.7824040996863468
+    },
+    {
+      "gene": "FOXA2",
+      "DeepPBS_content_r": 0.5998269444036932,
+      "DeepPBS_covR": 0.5998269444036932
+    },
+    {
+      "gene": "FOXA3",
+      "DeepPBS_content_r": 0.6804769091309467,
+      "DeepPBS_covR": 0.6804769091309467
+    },
+    {
+      "gene": "FOXM1",
+      "DeepPBS_content_r": 0.5399842990652182,
+      "DeepPBS_covR": 0.5399842990652182
+    },
+    {
+      "gene": "FOXO1",
+      "DeepPBS_content_r": 0.9705336001400036,
+      "DeepPBS_covR": 0.9705336001400036
+    },
+    {
+      "gene": "FOXO3",
+      "DeepPBS_content_r": 0.5603004191492633,
+      "DeepPBS_covR": 0.5603004191492633
+    },
+    {
+      "gene": "FOXO4",
+      "DeepPBS_content_r": 0.9452770040424254,
+      "DeepPBS_covR": 0.9452770040424254
+    },
+    {
+      "gene": "FOXP2",
+      "DeepPBS_content_r": 0.765457707912737,
+      "DeepPBS_covR": 0.765457707912737
+    },
+    {
+      "gene": "GABPA",
+      "DeepPBS_content_r": 0.7117584922730639,
+      "DeepPBS_covR": 0.7117584922730639
+    },
+    {
+      "gene": "P53",
+      "DeepPBS_content_r": 0.4979504986131188,
+      "DeepPBS_covR": 0.4979504986131188
+    }
+  ]
 }

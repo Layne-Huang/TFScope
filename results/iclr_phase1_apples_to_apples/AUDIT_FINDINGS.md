@@ -234,14 +234,40 @@ There is NO v25. Candidate A (chain_set_encoder) / B (interface_pair) remain
 untrained module scaffolds; the gate to promote them did not pass. See
 phase1_decision.json.
 
-## 10. DeepPBS on the primary 291 benchmark — documented limitation
+## 10. DeepPBS on the primary 291 benchmark — GENE-DISJOINT RETRAIN (done)
 
-The primary ICLR audit (291-test) compares v24 to B0-B8 but NOT to DeepPBS.
-Adding a FAIR DeepPBS (retrained on train_v22, gene-disjoint) was attempted 3x
-detached and failed on DeepPBS-side pipeline crashes (torch segfault in its
-multiflow env; float32-JSON scoring bug). It is also structure-limited (only
-20/51 test genes have a usable co-crystal). DECISION (user): accept as a
-documented limitation and rely on the fair comparison we already have —
-the leakage-clean cluster40 subset where TFScope 0.630 ~ DeepPBS 0.633 (tie,
-p=0.92). The leaky pretrained-DeepPBS 291 number (0.806) is reference-only and
-must NOT be quoted (DeepPBS trained on those structures).
+The earlier segfault was an ENV bug, not a DeepPBS bug: DeepPBS pins
+torch 2.3.0+cu121 / PyG 2.5.0 / torch-cluster 1.6.3, but it was being run in the
+`multiflow` env (torch 2.6.0+cu124, PyG 2.6.1). The torch-scatter/sparse/cluster
+C++ extensions are ABI-locked to their build torch, so the mismatch crashed.
+Fix: dedicated `deeppbs` conda env with the pinned stack (build_deeppbs_env.sh).
+
+**Leakage was total.** Mapping DeepPBS's 523 training structures to genes
+(gene-name + JASPAR-id + PDB-chain joins) shows ALL 20/20 primary-test genes that
+have a co-crystal are in DeepPBS's training folds => the pretrained 0.806 is fully
+gene-level leaky and must NOT be quoted.
+
+**Fair experiment.** Retrained the DeepPBS 5-model ensemble on the 477 structures
+whose gene is NOT in the 291 test set (gene-disjoint, matching TFScope's split;
+paralogs kept, as in TFScope's split), then predicted on the 20 test-gene
+structures. Scored through the SAME unified_eval as v24.
+(`iclr/run_deeppbs_retrained.py`, `deeppbs_291_retrained.json`.)
+
+| model (20 struct-having test genes) | Panel A content_r | Panel B covR |
+|---|---|---|
+| DeepPBS (gene-disjoint retrain, 5-model ens.) | 0.720 | 0.720 |
+| v24 (same 20 genes)                           | 0.685 | 0.631 |
+
+Paired over 20 genes: Δ(DeepPBS − v24) content_r = **+0.034, 95% CI
+[−0.017, +0.086]** (crosses 0) — a **statistical tie** (DeepPBS wins 13/20).
+covR is the wrong axis here: DeepPBS emits a full-length PWM and, like the B0/B1
+baselines (§3), gets the free "no-gate length" advantage, so covR==content_r for
+it; the fair axis is Panel A content_r.
+
+Reading: on DeepPBS's home turf (co-crystal available; subset is 11 ETS + 7 FOX +
+CLOCK + p53) the retrained structure model slightly edges sequence-only v24 but
+not significantly. Two framing points stand: (i) v24 needs NO structure at
+inference and covers all 51 test genes vs DeepPBS's 20; (ii) consistent with the
+leakage-clean cluster40 comparison (TFScope 0.630 ~ DeepPBS 0.633). The 20-gene
+subset is narrow and ETS/FOX-dominated, so it is a structural-subset sanity check,
+not the headline benchmark.
