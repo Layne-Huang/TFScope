@@ -322,3 +322,27 @@ directly on PWM values, whereas v24 optimizes shape terms (IC-PCC/top-base/cov-r
 Reading: v24 recovers motif IDENTITY better; DeepPBS recovers probability
 MAGNITUDES better. AUROC label = target base prob > 0.25 (pooled base×column);
 macro-F1 over per-column argmax base.
+
+## 13. PRIMARY protocol = UNTRIMMED DeepPBS (v24's gate is learned)
+
+Correction to §10/§11 framing. Those quoted DeepPBS IC-trimmed = 0.731. But
+IC-trimming DeepPBS to its motif core uses the information-content of the answer to
+localize the motif FOR DeepPBS — a clean-up v24 never gets, because v24's motif
+localization is a LEARNED, scored gate. So the fair primary comparison uses
+DeepPBS's actual RAW output (untrimmed); align_pwm still gives both models the same
+oracle offset+RC registration, so DeepPBS is not penalised for "where", only judged
+on its real prediction. (The §12 9-metric suite already used untrimmed DeepPBS.)
+
+20 struct-having genes, PanelA content_r:
+| model | content_r | vs DeepPBS-untrimmed |
+|---|---|---|
+| DeepPBS untrimmed (raw, PRIMARY) | 0.694 | — |
+| DeepPBS IC-trimmed (generous upper bound) | 0.731 | (hand-localized) |
+| v24 seed42 | 0.685 | Δ -0.009 CI[-0.060,+0.040] tie (v24 11/20) |
+| v24 ensemble | 0.707 | Δ +0.013 CI[-0.034,+0.061] tie, v24 ahead (11/20) |
+
+Bottom line (fair, untrimmed): single-seed v24 TIES DeepPBS; the 5-seed v24 ensemble
+slightly EDGES it (0.707 vs 0.694), and wins every ranking/identity metric (§12:
+top-base, AUROC, macroF1, Pearson) while DeepPBS keeps the calibration metrics
+(MAE/RMSE/JSD/IC) it is directly trained on. 0.731 is retained only as a
+generous-to-DeepPBS upper bound.

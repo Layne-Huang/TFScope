@@ -65,6 +65,11 @@ def _suite(preds_by_key, gt_by_fn, fn2gene, deeppbs=False, deeppbs_by_gene=None)
         pred = deeppbs_by_gene[g] if deeppbs else preds_by_key.get(fn)
         if pred is None:
             continue
+        # NOTE: DeepPBS is scored UNTRIMMED (its actual raw PWM over the co-crystal
+        # DNA). We deliberately do NOT IC-trim it: v24's motif localization is a
+        # LEARNED, scored gate, so hand-trimming DeepPBS to its IC core would grant
+        # it a free localization v24 had to earn. Untrimmed = the fair comparison.
+        # (align_pwm still gives both models the same oracle offset+RC registration.)
         aligned, cols = _aligned_cols(pred, core)
         if len(cols) < 2:
             continue
