@@ -1,0 +1,202 @@
+{
+  "status": "ok",
+  "protocol": "PDB-disjoint retrain (gene+PDB disjoint); length-fair scoring",
+  "n_genes": 20,
+  "DeepPBS_untrimmed_content_r": 0.6939062220540836,
+  "DeepPBS_IC_trimmed_content_r_FAIR": 0.7310358393042504,
+  "v24_content_r": 0.6852027027252416,
+  "v24_covR": 0.6309678266727548,
+  "paired_fair_delta_DeepPBS_minus_v24": 0.04583313657900876,
+  "paired_fair_95CI": [
+    -0.007303826745574233,
+    0.10061778500644847
+  ],
+  "frac_DeepPBS_wins_fair": 0.65,
+  "mean_lengths": {
+    "gt": 9.35,
+    "dp_full": 14.45,
+    "dp_trim": 11.05
+  },
+  "per_gene": [
+    {
+      "gene": "CLOCK",
+      "DeepPBS_U": 0.7990469274095507,
+      "DeepPBS_T_fair": 0.7990469280996397,
+      "v24": 0.8358543832293865,
+      "gt": 9,
+      "dp_full": 14,
+      "dp_trim": 12
+    },
+    {
+      "gene": "ELF3",
+      "DeepPBS_U": 0.4763204588787332,
+      "DeepPBS_T_fair": 0.619939092189793,
+      "v24": 0.5985534201388207,
+      "gt": 11,
+      "dp_full": 15,
+      "dp_trim": 11
+    },
+    {
+      "gene": "ELK4",
+      "DeepPBS_U": 0.6210631973394241,
+      "DeepPBS_T_fair": 0.776303594154757,
+      "v24": 0.6322547887703543,
+      "gt": 8,
+      "dp_full": 11,
+      "dp_trim": 7
+    },
+    {
+      "gene": "ERG",
+      "DeepPBS_U": 0.7942818550074183,
+      "DeepPBS_T_fair": 0.8124495343294637,
+      "v24": 0.7153504765165118,
+      "gt": 10,
+      "dp_full": 12,
+      "dp_trim": 7
+    },
+    {
+      "gene": "ETS1",
+      "DeepPBS_U": 0.6105381042342332,
+      "DeepPBS_T_fair": 0.6105381042342332,
+      "v24": 0.6969803855154275,
+      "gt": 9,
+      "dp_full": 25,
+      "dp_trim": 23
+    },
+    {
+      "gene": "ETS2",
+      "DeepPBS_U": 0.8419502009241364,
+      "DeepPBS_T_fair": 0.8268812783771512,
+      "v24": 0.815571565567605,
+      "gt": 10,
+      "dp_full": 10,
+      "dp_trim": 9
+    },
+    {
+      "gene": "ETV1",
+      "DeepPBS_U": 0.7901462239885838,
+      "DeepPBS_T_fair": 0.93635519709047,
+      "v24": 0.6917663678208764,
+      "gt": 9,
+      "dp_full": 10,
+      "dp_trim": 6
+    },
+    {
+      "gene": "ETV5",
+      "DeepPBS_U": 0.8088263183261831,
+      "DeepPBS_T_fair": 0.8447926510571729,
+      "v24": 0.584334222675879,
+      "gt": 9,
+      "dp_full": 9,
+      "dp_trim": 7
+    },
+    {
+      "gene": "ETV6",
+      "DeepPBS_U": 0.7317816098786096,
+      "DeepPBS_T_fair": 0.7317816104340537,
+      "v24": 0.713572562625863,
+      "gt": 10,
+      "dp_full": 13,
+      "dp_trim": 11
+    },
+    {
+      "gene": "FEV",
+      "DeepPBS_U": 0.8625976643713871,
+      "DeepPBS_T_fair": 0.8859344888601337,
+      "v24": 0.7003284933622691,
+      "gt": 9,
+      "dp_full": 10,
+      "dp_trim": 7
+    },
+    {
+      "gene": "FLI1",
+      "DeepPBS_U": 0.7931874392218263,
+      "DeepPBS_T_fair": 0.8182259715646822,
+      "v24": 0.5240041942656768,
+      "gt": 10,
+      "dp_full": 11,
+      "dp_trim": 8
+    },
+    {
+      "gene": "FOXA2",
+      "DeepPBS_U": 0.688386192526843,
+      "DeepPBS_T_fair": 0.688386194339157,
+      "v24": 0.753640256547667,
+      "gt": 10,
+      "dp_full": 16,
+      "dp_trim": 15
+    },
+    {
+      "gene": "FOXA3",
+      "DeepPBS_U": 0.6418528611223139,
+      "DeepPBS_T_fair": 0.6573252550287106,
+      "v24": 0.6392160225170491,
+      "gt": 10,
+      "dp_full": 13,
+      "dp_trim": 9
+    },
+    {
+      "gene": "FOXM1",
+      "DeepPBS_U": 0.5290879271834834,
+      "DeepPBS_T_fair": 0.5290879271834834,
+      "v24": 0.7263620843830098,
+      "gt": 10,
+      "dp_full": 19,
+      "dp_trim": 17
+    },
+    {
+      "gene": "FOXO1",
+      "DeepPBS_U": 0.7944876360493797,
+      "DeepPBS_T_fair": 0.7944876365302614,
+      "v24": 0.8134541366148366,
+      "gt": 7,
+      "dp_full": 16,
+      "dp_trim": 11
+    },
+    {
+      "gene": "FOXO3",
+      "DeepPBS_U": 0.5492029502261078,
+      "DeepPBS_T_fair": 0.6552411102307891,
+      "v24": 0.6632416930668981,
+      "gt": 8,
+      "dp_full": 13,
+      "dp_trim": 11
+    },
+    {
+      "gene": "FOXO4",
+      "DeepPBS_U": 0.7311977301149903,
+      "DeepPBS_T_fair": 0.8146853637182448,
+      "v24": 0.7379811721661348,
+      "gt": 8,
+      "dp_full": 13,
+      "dp_trim": 6
+    },
+    {
+      "gene": "FOXP2",
+      "DeepPBS_U": 0.6739925463888622,
+      "DeepPBS_T_fair": 0.7187451319343099,
+      "v24": 0.6763151394710842,
+      "gt": 7,
+      "dp_full": 19,
+      "dp_trim": 14
+    },
+    {
+      "gene": "GABPA",
+      "DeepPBS_U": 0.7597986200657125,
+      "DeepPBS_T_fair": 0.7201317413102507,
+      "v24": 0.6972705172077502,
+      "gt": 9,
+      "dp_full": 20,
+      "dp_trim": 13
+    },
+    {
+      "gene": "P53",
+      "DeepPBS_U": 0.3803779778238932,
+      "DeepPBS_T_fair": 0.38037797541825175,
+      "v24": 0.488002172041734,
+      "gt": 14,
+      "dp_full": 20,
+      "dp_trim": 17
+    }
+  ]
+}

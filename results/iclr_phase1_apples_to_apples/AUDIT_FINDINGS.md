@@ -271,3 +271,28 @@ inference and covers all 51 test genes vs DeepPBS's 20; (ii) consistent with the
 leakage-clean cluster40 comparison (TFScope 0.630 ~ DeepPBS 0.633). The 20-gene
 subset is narrow and ETS/FOX-dominated, so it is a structural-subset sanity check,
 not the headline benchmark.
+
+## 11. v24 5-seed ensemble + seed variance (fair 5-vs-5 vs DeepPBS)
+
+DeepPBS ships a 5-model ensemble, so single-seed v24 was an unfair comparator.
+Trained 4 more v24 seeds (1,7,13,23) with the EXACT contact_v24 recipe
+(run_v24_contact_ddp.sh: incl --two-chain-input --chain-id-embedding --max-chains 4;
+single-GPU batch12 accum3 = global batch 36). NOTE: a first attempt trained the
+seeds single-chain (dropped the multichain flags) and scored a bogus 0.505 —
+discarded and retrained correctly.
+
+**Seed variance (full 291, PanelA content_r):** seed1 0.665, seed42 0.629,
+seed13 0.571, seed23 0.541, seed7 0.529 -> mean 0.587 ± 0.055. seed1 BEATS the
+shipped seed42, so v24's 0.629 is a favorable-seed point estimate; honest v24 mean
+≈ 0.59 ± 0.06. This is the CI the audit flagged as missing.
+
+**5-model ensemble** (register-aligned averaging: each member commits to its motif
+core, members aligned offset+RC to seed42's core, then averaged — naive averaging
+in the padded 42-col frame gave a misleading 0.505):
+- full 291: content_r 0.664, covR 0.560 (> single seed42 0.629 / 0.530).
+- on the 20 DeepPBS-overlap genes: v24_ens5 0.707 vs DeepPBS-5model(fair) 0.731,
+  paired Δ = -0.024, 95% CI [-0.072, +0.021] -> **statistical tie** (v24 wins 11/20).
+
+Bottom line stands under every framing (single vs ensemble): sequence-only v24 TIES
+retrained structure-based DeepPBS on the ~20 genes where a co-crystal exists, and
+needs no structure while covering all 51 test genes. See v24_ensemble_summary.json.

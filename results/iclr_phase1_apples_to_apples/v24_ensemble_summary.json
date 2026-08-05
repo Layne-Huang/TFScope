@@ -1,0 +1,32 @@
+{
+  "protocol": "5-model v24 ensemble (seed42 + seeds 1,7,13,23), register-aligned averaging; same unified_eval",
+  "full_291": {
+    "v24_ens5_content_r": 0.6642,
+    "v24_ens5_covR": 0.5601,
+    "seed42_content_r": 0.629,
+    "seed42_covR": 0.53
+  },
+  "seed_variance_full291": {
+    "seeds": {
+      "seed1": 0.665,
+      "seed42": 0.629,
+      "seed13": 0.571,
+      "seed23": 0.541,
+      "seed7": 0.529
+    },
+    "mean": 0.587,
+    "sd": 0.055,
+    "note": "seed1 > seed42; v24 is high-variance, seed42 is a favorable seed"
+  },
+  "deeppbs_20gene_5v5": {
+    "v24_ens5": 0.707,
+    "v24_seed42": 0.685,
+    "DeepPBS_5model_fair": 0.731,
+    "paired_delta_ens_minus_deeppbs": -0.024,
+    "ci95": [
+      -0.072,
+      0.021
+    ],
+    "verdict": "tie (CI crosses 0), v24 wins 11/20"
+  }
+}
