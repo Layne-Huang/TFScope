@@ -296,3 +296,29 @@ in the padded 42-col frame gave a misleading 0.505):
 Bottom line stands under every framing (single vs ensemble): sequence-only v24 TIES
 retrained structure-based DeepPBS on the ~20 genes where a co-crystal exists, and
 needs no structure while covering all 51 test genes. See v24_ensemble_summary.json.
+
+## 12. Full metric suite (DeepPBS-5model vs v24-ensemble, 20 genes)
+
+Beyond Pearson-r, a 9-metric battery (both oracle-registered to GT core the same
+way; iclr/compare_full_metrics.py, full_metric_suite.json):
+
+| metric | dir | v24_ens5 | DeepPBS | winner |
+|---|---|---|---|---|
+| pearson_r | ↑ | 0.707 | 0.694 | v24 |
+| cosine | ↑ | 0.828 | 0.836 | DeepPBS |
+| topbase_acc (consensus letter) | ↑ | 0.760 | 0.724 | v24 |
+| auroc (base-enrichment) | ↑ | 0.790 | 0.748 | v24 |
+| macroF1 (consensus 4-class) | ↑ | 0.633 | 0.568 | v24 |
+| mae | ↓ | 0.171 | 0.153 | DeepPBS |
+| rmse | ↓ | 0.242 | 0.221 | DeepPBS |
+| jsd_bits | ↓ | 0.178 | 0.151 | DeepPBS |
+| ic_mae | ↓ | 0.769 | 0.667 | DeepPBS |
+
+Clean split matching training objectives: v24 wins every classification/ranking
+metric (top-base, AUROC, macro-F1, Pearson) = gets the correct dominant/enriched
+bases; DeepPBS wins every distribution/calibration metric (MAE, RMSE, JSD, IC-err,
+cosine) = exact probability magnitudes, because it is trained with an L1(MAE) loss
+directly on PWM values, whereas v24 optimizes shape terms (IC-PCC/top-base/cov-r).
+Reading: v24 recovers motif IDENTITY better; DeepPBS recovers probability
+MAGNITUDES better. AUROC label = target base prob > 0.25 (pooled base×column);
+macro-F1 over per-column argmax base.
