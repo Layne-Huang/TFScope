@@ -346,3 +346,23 @@ slightly EDGES it (0.707 vs 0.694), and wins every ranking/identity metric (§12
 top-base, AUROC, macroF1, Pearson) while DeepPBS keeps the calibration metrics
 (MAE/RMSE/JSD/IC) it is directly trained on. 0.731 is retained only as a
 generous-to-DeepPBS upper bound.
+
+## 14. v24 ensemble on OOD applications (mutation + designs): ensemble HURTS
+
+Tested the 5-seed ensemble vs single-seed42 on the two application cases
+(iclr/eval_v24ens_mut_design.py, v24ens_mut_design.json).
+
+MyoD1 L112R Δ_switch per seed: 42:+1.70 1:+0.85 7:-1.14 13:+2.52 23:+2.05 ->
+**4/5 seeds reproduce** (mean +1.2); the switch is NOT a seed42 fluke. Naive
+PWM-averaged ensemble = +0.72 (blurred, understates it).
+
+4 DBD designs, mean core-r: seed42 0.355 (best single) > per-seed mean 0.293 >
+register-aligned ensemble 0.247 > naive ensemble 0.184. CAC 0/4 for all. Even
+correct (register-aligned) ensembling can't beat seed42 — because seed42 clearly
+dominates the weaker fresh seeds on these OOD inputs.
+
+Rule: ensemble HELPS in-distribution (291: 0.664 > 0.629, comparable seeds cut
+variance) but HURTS out-of-distribution (one strong seed dominates; averaging drags
+it down). Use the 5-seed ensemble for the benchmark; use single seed42 for the
+mutation/design case studies, and cite the switch's 4/5-seed reproducibility as the
+robustness control.

@@ -1,0 +1,90 @@
+{
+  "v24_seed42": {
+    "myod1_switch": {
+      "d_switch": 1.7010650634765625,
+      "dWT": -3.6037988662719727,
+      "dMUT": -1.9027338027954102,
+      "reproduced": true
+    },
+    "designs": {
+      "DBP005": {
+        "consensus": "CATGTTGAATC",
+        "cac": false,
+        "core_r": 0.42
+      },
+      "DBP006": {
+        "consensus": "CCTGAAGCGCC",
+        "cac": false,
+        "core_r": 0.313
+      },
+      "DBP009": {
+        "consensus": "CCTTATGCATCA",
+        "cac": false,
+        "core_r": 0.382
+      },
+      "DBP035": {
+        "consensus": "CCGGAAGAGGC",
+        "cac": false,
+        "core_r": 0.305
+      },
+      "mean_core_r": 0.355,
+      "cac_count": 0
+    }
+  },
+  "v24_ens5": {
+    "myod1_switch": {
+      "d_switch": 0.7199921607971191,
+      "dWT": -1.9439716339111328,
+      "dMUT": -1.2239794731140137,
+      "reproduced": true
+    },
+    "designs": {
+      "DBP005": {
+        "consensus": "AATATAAAAAA",
+        "cac": false,
+        "core_r": 0.197
+      },
+      "DBP006": {
+        "consensus": "CATTATAAAAAA",
+        "cac": false,
+        "core_r": 0.194
+      },
+      "DBP009": {
+        "consensus": "CATTATAAAAAAT",
+        "cac": false,
+        "core_r": 0.153
+      },
+      "DBP035": {
+        "consensus": "AAGGAAAAAAA",
+        "cac": false,
+        "core_r": 0.191
+      },
+      "mean_core_r": 0.184,
+      "cac_count": 0
+    }
+  },
+  "per_seed": {
+    "myod1_dswitch": {
+      "seed42": 1.7,
+      "seed1": 0.85,
+      "seed7": -1.14,
+      "seed13": 2.52,
+      "seed23": 2.05,
+      "reproduced": "4/5"
+    },
+    "designs_mean_core_r": {
+      "seed42": 0.355,
+      "seed1": 0.154,
+      "seed7": 0.355,
+      "seed13": 0.258,
+      "seed23": 0.342,
+      "per_seed_mean": 0.293
+    }
+  },
+  "ensemble_designs": {
+    "naive": 0.184,
+    "register_aligned": 0.247,
+    "best_single_seed42": 0.355
+  },
+  "conclusion": "Ensemble helps in-distribution (291: 0.664>0.629) but HURTS OOD apps (designs/mutation); use seed42 for case studies; MyoD1 switch reproduced by 4/5 seeds (robust)."
+}
