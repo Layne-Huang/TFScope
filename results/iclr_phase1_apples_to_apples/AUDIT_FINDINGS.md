@@ -366,3 +366,23 @@ variance) but HURTS out-of-distribution (one strong seed dominates; averaging dr
 it down). Use the 5-seed ensemble for the benchmark; use single seed42 for the
 mutation/design case studies, and cite the switch's 4/5-seed reproducibility as the
 robustness control.
+
+## 15. MyoD1 L112R switch is a CROP ARTIFACT (correction to §14)
+
+Re-ran the MyoD1 switch with the TRAINING-CONSISTENT tight DBD crop (the parquet's
+own MYOD1 entry = 38 aa, dbd_start=0..seq_length like every training row) instead of
+the 52-aa crop the case-study script inherited from the old combined-model code.
+
+| MyoD1 crop | Δ_switch | verdict |
+|---|---|---|
+| 52 aa (extra C-term helix-2, OOD length) | +1.70 | "reproduced" (artifact) |
+| 38 aa (training-style, correct) | +0.03 | NO switch |
+
+With the tight crop, WT and mutant give the IDENTICAL consensus (correct muscle
+E-box CACCTG); Δ_switch ≈ 0. The +1.70 came entirely from the extra C-terminal
+residues absent from MyoD1's training DBD. Also: MYOD1 WT is IN the train_v22 train
+split (in_train=True), so v24 memorized the WT E-box; the L112R mutation does not
+move it. => The MyoD1 "specificity switch" does NOT survive the training-consistent
+protocol and must not be presented as mutation generalization. Consistent with the
+Barrera panel (v24 mutation-insensitive). Case-study crops MUST match the training
+convention (tight DBD, dbd_start=0..len).
