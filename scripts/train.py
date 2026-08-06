@@ -112,6 +112,11 @@ def parse_args():
                    help="2D contact targets json (default data/contact_maps/contact_targets.json)")
     p.add_argument("--dummy", action="store_true",
                    help="Use synthetic random data + DummyBackbone (no ESM weights needed)")
+    p.add_argument("--use-cached-esmc", action="store_true",
+                   help="Use precomputed frozen ESM-C per-residue embeddings instead of ESM-2")
+    p.add_argument("--esmc-cache-dir",
+                   default="/data1/leihuang/TFScope_store/esmc_emb",
+                   help="Directory of md5(sequence).pt ESM-C embedding tensors")
 
     # Training
     p.add_argument("--epochs", type=int, default=50)
@@ -349,6 +354,8 @@ def init_wandb(args, config):
             # model
             "esm_model":          config.esm_model,
             "esm_embed_dim":      config.esm_embed_dim,
+            "use_cached_esmc":    config.use_cached_esmc,
+            "esmc_cache_dir":     config.esmc_cache_dir,
             "freeze_encoder":     config.freeze_encoder,
             "num_experts":        config.num_experts,
             "top_k":              config.top_k,
@@ -534,6 +541,7 @@ def run_train_epoch(model, loss_fn, loader, optimizer, scheduler,
                 retrieved_masks=batch.get('retrieved_masks'),
                 retrieved_sims=batch.get('retrieved_sims'),
                 recog_prior=batch.get('recog_prior'),
+                esmc_emb=batch.get('esmc_emb'),
             )
             loss, metrics = loss_fn(
                 aux.get("internal_gate_logits", gate_logits),
@@ -653,6 +661,7 @@ def run_val_epoch(model, loss_fn, loader, device, precision="fp32"):
                 retrieved_masks=batch.get('retrieved_masks'),
                 retrieved_sims=batch.get('retrieved_sims'),
                 recog_prior=batch.get('recog_prior'),
+                esmc_emb=batch.get('esmc_emb'),
             )
             loss, metrics = loss_fn(
                 aux.get("internal_gate_logits", gate_logits),
@@ -732,6 +741,7 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=0,
                 retrieved_masks=batch.get('retrieved_masks'),
                 retrieved_sims=batch.get('retrieved_sims'),
                 recog_prior=batch.get('recog_prior'),
+                esmc_emb=batch.get('esmc_emb'),
             )
         pwm_prob = (
             F.softmax(pwm_logits, dim=1).float().cpu().numpy()
@@ -814,6 +824,10 @@ def main():
         raise ValueError("--register-head requires --latent-registration")
     if args.register_loss_weight < 0:
         raise ValueError("--register-loss-weight must be non-negative")
+    if args.use_cached_esmc:
+        args.two_chain_input = False
+        args.chain_id_embedding = False
+        args.lora_rank = 0
     rank, local_rank, world_size = distributed_context()
     distributed = world_size > 1
     is_main = rank == 0
@@ -856,6 +870,9 @@ def main():
         lora_rank=args.lora_rank,
         lora_alpha=args.lora_alpha,
         lora_n_layers=args.lora_n_layers,
+        use_cached_esmc=args.use_cached_esmc,
+        esmc_cache_dir=args.esmc_cache_dir,
+        esm_embed_dim=1152 if args.use_cached_esmc else TFScopeConfig.esm_embed_dim,
         learning_rate=args.lr,
         lora_learning_rate=args.lora_lr,
         warmup_steps=args.warmup_steps,
@@ -960,6 +977,12 @@ def main():
     if is_main:
         print(f"v18 attention normalizer: {config.v18_attn_sparse}"
               + (f" (alpha_init={config.v18_attn_alpha_init})" if config.v18_attn_sparse == "entmax_learn" else ""))
+        if config.use_cached_esmc:
+            print(
+                "Cached ESM-C backbone ON: "
+                f"dim={config.esm_embed_dim} cache={config.esmc_cache_dir} "
+                "single-chain, LoRA disabled"
+            )
         print(f"MoE: num_families={config.num_families} num_experts={config.num_experts} "
               f"top_k={config.top_k} expert_hidden={config.expert_hidden_dim} "
               f"family_embed={'learned' if not config.family_embedding_path else config.family_embedding_path}")
@@ -1101,7 +1124,7 @@ def main():
         return f"{n/1e6:.2f}M" if n >= 1e6 else f"{n/1e3:.1f}K"
 
     rows = [
-        ("backbone (ESM-2)",      model.backbone),
+        ("backbone",              model.backbone),
         ("global_pool",           model.global_pool),
         ("dbd_pool",              model.dbd_pool),
         ("projection",            model.projection),
