@@ -386,3 +386,46 @@ move it. => The MyoD1 "specificity switch" does NOT survive the training-consist
 protocol and must not be presented as mutation generalization. Consistent with the
 Barrera panel (v24 mutation-insensitive). Case-study crops MUST match the training
 convention (tight DBD, dbd_start=0..len).
+
+## 16. Pairwise mutation-sensitivity fine-tune (PoC: loss is the lever)
+
+Mutation-blindness is a LOSS problem, not an input-crop or capacity problem
+(flanks made it worse §14-15; bigger-LoRA overfits). Test: mine ~3236 within-family
+natural variant pairs (1750 specificity-SWITCHING, dpwm>0.15) from the TRAIN split;
+fine-tune v24 (LoRA+heads, ESM frozen, 8 ep) with a DIRECTIONAL loss pushing
+(pred_A - pred_B) -> (GT_A - GT_B) in A's motif frame, switching pairs up-weighted.
+Scripts: scripts/mine_mutation_pairs.py, scripts/train_pairwise_mut.py.
+
+Result (v24ft_pairmut):
+- MyoD1 L112R Δ_switch: v24 +0.03 -> **+0.29** (10x, correct direction, WT preference
+  preserved dWT=-2.37) — first thing in the whole exploration to move it.
+- Benchmark PanelA content_r: 0.629 -> **0.547** (-0.08) — directional term (weight 1.0,
+  switching x6, 8ep) over-weighted, trades motif recovery.
+
+=> PoC validates the hypothesis (pairwise ΔPWM supervision buys mutation sensitivity)
+but the benchmark cost is a tuning knob (lower delta-weight / fewer epochs / lower LR).
+NEXT: (1) Barrera 55-pair correlation to test generalization beyond MyoD1; (2) tune
+delta-weight to keep benchmark ~0.62 + mutation gain.
+
+## 17. Consolidated verdict: flanks + pairwise-mutation all < v24 (mutation wall = frozen ESM)
+
+Full benchmark (PanelA content_r, 291) and mutation (Barrera 55-pair corr; MyoD1 Δ_switch):
+
+| model | content_r | Barrera corr | MyoD1 Δsw |
+|---|---|---|---|
+| v24 baseline | 0.629 | -0.050 | +0.03 |
+| v25flank (DBD+-20 flank) | 0.602 | — | -1.40 |
+| v25xtal (full crystal chain) | 0.540 | — | — |
+| v24ft_pairmut (delta1.0,8ep) | 0.547 | -0.077 | +0.29 |
+| v24ft_pairmut_v2 (delta0.3,5ep) | 0.599 | — | — |
+
+NOTHING beat v24. Barrera stays blind for all (corr ~-0.05..-0.08; predicted Δ ~0.01 vs
+measured 0.180, ~15x too small). The MyoD1 +0.29 from the directional fine-tune was
+CASE-SPECIFIC (bHLH E-box), did NOT generalize to the Barrera homeodomain panel.
+
+Localizes the mutation-blindness bottleneck to the FROZEN ESM-2 (nearly invariant to a
+single substitution) — NOT the input crop (flanks hurt), NOT capacity (bigger-LoRA
+overfits 1.7k proteins), and only partially the objective (pairwise ΔPWM = tiny,
+non-generalizing nudge). Real fix needs an encoder that responds to point mutations
+(meaningful unfreezing -> overfits on this data) + single-residue training data (scarce;
+Barrera=55). Architecture/data wall, not a fine-tune knob.

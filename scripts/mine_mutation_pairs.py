@@ -18,6 +18,7 @@ SPLIT = "data/processed/splits/train_v22/split.json"
 OUT = "data/processed/mut_pairs_v23.json"
 K_PER_PROT = 8          # neighbours kept per protein (top-ΔPWM + random neutral)
 ID_LO, ID_HI = 0.55, 0.999
+FAM_CAP = 150           # subsample big families (C2H2) before O(n^2) pairing
 
 
 def decode(raw):
@@ -52,16 +53,21 @@ def main():
     seen = set()
     for fi, (fam, grp) in enumerate(fams):
         rows = grp.reset_index(drop=True)
+        if len(rows) > FAM_CAP:                         # subsample huge families for speed
+            rows = rows.iloc[rng.choice(len(rows), FAM_CAP, replace=False)].reset_index(drop=True)
         n = len(rows)
         if n < 2:
             continue
         fns = rows.filename.tolist(); seqs = rows.seq.tolist()
+        arrs = [np.frombuffer(s.encode(), dtype=np.uint8) for s in seqs]  # vectorized identity
         for i in range(n):
+            ai = arrs[i]; La = len(ai)
             cand = []
             for j in range(n):
                 if i == j:
                     continue
-                idv = ident(seqs[i], seqs[j])
+                aj = arrs[j]; L = min(La, len(aj))
+                idv = float(np.mean(ai[:L] == aj[:L])) if L else 0.0
                 if ID_LO <= idv <= ID_HI:
                     cand.append((j, idv))
             if not cand:
