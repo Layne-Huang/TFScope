@@ -13,7 +13,7 @@ import pandas as pd
 from tfscope.config import TFScopeConfig
 from tfscope.models.tfscope import TFScopeModel
 from tfscope.data.dataset import AA_TO_TOKEN
-dev = "cuda"; CK = "/data1/leihuang/project/TFScope/checkpoints/v24_contact/contact_v24_seed42"
+dev = "cuda"; CK = os.environ.get("BENCH_CK", "/data1/leihuang/project/TFScope/checkpoints/v24_contact/contact_v24_seed42")
 S6 = "/data1/leihuang/rCLAMPS/barrera2016_SuppTable_S6_combined.csv"
 pairs = json.load(open("results/mutation_benchmark/barrera_pairs.json"))["pairs"]
 
