@@ -313,6 +313,8 @@ def parse_args():
     # v18 contact-aware head
     p.add_argument("--pwm-head-v18", action="store_true",
                    help="Use the v18 contact-aware residual PWM head")
+    p.add_argument("--pwm-head-recog", action="store_true",
+                   help="End-to-end head-swap: RecognitionEnergyHead in place of PWMHeadV18")
     p.add_argument("--v18-freeze-prior", action="store_true",
                    help="Train ONLY the v18 contact branch; freeze the prior head + encoder")
     p.add_argument("--v18-row-div-weight", type=float, default=0.05)
@@ -919,6 +921,7 @@ def main():
         hard_negative_per_sample=args.hard_negative_per_sample,
         all_bad_case_rate=args.all_bad_case_rate,
         pwm_head_v18=args.pwm_head_v18,
+        pwm_head_recog=args.pwm_head_recog,
         v18_freeze_prior=args.v18_freeze_prior,
         v18_row_div_weight=args.v18_row_div_weight,
         v18_hub_weight=args.v18_hub_weight,

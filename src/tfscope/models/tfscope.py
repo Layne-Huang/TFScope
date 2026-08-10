@@ -53,8 +53,13 @@ class TFScopeModel(nn.Module):
 
         # Output heads
         self.gate_head = PositionGateHead(config)   # replaces MotifLengthHead
-        self.use_v18 = getattr(config, "pwm_head_v18", False)
-        self.pwm_head = PWMHeadV18(config) if self.use_v18 else PWMRegressionHead(config)
+        self.use_recog_head = getattr(config, "pwm_head_recog", False)
+        self.use_v18 = getattr(config, "pwm_head_v18", False) and not self.use_recog_head
+        if self.use_recog_head:
+            from tfscope.models.recognition_energy import RecognitionEnergyHead
+            self.pwm_head = RecognitionEnergyHead(config)   # end-to-end head-swap
+        else:
+            self.pwm_head = PWMHeadV18(config) if self.use_v18 else PWMRegressionHead(config)
         self.use_register_head = getattr(config, "register_head", False)
         if self.use_register_head:
             self.register_head = RegisterHead(config)
@@ -193,6 +198,8 @@ class TFScopeModel(nn.Module):
                                recog_prior=recog_prior, family_id=family_id,
                                homology=homology, family_vec=family_vec,
                                bias_prior=bias_prior)
+        if self.use_recog_head:
+            head_kwargs.update(sequence_tokens=sequence_tokens, family_id=family_id)
         pwm_logits = self.pwm_head(moe_out, **head_kwargs)        # internal frame
         register_logits = (
             self.register_head(moe_out) if self.use_register_head else None

@@ -83,3 +83,49 @@ class RecognitionEnergyDecoder(nn.Module):
             parts["z"] = z
             return z, parts
         return z                                             # (n_pos,4)
+
+
+class RecognitionEnergyHead(nn.Module):
+    """Batched, drop-in replacement for PWMHeadV18 inside TFScopeModel. Consumes
+    v24's post-MoE residue embeddings + AA one-hot (from sequence_tokens) + family,
+    runs the RecognitionEnergyDecoder per example (batch is small), returns
+    pwm_logits (B, 4, max_motif_length). The span gate stays external (unchanged).
+    Non-DBD / padding residues are masked out of the soft contact via a large
+    negative bias, so it works on padded batches."""
+
+    def __init__(self, config):
+        super().__init__()
+        self.n_pos = config.max_motif_length
+        self.dec = RecognitionEnergyDecoder(
+            esm_dim=config.esm_embed_dim, d=96, n_pos=self.n_pos,
+            n_fam=config.num_families, aa_dim=20,
+            use_second_shell=getattr(config, "recog_second_shell", False))
+        self._last_attn = None; self._last_key_mask = None       # aux compat
+        # ESM token id -> 20-AA index lookup
+        from tfscope.data.dataset import AA_TO_TOKEN
+        AA = "ACDEFGHIKLMNPQRSTVWY"
+        vocab = max(AA_TO_TOKEN.values()) + 1
+        t2a = torch.full((vocab,), -1, dtype=torch.long)
+        for a, tok in AA_TO_TOKEN.items():
+            if a in AA and 0 <= tok < vocab:
+                t2a[tok] = AA.index(a)
+        self.register_buffer("tok2aa", t2a, persistent=False)
+
+    def forward(self, moe_out, esm_embeddings=None, dbd_mask=None,
+                sequence_tokens=None, family_id=None, **kwargs):
+        B, L, _ = esm_embeddings.shape
+        outs = []
+        for b in range(B):
+            h = esm_embeddings[b]                                # (L, D)
+            ids = self.tok2aa[sequence_tokens[b].clamp(min=0, max=self.tok2aa.numel() - 1)]
+            aa = torch.zeros(L, 20, device=h.device, dtype=h.dtype)
+            valid = ids >= 0
+            if valid.any():
+                aa[valid] = F.one_hot(ids[valid], 20).to(h.dtype)
+            fam = int(family_id[b]) if family_id is not None else 0
+            bias = torch.where(dbd_mask[b].bool(), torch.zeros(L, device=h.device),
+                               torch.full((L,), -1e4, device=h.device)) if dbd_mask is not None else None
+            z = self.dec(h, aa, fam_id=fam, oracle_bias=bias)    # (n_pos, 4)
+            outs.append(z.t())                                   # (4, n_pos)
+        self._last_attn = None; self._last_key_mask = None
+        return torch.stack(outs, 0)                              # (B, 4, n_pos)

@@ -75,6 +75,9 @@ class TFScopeConfig:
     # with a cosine, LayerNorm'd, amino-acid-identity-aware *residual* branch on
     # top of the existing v10/v14 prior head, plus anti-collapse regularisation.
     pwm_head_v18: bool = False         # enable the v18 contact-aware residual head
+    pwm_head_recog: bool = False       # replace PWM head with RecognitionEnergyHead (end-to-end
+                                       # head-swap: same LoRA-ESM+MoE+span-gate, biophysical decoder)
+    recog_second_shell: bool = False   # second-shell psi term in the recog head
     v18_attn_heads: int = 1            # single-head cross-attention (interpretable)
     v18_cosine_temp: float = 10.0      # temperature for cosine attention logits
     v18_kv_layernorm: bool = True      # LayerNorm ESM embeddings before K/V projection
