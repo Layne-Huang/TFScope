@@ -429,3 +429,27 @@ overfits 1.7k proteins), and only partially the objective (pairwise ΔPWM = tiny
 non-generalizing nudge). Real fix needs an encoder that responds to point mutations
 (meaningful unfreezing -> overfits on this data) + single-residue training data (scarce;
 Barrera=55). Architecture/data wall, not a fine-tune knob.
+
+## 18. Head-swap (recognition-energy decoder) does NOT beat v24 on the full 291
+
+Tested whether v24's PWMHeadV18 is the bottleneck by swapping in the
+RecognitionEnergyDecoder on RAW frozen ESM-2, trained on the full train_v22 (all
+families), scored on the 291 unified PanelA. TWO independent training harnesses:
+
+| PWM head | PanelA content_r (291) |
+|---|---|
+| v24 PWMHeadV18 | 0.629 |
+| recog — per-example oracle-align (scripts/train_recog_full.py) | 0.519 |
+| recog — clean per-family fixed frames (scripts/train_recog_frames.py) | 0.438 |
+
+Both recog setups land 0.10-0.19 BELOW v24 => v24's head is NOT the bottleneck; it
+is the better head on the full multi-family benchmark. Phase-8's "recog 0.79 >> v24
+0.47" was subset (bHLH+HD) + metric (WT-covR) + feature-source (v24-adapted)
+specific and does NOT generalize to the full-291 PanelA. Clean-frame worse than
+dirty likely because the fixed family frame forces a family-average motif (PanelA
+re-aligns at test anyway); not worth debugging further.
+
+CONSOLIDATED VERDICT (§14-18): every lever explored — flank inputs, pairwise
+mutation loss, PWM-head swap — underperforms v24. No remaining knob beats it;
+mutation-blindness is a frozen-ESM limit. -> STOP exploring; the paper is
+sequence-only-ties-DeepPBS + rigorous multi-metric comparison + honest limitations.
