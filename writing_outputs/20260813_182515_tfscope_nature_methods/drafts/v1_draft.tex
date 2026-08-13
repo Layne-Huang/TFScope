@@ -99,12 +99,17 @@ sequence.
 
 TFScope maps a TF DNA-binding-domain (DBD) protein sequence to a $4\times L$ PWM
 (Fig.~\ref{fig:overview}\TODO{architecture schematic — Fig 1a/b not yet drawn}).
-The backbone is a \emph{frozen} ESM-2 650M encoder\cite{lin2023esm2}; all
-adaptation is confined to (i) low-rank LoRA updates\cite{hu2022lora} (rank 16),
-(ii) an 8-expert residue mixture-of-experts that specializes over DBD positions,
-(iii) a contact-aware PWM head that biases motif columns using a DNA-contact
-signal read from the backbone, and (iv) a learned span gate that commits to the
-informative motif core. The model is trained on curated protein$\rightarrow$PWM
+The backbone is a \emph{frozen} ESM-2 650M encoder\cite{lin2023esm2} whose
+residue features are a weighted average of the last four layers concatenated with
+a DBD indicator; all adaptation is confined to (i) low-rank
+LoRA updates\cite{hu2022lora} (rank 16), (ii) a token-level residue
+mixture-of-experts (2 shared $+$ 8 routed experts) conditioned on a family
+embedding, with dual gated-attention pooling (global and DBD-restricted),
+(iii) a position gate head whose projection head emits a soft motif gate and a
+protein representation, and (iv) a contact-aware PWM head that predicts a prior
+PWM and adds a contact-aware correction (Final PWM $=$ Prior $+$ Correction),
+where the correction is trained with recognition-residue contact supervision
+(train-only). The model is trained on curated protein$\rightarrow$PWM
 pairs (train split \texttt{tf\_pwm\_training\_v23}) using DBD-cropped inputs; at
 inference it requires only the DBD sequence. We report a five-seed ensemble
 (seeds 42/1/7/13/23) whose members are register-aligned (offset $+$
@@ -248,12 +253,19 @@ forward pass and no structure.
 \small
 
 \subsection*{Model architecture}
-Frozen ESM-2 650M (\texttt{esm2\_t33\_650M\_UR50D}, layer 33) backbone; LoRA
-adapters (rank 16) on attention projections; an 8-expert residue
-mixture-of-experts over DBD positions; a contact-aware PWM head (v18 contact
-bias) that injects a DNA-contact prior derived from the backbone; and a learned
-span gate committing to the motif core. Output is a $4\times L$ PWM.
-\TODO{exact layer list, LoRA target modules, MoE routing, head equations, param counts}
+Frozen ESM-2 650M (\texttt{esm2\_t33\_650M\_UR50D}) backbone; per-residue features
+are a learned weighted average of the last four transformer layers, concatenated
+with a binary DBD indicator. Adaptation: LoRA adapters (rank 16); a token-level
+residue mixture-of-experts with 2 shared and 8 routed experts, conditioned on a
+family embedding; dual gated-attention pooling (a global pool and a
+DBD-restricted pool); a position gate head with a projection head emitting a soft
+motif gate (up to 20 positions) and a pooled protein representation; and a
+contact-aware PWM head producing a prior PWM plus a contact-aware correction
+(Final PWM $=$ Prior $+$ Correction). The correction is supervised with
+recognition-residue DNA-contact labels during training only; at inference the
+model is sequence-only. Output is a $4\times L$ PWM with the gate.
+\TODO{exact LoRA target modules, MoE routing/top-k, gated-attention and
+correction equations, param counts, weighted-layer indices}
 
 \subsection*{Training data and splits}
 Protein$\rightarrow$PWM pairs from \texttt{tf\_pwm\_training\_v23} with DBD-cropped
@@ -326,10 +338,20 @@ variance decomposition. \TODO{n, seeds, CI method, multiple-comparison handling}
 \section*{Figures}
 
 \begin{figure}[h]\centering
-\PLACEHOLDER{Fig 1a/b architecture schematic not yet drawn}
-\caption{\textbf{TFScope architecture.} Frozen ESM-2 650M backbone with LoRA,
-residue mixture-of-experts, contact-aware PWM head, and span gate mapping a DBD
-sequence to a PWM. \TODO{draw schematic}}
+\includegraphics[width=\linewidth]{Model.pdf}
+\caption{\textbf{TFScope architecture (sequence-only, no structure at inference).}
+(1)~Input: a TF DNA-binding-domain (DBD) protein sequence. (2)~PLM encoder: a
+\emph{frozen} ESM-2 650M backbone with LoRA adapters; residue embeddings are a
+weighted average of the last four layers, concatenated with a DBD indicator.
+(3)~Token-level residue mixture-of-experts (2 shared $+$ 8 routed experts)
+conditioned on a family embedding, followed by dual gated-attention pooling
+(global and DBD-restricted). (4)~Position gate head: a projection head produces a
+soft motif gate over positions and a protein representation. (5)~Contact-aware
+PWM head: a prior PWM (A) is refined by a contact-aware correction (B) driven by
+recognition-residue contact supervision (train-only), giving Final PWM $=$ Prior
+$+$ Correction. (6)~Output: the predicted position gate, PWM, and motif logo;
+predicted consensus DNA can be validated by downstream folding (AF3/Boltz) or
+Rosetta.}
 \label{fig:overview}
 \end{figure}
 
