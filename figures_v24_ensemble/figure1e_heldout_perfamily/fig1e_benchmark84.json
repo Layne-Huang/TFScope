@@ -1,0 +1,66 @@
+{
+ "set": "deeppbs_cluster40 test (benchmark)",
+ "n": 84,
+ "n_tf": 41,
+ "n_leaked": 20,
+ "median_all": 0.947,
+ "mean_all": 0.811,
+ "median_clean": 0.947,
+ "mean_clean": 0.798,
+ "per_family": {
+  "C2H2_long": {
+   "n": 3,
+   "n_clean": 3,
+   "median": 0.993,
+   "median_clean": 0.993
+  },
+  "C2H2_medium": {
+   "n": 1,
+   "n_clean": 0,
+   "median": 0.931,
+   "median_clean": null
+  },
+  "C2H2_short": {
+   "n": 4,
+   "n_clean": 4,
+   "median": 0.959,
+   "median_clean": 0.959
+  },
+  "ETS": {
+   "n": 2,
+   "n_clean": 2,
+   "median": 0.997,
+   "median_clean": 0.997
+  },
+  "Homeodomain": {
+   "n": 15,
+   "n_clean": 6,
+   "median": 0.998,
+   "median_clean": 0.934
+  },
+  "Nuclear_Receptor": {
+   "n": 6,
+   "n_clean": 3,
+   "median": 0.794,
+   "median_clean": 0.665
+  },
+  "Other": {
+   "n": 42,
+   "n_clean": 35,
+   "median": 0.944,
+   "median_clean": 0.951
+  },
+  "bHLH": {
+   "n": 5,
+   "n_clean": 5,
+   "median": 0.968,
+   "median_clean": 0.968
+  },
+  "bZIP": {
+   "n": 6,
+   "n_clean": 6,
+   "median": 0.849,
+   "median_clean": 0.849
+  }
+ }
+}
