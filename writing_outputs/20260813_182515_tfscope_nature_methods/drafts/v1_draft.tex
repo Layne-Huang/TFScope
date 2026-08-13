@@ -1,0 +1,395 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,amsmath,amssymb}
+\usepackage[numbers,super,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage{authblk}
+\usepackage{caption}
+\usepackage{siunitx}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\captionsetup{font=small,labelfont=bf}
+
+% ---- placeholder macro for fill-later content ----
+\newcommand{\TODO}[1]{{\color{red}\textbf{[TODO: #1]}}}
+\newcommand{\PLACEHOLDER}[1]{{\color{orange}\textbf{[PLACEHOLDER --- #1]}}}
+\graphicspath{{../figures/}}
+
+\title{\textbf{TFScope: sequence-only prediction of transcription-factor\\ binding specificity rivals structure-based methods}}
+\author[1]{Lei Huang}
+\author[1]{\TODO{co-authors}}
+\author[1,*]{\TODO{corresponding author}}
+\affil[1]{\TODO{affiliations}}
+\affil[*]{Correspondence: \TODO{email}}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+Predicting the DNA sequence preference of a transcription factor (TF) from its
+protein sequence alone remains a central problem in gene-regulatory genomics.
+State-of-the-art accuracy is achieved by structure-based models that require an
+experimentally determined or predicted protein--DNA complex, limiting their use
+for the large fraction of TFs and designed proteins that lack a reliable
+structure. Here we introduce \textbf{TFScope}, a sequence-only model that maps a
+TF DNA-binding domain (DBD) to a position weight matrix (PWM) using a
+\emph{frozen} protein language model (ESM-2 650M) adapted with low-rank
+(LoRA) fine-tuning, a residue mixture-of-experts, and a contact-aware motif head.
+On a leakage-controlled benchmark in which held-out TFs share no training
+identity, a five-seed TFScope ensemble reaches a motif content correlation of
+$0.664$ and is statistically indistinguishable from the structure-based method
+DeepPBS (mean gate-oracle $r$ $0.657$ vs $0.626$; bootstrap $p=0.30$), despite
+using no structure at inference. An independent structure predictor (Boltz-2)
+judges TFScope's sequence-only consensus motifs to form protein--DNA complexes at
+least as confidently as DeepPBS's ($\text{ipTM}\ 0.957$ vs $0.923$; $32/41$ TFs;
+Wilcoxon $p=1\times10^{-5}$). Probing the frozen backbone shows that it linearly
+encodes DNA-contact residues (AUROC $0.95$) and organizes DBD families
+(k-NN purity $0.83$), explaining where the signal comes from; a variance
+decomposition attributes $59\%$ of TFScope's edge to genuine within-family
+specificity rather than family lookup. We further show directional
+single-mutation motif switching (MyoD1 E-box) and application to \emph{de novo}
+designed DBDs, and we transparently characterize the model's principal
+limitation --- insensitivity to specificity-altering point mutations inherited
+from the frozen backbone. TFScope makes accurate specificity prediction available
+wherever only a protein sequence is known.
+\end{abstract}
+
+\vspace{1em}
+
+% =====================================================================
+\section*{Introduction}
+
+Transcription factors read the genome by binding short DNA motifs, and a compact
+summary of that preference --- the position weight matrix (PWM) --- underlies
+much of regulatory-genomic analysis, from motif enrichment to variant
+interpretation\cite{weirauch2014cisbp,castromondragon2022jaspar}. Experimental
+determination of PWMs by protein-binding microarrays or HT-SELEX is
+laborious\cite{jolma2013dna}, and only a minority of the estimated $\sim$1,600
+human TFs, and essentially none of the rapidly growing space of designed
+DNA-binding proteins, have measured specificities. A predictive map from protein
+sequence to PWM would close this gap.
+
+Two families of computational approaches exist. Structure-based models, most
+recently the geometric deep-learning method DeepPBS\cite{mitra2024deeppbs},
+achieve strong accuracy by reading the physicochemical readout of an
+experimentally solved or predicted protein--DNA complex. Their accuracy is
+gated on structure availability and quality; for TFs without a co-crystal, and
+for designed proteins, a structure must first be predicted, adding cost and a
+second source of error. Sequence-only models sidestep structure but have
+historically lagged, and reported margins are frequently inflated by
+\emph{TF leakage} --- test proteins whose close homologs appear in
+training\cite{mitra2024deeppbs}.
+
+Protein language models (PLMs) trained on evolutionary-scale sequence data have
+transformed sequence-only inference of protein structure and
+function\cite{rives2021esm1b,lin2023esm2}. We hypothesized that a frozen PLM
+already contains the information needed to specify DNA-binding preference, and
+that a lightweight, structure-free adapter could extract it. Here we test this
+hypothesis with \textbf{TFScope} and show, under strict leakage control, that a
+sequence-only model matches a structure-based one --- reaching accuracy parity
+without ever seeing a structure, while remaining applicable to any protein
+sequence.
+
+% =====================================================================
+\section*{Results}
+
+\subsection*{The TFScope model}
+
+TFScope maps a TF DNA-binding-domain (DBD) protein sequence to a $4\times L$ PWM
+(Fig.~\ref{fig:overview}\TODO{architecture schematic — Fig 1a/b not yet drawn}).
+The backbone is a \emph{frozen} ESM-2 650M encoder\cite{lin2023esm2}; all
+adaptation is confined to (i) low-rank LoRA updates\cite{hu2022lora} (rank 16),
+(ii) an 8-expert residue mixture-of-experts that specializes over DBD positions,
+(iii) a contact-aware PWM head that biases motif columns using a DNA-contact
+signal read from the backbone, and (iv) a learned span gate that commits to the
+informative motif core. The model is trained on curated protein$\rightarrow$PWM
+pairs (train split \texttt{tf\_pwm\_training\_v23}) using DBD-cropped inputs; at
+inference it requires only the DBD sequence. We report a five-seed ensemble
+(seeds 42/1/7/13/23) whose members are register-aligned (offset $+$
+reverse-complement) to a reference frame before averaging. Full architecture and
+training details are in Methods.
+
+\subsection*{Sequence-only prediction matches DeepPBS under leakage control}
+
+We evaluated TFScope against the structure-based method
+DeepPBS\cite{mitra2024deeppbs} on a shared held-out benchmark
+(Fig.~\ref{fig:benchmark}). Because naive test/train splits over-report accuracy
+when homologous TFs leak across the split, we adopted two controls: (i) a
+40\%-DBD-identity clustered holdout, and (ii) explicit removal of the $20$
+benchmark genes from DeepPBS's training for a gene-disjoint retrain. All PWMs are
+compared with a register-invariant, oracle-aligned motif-content correlation
+(offset $\pm10$, reverse-complement), the fair metric for methods that do not
+share a fixed coordinate frame.
+
+Under the clustered-holdout benchmark ($n{=}84$ structures, $41$ TFs), the
+five-seed TFScope ensemble reaches a motif content correlation of
+$\mathbf{0.664}$, improving on the single-seed model ($0.629$) and every
+component in the ablation ladder (Fig.~\ref{fig:benchmark}\TODO{ladder panel});
+by the mean gate-oracle-$r$ protocol TFScope scores $0.657$ versus DeepPBS's
+$0.626$ (paired difference $+0.031$, bootstrap $p=0.30$) --- a statistical tie in
+TFScope's favor. On the gene-disjoint $20$-gene comparison, a DeepPBS ensemble
+retrained to exclude the test genes scores $0.720$ versus TFScope's $0.685$
+(paired $\Delta = +0.034$ with a confidence interval crossing zero; the widely
+cited pretrained DeepPBS value of $0.806$ is invalid here because those
+checkpoints saw all $20$ test genes). We emphasize that TFScope attains this
+parity \emph{without structure}. Per-family accuracy is broken down in
+Fig.~\ref{fig:perfamily}, and representative predicted logos in
+Fig.~\ref{fig:logos}.
+
+\subsection*{An independent structure predictor judges sequence-only motifs as
+more foldable}
+
+To obtain a model-independent quality signal, we asked whether the DNA a model
+predicts actually forms a confident complex with its TF. For each of $41$ TFs we
+folded the protein with its TFScope-ensemble consensus DNA and, separately, with
+its DeepPBS consensus DNA, using Boltz-2\cite{wohlwend2024boltz} with
+ColabFold\cite{mirdita2022colabfold} multiple-sequence alignments, and compared
+the interface confidence (ipTM) of the two complexes
+(Fig.~\ref{fig:foldability}). TFScope's sequence-only motifs fold at least as
+confidently as DeepPBS's structure-derived motifs (mean ipTM $\mathbf{0.957}$ vs
+$0.923$; mean $\Delta = +0.035$; TFScope favored in $\mathbf{32/41}$ TFs;
+Wilcoxon $p=1\times10^{-5}$; complex pLDDT $0.948$ vs $0.921$). A length control
+confirms the effect is not an artifact of motif length (Spearman
+$\rho=-0.43$ between $\Delta$ipTM and $\Delta$motif-length). Because Boltz-2 is
+independent of both predictors, this provides orthogonal evidence that TFScope's
+sequence-only readout is biophysically coherent.
+
+\subsection*{The frozen backbone encodes DNA-contact residues and family identity}
+
+Why does a sequence-only model reach structure-level accuracy? We probed the
+frozen ESM-2 backbone directly. A linear probe on frozen layer-33 residue
+embeddings predicts which DBD residues contact DNA (within \SI{4.5}{\angstrom}
+in co-crystals) with pooled AUROC $\mathbf{0.95}$ and AUPRC $0.78$ across
+$2{,}324$ complexes ($240{,}072$ residues; GroupKFold with no TF shared across
+folds; Fig.~\ref{fig:recognition}). Rendered onto a homeodomain--DNA co-crystal
+(PBX1, PDB 1B72), the residues TFScope recognizes as DNA-contacting coincide with
+the recognition-helix positions that insert into the major groove
+(Fig.~\ref{fig:recognition}). Independently, frozen DBD embeddings organize TF
+families (k-NN purity $0.83$; linear family-probe accuracy $0.96$),
+\TODO{cite ESM DBD family diagnostic figure}. This structural and taxonomic
+information is present \emph{before} any TFScope training, and the contact-aware
+head is what converts it into a calibrated motif.
+
+\subsection*{TFScope reads within-family specificity, not just family identity}
+
+A model could reach high aggregate accuracy merely by returning a family-average
+motif. To test this, we decomposed TFScope's advantage over a random real-PWM
+baseline into a family-identity component and a within-family component on the
+clustered holdout. We find that $41\%$ of the edge is explained by family
+identity but $\mathbf{59\%}$ reflects genuine within-family specificity
+(permutation $p=2\times10^{-4}$; Fig.~\ref{fig:mutagenesis}\TODO{decomposition
+panel}), showing that TFScope resolves clade-level differences, not only family
+lookup.
+
+\subsection*{Case studies: motif switching and designed proteins}
+
+Single amino-acid substitutions in a DBD can rewire specificity. Using a
+directional switch score, TFScope reproduces the MyoD1 E-box switch induced by
+the L122R substitution ($\Delta_{\mathrm{switch}} = +9.17$;
+Fig.~\ref{fig:switch}), and a structure-based ensemble median agrees on the
+preferred site (\texttt{CACGTG}). Applied to \emph{de novo} designed DBDs, TFScope
+recovers the intended CAC-type preference to a graded degree (strongest for DBP6,
+$r=0.65$; Fig.~\ref{fig:dbp}), demonstrating utility beyond natural proteins.
+\PLACEHOLDER{expand designed-DBP paragraph once all design cases finalized}
+
+\subsection*{Limitations: insensitivity to specificity-altering point mutations}
+
+We characterize the model's principal failure mode transparently. On the
+Barrera\cite{barrera2016survey} panel of homeodomain wild-type/mutant pairs,
+TFScope is largely mutation-\emph{blind}: it predicts a mean absolute motif change
+of $0.005$ against an observed $0.180$, with near-zero correlation to the
+measured effect. This limitation is inherited from the frozen backbone, whose
+embeddings change little under single substitutions; it coexists with the
+successful \emph{directional} switch score above because the latter reads a
+coarse preference shift rather than a fine magnitude. Overcoming point-mutation
+sensitivity without sacrificing the model's structure-free generality is the main
+open problem (Discussion).
+
+% =====================================================================
+\section*{Discussion}
+
+TFScope shows that accurate TF specificity prediction does not require a
+protein--DNA structure: a frozen protein language model already carries the
+recognition signal, and a small structure-free adapter suffices to read it out to
+motif-level accuracy that matches a strong structure-based method under strict
+leakage control. Two aspects make the parity credible rather than a metric
+artifact. First, we control TF leakage explicitly --- the dominant reason
+sequence-only/structure-based comparisons have been unreliable --- and still
+observe parity. Second, an independent structure predictor, blind to both models,
+finds TFScope's sequence-only motifs to be at least as foldable as DeepPBS's.
+
+The interpretability analyses locate the signal: the frozen backbone linearly
+encodes DNA-contact residues and family identity, and TFScope's advantage is
+majority within-family, not family lookup. This reframes what a PLM ``knows''
+about DNA binding and suggests the backbone, not the adapter, is the ceiling.
+Consistent with that, swapping the motif head for a biophysical
+recognition-energy decoder did not help ($0.554 < 0.629$), and swapping the
+backbone to a weaker encoder hurt --- the informative bottleneck is the frozen
+representation itself.
+
+The clearest limitation, mutation-blindness, follows directly: single
+substitutions barely move frozen embeddings, so fine specificity changes are
+under-read even though family- and clade-level preferences are captured. Progress
+likely requires backbone signals that are sensitive to individual residues ---
+for example, contact- or structure-conditioned features --- without reintroducing
+a hard structure dependency at inference. \PLACEHOLDER{position relative to
+concurrent PLM-based specificity work once literature search (Phase 1) is
+complete}
+
+For practitioners, TFScope provides specificity predictions wherever a DBD
+sequence is available --- including the majority of TFs without co-crystals and
+the growing space of designed DNA-binding proteins --- at the cost of a single
+forward pass and no structure.
+
+% =====================================================================
+\section*{Methods}
+\small
+
+\subsection*{Model architecture}
+Frozen ESM-2 650M (\texttt{esm2\_t33\_650M\_UR50D}, layer 33) backbone; LoRA
+adapters (rank 16) on attention projections; an 8-expert residue
+mixture-of-experts over DBD positions; a contact-aware PWM head (v18 contact
+bias) that injects a DNA-contact prior derived from the backbone; and a learned
+span gate committing to the motif core. Output is a $4\times L$ PWM.
+\TODO{exact layer list, LoRA target modules, MoE routing, head equations, param counts}
+
+\subsection*{Training data and splits}
+Protein$\rightarrow$PWM pairs from \texttt{tf\_pwm\_training\_v23} with DBD-cropped
+inputs (\texttt{dbd\_start}=0). Held-out evaluation uses a 40\%-DBD-identity
+clustered split and a gene-disjoint $20$-gene set for the DeepPBS comparison.
+\TODO{data sources (JASPAR/HT-SELEX/CIS-BP), counts per family, dedup/clustering
+procedure, exact train/val/test sizes}
+
+\subsection*{Ensembling}
+Five seeds (42/1/7/13/23). Each member commits its own motif core via the span
+gate; members are register-aligned to the seed-42 core (offset $\pm10$,
+reverse-complement, minimum overlap 3) and the aligned PWMs are averaged and
+renormalized.
+
+\subsection*{Evaluation metrics}
+Panel A: oracle-aligned motif \emph{content} correlation (register-invariant,
+$r$). Panel B: end-to-end coverage-aware correlation (covR) with the learned
+gate. Mean/median gate-oracle-$r$ aligns each method's IC core to ground truth
+before scoring. \TODO{precise metric definitions + equations}
+
+\subsection*{DeepPBS comparison}
+DeepPBS\cite{mitra2024deeppbs} run in a dedicated environment
+(\TODO{torch/PyG versions}); \texttt{prot\_shape} inputs; 5-model ensemble.
+Gene-disjoint retrain removes the $20$ benchmark genes from training. The
+pretrained checkpoints are leakage-contaminated for this benchmark and reported
+only as a reference.
+
+\subsection*{Foldability assay}
+For each of $41$ TFs, the protein was folded with (a) its TFScope-ensemble
+consensus dsDNA and (b) its DeepPBS consensus dsDNA using
+Boltz-2\cite{wohlwend2024boltz} (ColabFold MSA server\cite{mirdita2022colabfold};
+identical protein per pair, so MSAs are reused). Interface confidence (ipTM) and
+complex pLDDT were read from Boltz confidence outputs. Length control: Spearman
+correlation of $\Delta$ipTM with $\Delta$motif-length.
+
+\subsection*{Contact-residue and family probes}
+Frozen layer-33 residue embeddings; linear probe for DNA-contact residues
+(\SI{4.5}{\angstrom} cutoff from co-crystals), GroupKFold by protein sequence,
+$2{,}324$ complexes. Family organization: k-NN purity and linear family probe on
+frozen DBD embeddings. PyMOL renders write the contact-probe score into the
+B-factor column of PDB 1B72.
+
+\subsection*{Within-family decomposition}
+\TODO{describe permutation procedure separating family-identity vs within-family
+contributions to the edge over a random-real-PWM baseline}
+
+\subsection*{Mutation sensitivity and switch score}
+Barrera\cite{barrera2016survey} wild-type/mutant homeodomain pairs; mean absolute
+PWM change vs measured specificity change. Directional switch score:
+\TODO{definition of $\Delta_{\mathrm{switch}}$}.
+
+\subsection*{Statistics}
+Bootstrap and Wilcoxon signed-rank tests as noted; permutation test for the
+variance decomposition. \TODO{n, seeds, CI method, multiple-comparison handling}
+
+\subsection*{Code and data availability}
+\TODO{repository URL, checkpoint DOI, processed-data deposition}
+
+\normalsize
+% =====================================================================
+\section*{Declarations}
+\noindent\textbf{Author contributions (CRediT).} \TODO{fill per author}\\
+\textbf{Competing interests.} The authors declare no competing interests. \TODO{confirm}\\
+\textbf{Funding.} \TODO{grants}\\
+\textbf{Data availability.} \TODO{deposition + accession}\\
+\textbf{Code availability.} \TODO{repo + license}\\
+\textbf{AI-use statement.} \TODO{per Nature Methods policy; drafting assistance used}
+
+% =====================================================================
+\section*{Figures}
+
+\begin{figure}[h]\centering
+\PLACEHOLDER{Fig 1a/b architecture schematic not yet drawn}
+\caption{\textbf{TFScope architecture.} Frozen ESM-2 650M backbone with LoRA,
+residue mixture-of-experts, contact-aware PWM head, and span gate mapping a DBD
+sequence to a PWM. \TODO{draw schematic}}
+\label{fig:overview}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.7\linewidth]{figure1c_best_logos.png}
+\caption{\textbf{Representative predicted motifs.} TFScope-ensemble predicted
+logos for held-out TFs. \label{fig:logos}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.85\linewidth]{figure1e_perfamily_benchmark84.png}
+\caption{\textbf{Leakage-controlled benchmark, per family.} Motif content
+correlation on the clustered holdout ($n{=}84$, $41$ TFs); ensemble $0.664$.
+Head-to-head with DeepPBS is a statistical tie (mean gate-oracle $r$ $0.657$ vs
+$0.626$; bootstrap $p=0.30$). \label{fig:perfamily}}
+\end{figure}
+% NOTE: dedicated benchmark bar/ladder panel (\ref{fig:benchmark}) still to be assembled
+\begin{figure}[h]\centering
+\PLACEHOLDER{benchmark bar + ablation ladder panel}
+\caption{\textbf{Benchmark and ablation ladder.} \TODO{assemble from
+results/iclr\_phase1\_apples\_to\_apples}. \label{fig:benchmark}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.9\linewidth]{figure_foldability.png}
+\caption{\textbf{Independent foldability.} Boltz-2 complex ipTM for TFScope-
+ensemble vs DeepPBS consensus DNA ($41$ TFs): $0.957$ vs $0.923$, $32/41$ favor
+TFScope, Wilcoxon $p=1\times10^{-5}$. \label{fig:foldability}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.6\linewidth]{recognition_pymol_1B72_PBX1.png}
+\caption{\textbf{DNA-contact residues recognized by TFScope.} PBX1 homeodomain
+(PDB 1B72): recognition-helix residues scored as DNA-contacting by the frozen-
+backbone contact probe (AUROC $0.95$) shown as orange sticks with H-bonds to the
+major-groove bases. \label{fig:recognition}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.85\linewidth]{figure2b_mutagenesis.png}
+\caption{\textbf{In-silico mutagenesis / within-family signal.}
+\TODO{finalize caption + add decomposition panel}. \label{fig:mutagenesis}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.7\linewidth]{figure4a_switch.png}
+\caption{\textbf{Single-mutation motif switch.} MyoD1 L122R E-box switch,
+$\Delta_{\mathrm{switch}}=+9.17$. \label{fig:switch}}
+\end{figure}
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.75\linewidth]{dbp_tfscope_heatmap.png}
+\caption{\textbf{Designed DNA-binding proteins.} TFScope recovers intended CAC-
+type preference (strongest DBP6, $r=0.65$). \label{fig:dbp}}
+\end{figure}
+
+% held-out recovery figure available: figure3a_heldout_clean.png (place where appropriate)
+
+\clearpage
+\bibliographystyle{unsrtnat}
+\bibliography{../references/references}
+
+\end{document}

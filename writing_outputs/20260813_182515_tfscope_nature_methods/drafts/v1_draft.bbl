@@ -1,0 +1,90 @@
+\begin{thebibliography}{10}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Weirauch et~al.(2014)Weirauch, Yang, Albu, et~al.]{weirauch2014cisbp}
+Matthew~T. Weirauch, Ally Yang, Mihai Albu, et~al.
+\newblock Determination and inference of eukaryotic transcription factor
+  sequence specificity.
+\newblock \emph{Cell}, 158\penalty0 (6):\penalty0 1431--1443, 2014.
+\newblock \doi{10.1016/j.cell.2014.08.009}.
+
+\bibitem[Castro-Mondragon et~al.(2022)Castro-Mondragon, Riudavets-Puig,
+  Rauluseviciute, et~al.]{castromondragon2022jaspar}
+Jaime~A. Castro-Mondragon, Rafael Riudavets-Puig, Ieva Rauluseviciute, et~al.
+\newblock Jaspar 2022: the 9th release of the open-access database of
+  transcription factor binding profiles.
+\newblock \emph{Nucleic Acids Research}, 50\penalty0 (D1):\penalty0 D165--D173,
+  2022.
+\newblock \doi{10.1093/nar/gkab1113}.
+
+\bibitem[Jolma et~al.(2013)Jolma, Yan, Whitington, et~al.]{jolma2013dna}
+Arttu Jolma, Jian Yan, Thomas Whitington, et~al.
+\newblock Dna-binding specificities of human transcription factors.
+\newblock \emph{Cell}, 152\penalty0 (1-2):\penalty0 327--339, 2013.
+\newblock \doi{10.1016/j.cell.2012.12.009}.
+
+\bibitem[Mitra et~al.(2024)Mitra, Cohen, Sagendorf, Berman, and
+  Rohs]{mitra2024deeppbs}
+Raktim Mitra, Alan~M. Cohen, Jared~M. Sagendorf, Helen~M. Berman, and Remo
+  Rohs.
+\newblock Geometric deep learning of protein--dna binding specificity.
+\newblock \emph{Nature Methods}, 2024.
+\newblock DeepPBS. \TODO{verify volume/pages/DOI}.
+
+\bibitem[Rives et~al.(2021)Rives, Meier, Sercu, Goyal, Lin, Liu, Guo, Ott,
+  Zitnick, Ma, and Fergus]{rives2021esm1b}
+Alexander Rives, Joshua Meier, Tom Sercu, Siddharth Goyal, Zeming Lin, Jason
+  Liu, Demi Guo, Myle Ott, C.~Lawrence Zitnick, Jerry Ma, and Rob Fergus.
+\newblock Biological structure and function emerge from scaling unsupervised
+  learning to 250 million protein sequences.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 118\penalty0
+  (15):\penalty0 e2016239118, 2021.
+\newblock \doi{10.1073/pnas.2016239118}.
+
+\bibitem[Lin et~al.(2023)Lin, Akin, Rao, Hie, Zhu, Lu, Smetanin, Verkuil,
+  Kabeli, Shmueli, dos Santos~Costa, Fazel-Zarandi, Sercu, Candido, and
+  Rives]{lin2023esm2}
+Zeming Lin, Halil Akin, Roshan Rao, Brian Hie, Zhongkai Zhu, Wenting Lu, Nikita
+  Smetanin, Robert Verkuil, Ori Kabeli, Yaniv Shmueli, Allan dos Santos~Costa,
+  Maryam Fazel-Zarandi, Tom Sercu, Salvatore Candido, and Alexander Rives.
+\newblock Evolutionary-scale prediction of atomic-level protein structure with
+  a language model.
+\newblock \emph{Science}, 379\penalty0 (6637):\penalty0 1123--1130, 2023.
+\newblock \doi{10.1126/science.ade2574}.
+
+\bibitem[Hu et~al.(2022)Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and
+  Chen]{hu2022lora}
+Edward~J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
+  Wang, Lu~Wang, and Weizhu Chen.
+\newblock Lora: Low-rank adaptation of large language models.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2022.
+
+\bibitem[Wohlwend et~al.(2024)Wohlwend, Corso, Passaro,
+  et~al.]{wohlwend2024boltz}
+Jeremy Wohlwend, Gabriele Corso, Saro Passaro, et~al.
+\newblock Boltz-1: Democratizing biomolecular interaction modeling.
+\newblock \emph{bioRxiv}, 2024.
+\newblock \TODO{update to Boltz-2 citation + DOI}.
+
+\bibitem[Mirdita et~al.(2022)Mirdita, Sch{\"u}tze, Moriwaki, Heo, Ovchinnikov,
+  and Steinegger]{mirdita2022colabfold}
+Milot Mirdita, Konstantin Sch{\"u}tze, Yoshitaka Moriwaki, Lim Heo, Sergey
+  Ovchinnikov, and Martin Steinegger.
+\newblock Colabfold: making protein folding accessible to all.
+\newblock \emph{Nature Methods}, 19:\penalty0 679--682, 2022.
+\newblock \doi{10.1038/s41592-022-01488-1}.
+
+\bibitem[Barrera et~al.(2016)Barrera, Vedenko, Kurland,
+  et~al.]{barrera2016survey}
+Luis~A. Barrera, Anastasia Vedenko, Jesse~V. Kurland, et~al.
+\newblock Survey of variation in human transcription factors reveals prevalent
+  dna binding changes.
+\newblock \emph{Science}, 351\penalty0 (6280):\penalty0 1450--1454, 2016.
+\newblock \doi{10.1126/science.aad2257}.
+
+\end{thebibliography}
