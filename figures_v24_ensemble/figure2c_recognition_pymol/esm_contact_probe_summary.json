@@ -1,0 +1,55 @@
+{
+  "n_complexes": 2324,
+  "n_dbd_residues": 240072,
+  "contact_base_rate": 0.17109867039888033,
+  "esm_model": "esm2_t33_650M_UR50D",
+  "esm_layer": 33,
+  "contact_cutoff_angstrom": 4.5,
+  "grouping": "protein sequence (GroupKFold, no TF across folds)",
+  "n_folds": 5,
+  "pooled_auroc": 0.9464636696564401,
+  "pooled_auprc": 0.781172166175611,
+  "fold_metrics": [
+    {
+      "fold": 0,
+      "n_test": 48021,
+      "auroc": 0.9553295588034825,
+      "auprc": 0.821663620513092
+    },
+    {
+      "fold": 1,
+      "n_test": 48000,
+      "auroc": 0.9560615214808047,
+      "auprc": 0.8144566091112193
+    },
+    {
+      "fold": 2,
+      "n_test": 48021,
+      "auroc": 0.9378141667283664,
+      "auprc": 0.7470919727386643
+    },
+    {
+      "fold": 3,
+      "n_test": 48020,
+      "auroc": 0.9491133085038718,
+      "auprc": 0.7884116748616061
+    },
+    {
+      "fold": 4,
+      "n_test": 48010,
+      "auroc": 0.9343504557109388,
+      "auprc": 0.7435747412081517
+    }
+  ],
+  "mean_recall_top5": 0.2706545733737114,
+  "mean_recall_top10": 0.5018449453370345,
+  "mean_hits_top5": 4.151462994836489,
+  "mean_hits_top10": 7.892426850258175,
+  "median_contacts_per_complex": 17.0,
+  "case_study": {
+    "complex_id": "1B72_0_B_WITH_DE",
+    "family": "Homeobox_KN",
+    "recall_top10": 1.0,
+    "n_contacts": 10
+  }
+}
