@@ -453,3 +453,25 @@ CONSOLIDATED VERDICT (§14-18): every lever explored — flank inputs, pairwise
 mutation loss, PWM-head swap — underperforms v24. No remaining knob beats it;
 mutation-blindness is a frozen-ESM limit. -> STOP exploring; the paper is
 sequence-only-ties-DeepPBS + rigorous multi-metric comparison + honest limitations.
+
+## 19. END-TO-END head-swap (fair) also < v24 -> head-swap thread CLOSED
+
+Addressed the confound in §18 (frozen features, no LoRA/MoE): integrated
+RecognitionEnergyHead INTO the full v24 pipeline (LoRA-ESM + residue-MoE + span
+gate + N-chain), only the PWM head differs, trained end-to-end from scratch
+(--pwm-head-recog; scripts/run_recog_e2e_single.sh; early-stopped ep165).
+
+Result on the 291 unified PanelA:
+| head | content_r | covR | gate_len_mae | train oracle_r |
+|---|---|---|---|---|
+| v24 PWMHeadV18 | 0.629 | 0.530 | 3.52 | 0.458 |
+| recog end-to-end | 0.554 | 0.462 | 4.02 | 0.484 |
+| recog frozen dirty/clean (§18) | 0.519/0.438 | | | |
+
+End-to-end (0.554) beats the frozen runs (confirms LoRA adaptation matters) but is
+still 0.075 BELOW v24 -> v24's PWM head is NOT the bottleneck; it is the better head
+on the benchmark. NUANCE: recog's TRAIN oracle_r (0.484) > v24 (0.458) yet PanelA is
+lower with worse gate_len_mae -> fits oracle-motif slightly better but worse committed
+prediction; not a benchmark win. HEAD-SWAP THREAD CLOSED. Consolidated verdict (§14-19):
+every lever (flanks, pairwise-mutation loss, head-swap frozen+end-to-end) < v24. Stop
+exploring; consolidate the sequence-only-ties-DeepPBS paper.
