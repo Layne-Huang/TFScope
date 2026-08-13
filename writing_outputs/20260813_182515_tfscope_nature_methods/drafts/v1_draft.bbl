@@ -1,4 +1,4 @@
-\begin{thebibliography}{10}
+\begin{thebibliography}{11}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -20,6 +20,13 @@ Jaime~A. Castro-Mondragon, Rafael Riudavets-Puig, Ieva Rauluseviciute, et~al.
 \newblock \emph{Nucleic Acids Research}, 50\penalty0 (D1):\penalty0 D165--D173,
   2022.
 \newblock \doi{10.1093/nar/gkab1113}.
+
+\bibitem[Avsec et~al.(2021)Avsec, Agarwal, Visentin, et~al.]{avsec2021enformer}
+{\v Z}iga Avsec, Vikram Agarwal, Daniel Visentin, et~al.
+\newblock Effective gene expression prediction from sequence by integrating
+  long-range interactions.
+\newblock \emph{Nature Methods}, 18:\penalty0 1196--1203, 2021.
+\newblock \doi{10.1038/s41592-021-01252-x}.
 
 \bibitem[Jolma et~al.(2013)Jolma, Yan, Whitington, et~al.]{jolma2013dna}
 Arttu Jolma, Jian Yan, Thomas Whitington, et~al.
