@@ -1,9 +1,15 @@
-\begin{thebibliography}{11}
+\begin{thebibliography}{40}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Stormo(2000)]{stormo2000dna}
+Gary~D. Stormo.
+\newblock {DNA} binding sites: representation and discovery.
+\newblock \emph{Bioinformatics}, 16\penalty0 (1):\penalty0 16--23, 2000.
+\newblock \doi{10.1093/bioinformatics/16.1.16}.
 
 \bibitem[Weirauch et~al.(2014)Weirauch, Yang, Albu, et~al.]{weirauch2014cisbp}
 Matthew~T. Weirauch, Ally Yang, Mihai Albu, et~al.
@@ -15,11 +21,20 @@ Matthew~T. Weirauch, Ally Yang, Mihai Albu, et~al.
 \bibitem[Castro-Mondragon et~al.(2022)Castro-Mondragon, Riudavets-Puig,
   Rauluseviciute, et~al.]{castromondragon2022jaspar}
 Jaime~A. Castro-Mondragon, Rafael Riudavets-Puig, Ieva Rauluseviciute, et~al.
-\newblock Jaspar 2022: the 9th release of the open-access database of
+\newblock {JASPAR} 2022: the 9th release of the open-access database of
   transcription factor binding profiles.
 \newblock \emph{Nucleic Acids Research}, 50\penalty0 (D1):\penalty0 D165--D173,
   2022.
 \newblock \doi{10.1093/nar/gkab1113}.
+
+\bibitem[Kulakovskiy et~al.(2018)Kulakovskiy, Vorontsov, Yevshin,
+  et~al.]{kulakovskiy2018hocomoco}
+Ivan~V. Kulakovskiy, Ilya~E. Vorontsov, Ivan~S. Yevshin, et~al.
+\newblock {HOCOMOCO}: towards a complete collection of transcription factor
+  binding models for human and mouse via large-scale {ChIP}-seq analysis.
+\newblock \emph{Nucleic Acids Research}, 46\penalty0 (D1):\penalty0 D252--D259,
+  2018.
+\newblock \doi{10.1093/nar/gkx1106}.
 
 \bibitem[Avsec et~al.(2021)Avsec, Agarwal, Visentin, et~al.]{avsec2021enformer}
 {\v Z}iga Avsec, Vikram Agarwal, Daniel Visentin, et~al.
@@ -28,19 +43,152 @@ Jaime~A. Castro-Mondragon, Rafael Riudavets-Puig, Ieva Rauluseviciute, et~al.
 \newblock \emph{Nature Methods}, 18:\penalty0 1196--1203, 2021.
 \newblock \doi{10.1038/s41592-021-01252-x}.
 
+\bibitem[Berger et~al.(2006)Berger, Philippakis, Qureshi, He, Estep, and
+  Bulyk]{berger2006compact}
+Michael~F. Berger, Anthony~A. Philippakis, Aaron~M. Qureshi, Fangxue~S. He,
+  Preston~W. Estep, and Martha~L. Bulyk.
+\newblock Compact, universal {DNA} microarrays to comprehensively determine
+  transcription-factor binding site specificities.
+\newblock \emph{Nature Biotechnology}, 24\penalty0 (11):\penalty0 1429--1435,
+  2006.
+\newblock \doi{10.1038/nbt1246}.
+
+\bibitem[Badis et~al.(2009)Badis, Berger, Philippakis,
+  et~al.]{badis2009diversity}
+Gwenael Badis, Michael~F. Berger, Anthony~A. Philippakis, et~al.
+\newblock Diversity and complexity in {DNA} recognition by transcription
+  factors.
+\newblock \emph{Science}, 324\penalty0 (5935):\penalty0 1720--1723, 2009.
+\newblock \doi{10.1126/science.1162327}.
+
 \bibitem[Jolma et~al.(2013)Jolma, Yan, Whitington, et~al.]{jolma2013dna}
 Arttu Jolma, Jian Yan, Thomas Whitington, et~al.
-\newblock Dna-binding specificities of human transcription factors.
+\newblock {DNA}-binding specificities of human transcription factors.
 \newblock \emph{Cell}, 152\penalty0 (1-2):\penalty0 327--339, 2013.
 \newblock \doi{10.1016/j.cell.2012.12.009}.
 
-\bibitem[Mitra et~al.(2024)Mitra, Cohen, Sagendorf, Berman, and
-  Rohs]{mitra2024deeppbs}
-Raktim Mitra, Alan~M. Cohen, Jared~M. Sagendorf, Helen~M. Berman, and Remo
-  Rohs.
-\newblock Geometric deep learning of protein--dna binding specificity.
-\newblock \emph{Nature Methods}, 2024.
-\newblock DeepPBS. \TODO{verify volume/pages/DOI}.
+\bibitem[Vaquerizas et~al.(2009)Vaquerizas, Kummerfeld, Teichmann, and
+  Luscombe]{vaquerizas2009census}
+Juan~M. Vaquerizas, Sarah~K. Kummerfeld, Sarah~A. Teichmann, and Nicholas~M.
+  Luscombe.
+\newblock A census of human transcription factors: function, expression and
+  evolution.
+\newblock \emph{Nature Reviews Genetics}, 10\penalty0 (4):\penalty0 252--263,
+  2009.
+\newblock \doi{10.1038/nrg2538}.
+
+\bibitem[Lambert et~al.(2018)Lambert, Jolma, Campitelli, Das, Yin, Albu, Chen,
+  Taipale, Hughes, and Weirauch]{lambert2018human}
+Samuel~A. Lambert, Arttu Jolma, Laura~F. Campitelli, Pratyush~K. Das, Yimeng
+  Yin, Mihai Albu, Xiaoting Chen, Jussi Taipale, Timothy~R. Hughes, and
+  Matthew~T. Weirauch.
+\newblock The human transcription factors.
+\newblock \emph{Cell}, 172\penalty0 (4):\penalty0 650--665, 2018.
+\newblock \doi{10.1016/j.cell.2018.01.029}.
+
+\bibitem[Rohs et~al.(2009)Rohs, West, Sosinsky, Liu, Mann, and
+  Honig]{rohs2009dnashape}
+Remo Rohs, Sean~M. West, Alona Sosinsky, Peng Liu, Richard~S. Mann, and Barry
+  Honig.
+\newblock The role of {DNA} shape in protein--{DNA} recognition.
+\newblock \emph{Nature}, 461\penalty0 (7268):\penalty0 1248--1253, 2009.
+\newblock \doi{10.1038/nature08473}.
+
+\bibitem[Zhou et~al.(2013)Zhou, Yang, Lu, Dror, Dantas~Machado, Ghane,
+  Di~Felice, and Rohs]{zhou2013dnashape}
+Tianyin Zhou, Lin Yang, Yan Lu, Iris Dror, Ana~Carolina Dantas~Machado, Tahereh
+  Ghane, Rosa Di~Felice, and Remo Rohs.
+\newblock {DNAshape}: a method for the high-throughput prediction of {DNA}
+  structural features on a genomic scale.
+\newblock \emph{Nucleic Acids Research}, 41\penalty0 (W1):\penalty0 W56--W62,
+  2013.
+\newblock \doi{10.1093/nar/gkt437}.
+
+\bibitem[Mitra et~al.(2024)Mitra, Li, Sagendorf, Jiang, Cohen, Chiu, Glasscock,
+  and Rohs]{mitra2024deeppbs}
+Raktim Mitra, Jinsen Li, Jared~M. Sagendorf, Yibei Jiang, Ari~S. Cohen, Tsu-Pei
+  Chiu, Cameron~J. Glasscock, and Remo Rohs.
+\newblock Geometric deep learning of protein--{DNA} binding specificity.
+\newblock \emph{Nature Methods}, 21\penalty0 (9):\penalty0 1674--1683, 2024.
+\newblock \doi{10.1038/s41592-024-02372-w}.
+
+\bibitem[Jumper et~al.(2021)Jumper, Evans, Pritzel,
+  et~al.]{jumper2021alphafold}
+John Jumper, Richard Evans, Alexander Pritzel, et~al.
+\newblock Highly accurate protein structure prediction with {AlphaFold}.
+\newblock \emph{Nature}, 596:\penalty0 583--589, 2021.
+\newblock \doi{10.1038/s41586-021-03819-2}.
+
+\bibitem[Baek et~al.(2021)Baek, DiMaio, Anishchenko, Dauparas, Ovchinnikov,
+  Lee, et~al.]{baek2021rosettafold}
+Minkyung Baek, Frank DiMaio, Ivan Anishchenko, Justas Dauparas, Sergey
+  Ovchinnikov, Gyu~Rie Lee, et~al.
+\newblock Accurate prediction of protein structures and interactions using a
+  three-track neural network.
+\newblock \emph{Science}, 373\penalty0 (6557):\penalty0 871--876, 2021.
+\newblock \doi{10.1126/science.abj8754}.
+
+\bibitem[Abramson et~al.(2024)Abramson, Adler, Dunger,
+  et~al.]{abramson2024alphafold3}
+Josh Abramson, Jonas Adler, Jack Dunger, et~al.
+\newblock Accurate structure prediction of biomolecular interactions with
+  {AlphaFold3}.
+\newblock \emph{Nature}, 630:\penalty0 493--500, 2024.
+\newblock \doi{10.1038/s41586-024-07487-w}.
+
+\bibitem[Alipanahi et~al.(2015)Alipanahi, Delong, Weirauch, and
+  Frey]{alipanahi2015deepbind}
+Babak Alipanahi, Andrew Delong, Matthew~T. Weirauch, and Brendan~J. Frey.
+\newblock Predicting the sequence specificities of {DNA}- and {RNA}-binding
+  proteins by deep learning.
+\newblock \emph{Nature Biotechnology}, 33:\penalty0 831--838, 2015.
+\newblock \doi{10.1038/nbt.3300}.
+
+\bibitem[Zhou and Troyanskaya(2015)]{zhou2015deepsea}
+Jian Zhou and Olga~G. Troyanskaya.
+\newblock Predicting effects of noncoding variants with deep learning--based
+  sequence model.
+\newblock \emph{Nature Methods}, 12\penalty0 (10):\penalty0 931--934, 2015.
+\newblock \doi{10.1038/nmeth.3547}.
+
+\bibitem[Kelley et~al.(2016)Kelley, Snoek, and Rinn]{kelley2016basset}
+David~R. Kelley, Jasper Snoek, and John~L. Rinn.
+\newblock {Basset}: learning the regulatory code of the accessible genome with
+  deep convolutional neural networks.
+\newblock \emph{Genome Research}, 26\penalty0 (7):\penalty0 990--999, 2016.
+\newblock \doi{10.1101/gr.200535.115}.
+
+\bibitem[Eraslan et~al.(2019)Eraslan, Avsec, Gagneur, and
+  Theis]{eraslan2019deeplearning}
+G{\"o}kcen Eraslan, {\v Z}iga Avsec, Julien Gagneur, and Fabian~J. Theis.
+\newblock Deep learning: new computational modelling techniques for genomics.
+\newblock \emph{Nature Reviews Genetics}, 20\penalty0 (7):\penalty0 389--403,
+  2019.
+\newblock \doi{10.1038/s41576-019-0122-6}.
+
+\bibitem[Weirauch et~al.(2013)Weirauch, Cote, Norel,
+  et~al.]{weirauch2013evaluation}
+Matthew~T. Weirauch, Atina Cote, Raquel Norel, et~al.
+\newblock Evaluation of methods for modeling transcription factor sequence
+  specificity.
+\newblock \emph{Nature Biotechnology}, 31\penalty0 (2):\penalty0 126--134,
+  2013.
+\newblock \doi{10.1038/nbt.2486}.
+
+\bibitem[Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez,
+  Kaiser, and Polosukhin]{vaswani2017attention}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N. Gomez, Lukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~30, 2017.
+
+\bibitem[Devlin et~al.(2019)Devlin, Chang, Lee, and Toutanova]{devlin2019bert}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
+\newblock {BERT}: Pre-training of deep bidirectional transformers for language
+  understanding.
+\newblock In \emph{Proceedings of NAACL-HLT}, pages 4171--4186, 2019.
+\newblock \doi{10.18653/v1/N19-1423}.
 
 \bibitem[Rives et~al.(2021)Rives, Meier, Sercu, Goyal, Lin, Liu, Guo, Ott,
   Zitnick, Ma, and Fergus]{rives2021esm1b}
@@ -51,6 +199,34 @@ Alexander Rives, Joshua Meier, Tom Sercu, Siddharth Goyal, Zeming Lin, Jason
 \newblock \emph{Proceedings of the National Academy of Sciences}, 118\penalty0
   (15):\penalty0 e2016239118, 2021.
 \newblock \doi{10.1073/pnas.2016239118}.
+
+\bibitem[Elnaggar et~al.(2022)Elnaggar, Heinzinger, Dallago, Rehawi, Wang,
+  Jones, Gibbs, Feher, Angerer, Steinegger, Bhowmik, and
+  Rost]{elnaggar2021prottrans}
+Ahmed Elnaggar, Michael Heinzinger, Christian Dallago, Ghalia Rehawi, Yu~Wang,
+  Llion Jones, Tom Gibbs, Tamas Feher, Christoph Angerer, Martin Steinegger,
+  Debsindhu Bhowmik, and Burkhard Rost.
+\newblock {ProtTrans}: Toward understanding the language of life through
+  self-supervised learning.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 44\penalty0 (10):\penalty0 7112--7127, 2022.
+\newblock \doi{10.1109/TPAMI.2021.3095381}.
+
+\bibitem[Rao et~al.(2021)Rao, Liu, Verkuil, Meier, Canny, Abbeel, Sercu, and
+  Rives]{rao2021msa}
+Roshan~M. Rao, Jason Liu, Robert Verkuil, Joshua Meier, John Canny, Pieter
+  Abbeel, Tom Sercu, and Alexander Rives.
+\newblock {MSA} transformer.
+\newblock In \emph{Proceedings of the 38th International Conference on Machine
+  Learning (ICML)}, volume 139 of \emph{PMLR}, pages 8844--8856, 2021.
+
+\bibitem[Rao et~al.(2019)Rao, Bhattacharya, Thomas, Duan, Chen, Canny, Abbeel,
+  and Song]{rao2019evaluating}
+Roshan Rao, Nicholas Bhattacharya, Neil Thomas, Yan Duan, Xi~Chen, John Canny,
+  Pieter Abbeel, and Yun~S. Song.
+\newblock Evaluating protein transfer learning with {TAPE}.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~32, pages 9689--9701, 2019.
 
 \bibitem[Lin et~al.(2023)Lin, Akin, Rao, Hie, Zhu, Lu, Smetanin, Verkuil,
   Kabeli, Shmueli, dos Santos~Costa, Fazel-Zarandi, Sercu, Candido, and
@@ -67,31 +243,107 @@ Zeming Lin, Halil Akin, Roshan Rao, Brian Hie, Zhongkai Zhu, Wenting Lu, Nikita
   Chen]{hu2022lora}
 Edward~J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
   Wang, Lu~Wang, and Weizhu Chen.
-\newblock Lora: Low-rank adaptation of large language models.
+\newblock {LoRA}: Low-rank adaptation of large language models.
 \newblock In \emph{International Conference on Learning Representations
   (ICLR)}, 2022.
 
-\bibitem[Wohlwend et~al.(2024)Wohlwend, Corso, Passaro,
-  et~al.]{wohlwend2024boltz}
-Jeremy Wohlwend, Gabriele Corso, Saro Passaro, et~al.
-\newblock Boltz-1: Democratizing biomolecular interaction modeling.
+\bibitem[Passaro et~al.(2025)Passaro, Corso, Wohlwend, Reveiz, Thaler, Somnath,
+  Getz, Portnoi, Roy, Stark, Kwabi-Addo, Beaini, Jaakkola, and
+  Barzilay]{passaro2025boltz2}
+Saro Passaro, Gabriele Corso, Jeremy Wohlwend, Mateo Reveiz, Stephan Thaler,
+  Vignesh~Ram Somnath, Noah Getz, Tally Portnoi, Julien Roy, Hannes Stark,
+  David Kwabi-Addo, Dominique Beaini, Tommi Jaakkola, and Regina Barzilay.
+\newblock {Boltz-2}: Towards accurate and efficient binding affinity
+  prediction.
+\newblock \emph{bioRxiv}, 2025.
+\newblock \doi{10.1101/2025.06.14.659707}.
+
+\bibitem[Wohlwend et~al.(2024)Wohlwend, Corso, Passaro, Reveiz, Leidal,
+  Swiderski, Portnoi, Chinn, Silterra, Jaakkola, and
+  Barzilay]{wohlwend2024boltz1}
+Jeremy Wohlwend, Gabriele Corso, Saro Passaro, Mateo Reveiz, Ken Leidal, Wojtek
+  Swiderski, Tally Portnoi, Itamar Chinn, Jacob Silterra, Tommi Jaakkola, and
+  Regina Barzilay.
+\newblock {Boltz-1}: Democratizing biomolecular interaction modeling.
 \newblock \emph{bioRxiv}, 2024.
-\newblock \TODO{update to Boltz-2 citation + DOI}.
+\newblock \doi{10.1101/2024.11.19.624167}.
 
 \bibitem[Mirdita et~al.(2022)Mirdita, Sch{\"u}tze, Moriwaki, Heo, Ovchinnikov,
   and Steinegger]{mirdita2022colabfold}
 Milot Mirdita, Konstantin Sch{\"u}tze, Yoshitaka Moriwaki, Lim Heo, Sergey
   Ovchinnikov, and Martin Steinegger.
-\newblock Colabfold: making protein folding accessible to all.
+\newblock {ColabFold}: making protein folding accessible to all.
 \newblock \emph{Nature Methods}, 19:\penalty0 679--682, 2022.
 \newblock \doi{10.1038/s41592-022-01488-1}.
+
+\bibitem[Noyes et~al.(2008)Noyes, Christensen, Wakabayashi, Stormo, Brodsky,
+  and Wolfe]{noyes2008homeodomain}
+Marcus~B. Noyes, Ryan~G. Christensen, Atsuya Wakabayashi, Gary~D. Stormo,
+  Michael~H. Brodsky, and Scot~A. Wolfe.
+\newblock Analysis of homeodomain specificities allows the family-wide
+  prediction of preferred recognition sites.
+\newblock \emph{Cell}, 133\penalty0 (7):\penalty0 1277--1289, 2008.
+\newblock \doi{10.1016/j.cell.2008.05.023}.
+
+\bibitem[Najafabadi et~al.(2015)Najafabadi, Mnaimneh, Schmitges, Garton, Lam,
+  Yang, Albu, Weirauch, Radovani, Kim, Greenblatt, Frey, and
+  Hughes]{najafabadi2015c2h2}
+Hamed~S. Najafabadi, Sanie Mnaimneh, Frank~W. Schmitges, Michael Garton,
+  Kathy~N. Lam, Ally Yang, Mihai Albu, Matthew~T. Weirauch, Ernest Radovani,
+  Philip~M. Kim, Jack Greenblatt, Brendan~J. Frey, and Timothy~R. Hughes.
+\newblock {C2H2} zinc finger proteins greatly expand the human regulatory
+  lexicon.
+\newblock \emph{Nature Biotechnology}, 33\penalty0 (5):\penalty0 555--562,
+  2015.
+\newblock \doi{10.1038/nbt.3128}.
+
+\bibitem[Wetzel et~al.(2022)Wetzel, Zhang, and Singh]{wetzel2022rclamps}
+Joshua~L. Wetzel, Kaiqian Zhang, and Mona Singh.
+\newblock Learning probabilistic protein--{DNA} recognition codes from
+  {DNA}-binding specificities using structural mappings.
+\newblock \emph{Genome Research}, 32:\penalty0 1776--1786, 2022.
+\newblock \doi{10.1101/gr.276606.122}.
 
 \bibitem[Barrera et~al.(2016)Barrera, Vedenko, Kurland,
   et~al.]{barrera2016survey}
 Luis~A. Barrera, Anastasia Vedenko, Jesse~V. Kurland, et~al.
 \newblock Survey of variation in human transcription factors reveals prevalent
-  dna binding changes.
+  {DNA} binding changes.
 \newblock \emph{Science}, 351\penalty0 (6280):\penalty0 1450--1454, 2016.
 \newblock \doi{10.1126/science.aad2257}.
+
+\bibitem[Meier et~al.(2021)Meier, Rao, Verkuil, Liu, Sercu, and
+  Rives]{meier2021language}
+Joshua Meier, Roshan Rao, Robert Verkuil, Jason Liu, Tom Sercu, and Alexander
+  Rives.
+\newblock Language models enable zero-shot prediction of the effects of
+  mutations on protein function.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, volume~34, pages 29287--29303, 2021.
+
+\bibitem[Brandes et~al.(2023)Brandes, Goldman, Wang, Ye, and
+  Ntranos]{brandes2023genome}
+Nadav Brandes, Grant Goldman, Charlotte~H. Wang, Chun~Jimmie Ye, and Vasilis
+  Ntranos.
+\newblock Genome-wide prediction of disease variant effects with a deep protein
+  language model.
+\newblock \emph{Nature Genetics}, 55\penalty0 (9):\penalty0 1512--1522, 2023.
+\newblock \doi{10.1038/s41588-023-01465-0}.
+
+\bibitem[Shazeer et~al.(2017)Shazeer, Mirhoseini, Maziarz, Davis, Le, Hinton,
+  and Dean]{shazeer2017outrageously}
+Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le,
+  Geoffrey Hinton, and Jeff Dean.
+\newblock Outrageously large neural networks: The sparsely-gated
+  mixture-of-experts layer.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2017.
+
+\bibitem[Fedus et~al.(2022)Fedus, Zoph, and Shazeer]{fedus2022switch}
+William Fedus, Barret Zoph, and Noam Shazeer.
+\newblock Switch transformers: Scaling to trillion parameter models with simple
+  and efficient sparsity.
+\newblock \emph{Journal of Machine Learning Research}, 23\penalty0
+  (120):\penalty0 1--39, 2022.
 
 \end{thebibliography}

@@ -66,15 +66,17 @@ motifs, and the position weight matrix (PWM) that summarizes this preference is
 one of the most widely used objects in regulatory genomics. PWMs drive motif
 enrichment analysis, the annotation of \emph{cis}-regulatory elements, and the
 interpretation of non-coding variants, and they anchor the priors used by many
-chromatin and gene-expression models\cite{weirauch2014cisbp,castromondragon2022jaspar,avsec2021enformer}.
+chromatin and gene-expression models\cite{stormo2000dna,weirauch2014cisbp,castromondragon2022jaspar,kulakovskiy2018hocomoco,avsec2021enformer}.
 A PWM is therefore not merely a descriptive statistic but a reusable input to a
 large downstream ecosystem, which makes the availability of accurate PWMs a
 practical bottleneck rather than an academic curiosity.
 
 Yet measured specificities remain sparse. High-throughput assays such as
-protein-binding microarrays and HT-SELEX have characterized many TFs, but the
-experiments are laborious and have covered only a fraction of the roughly 1,600
-human TFs, with even thinner coverage across non-model organisms\cite{jolma2013dna,weirauch2014cisbp}.
+protein-binding microarrays\cite{berger2006compact,badis2009diversity} and
+HT-SELEX\cite{jolma2013dna} have characterized many TFs, but the experiments are
+laborious and have covered only a fraction of the roughly 1,600 human
+TFs\cite{vaquerizas2009census,lambert2018human}, with even thinner coverage across
+non-model organisms.
 The gap is widening rather than closing, because protein design now produces
 \emph{de novo} DNA-binding proteins far faster than any binding assay can profile
 them. A model that predicts a PWM directly from a protein sequence would let this
@@ -85,21 +87,27 @@ Computational specificity prediction has followed two routes with complementary
 weaknesses. Structure-based models read the physicochemical readout of a
 protein--DNA complex and currently define the state of the art; the geometric
 deep-learning method DeepPBS, for example, predicts specificity from the geometry
-and chemistry of the interface\cite{mitra2024deeppbs}. Their accuracy, however, is
-gated on the availability and quality of a structure. For a TF without a
-co-crystal, and for any designed protein, a complex must first be predicted, which
+and chemistry of the interface, exploiting the well-established dependence of
+recognition on DNA shape\cite{rohs2009dnashape,zhou2013dnashape,mitra2024deeppbs}.
+Their accuracy, however, is gated on the availability and quality of a structure.
+For a TF without a co-crystal, and for any designed protein, a complex must first be
+predicted\cite{jumper2021alphafold,baek2021rosettafold,abramson2024alphafold3}, which
 adds computational cost and a second, compounding source of error. Sequence-only
-models avoid this dependency but have historically been less accurate, and their
-reported advantages are frequently inflated by TF leakage, in which test proteins
-share close homologs with the training set and the model succeeds by recall rather
-than by genuine generalization\cite{mitra2024deeppbs}. Distinguishing real
-sequence-to-specificity inference from leakage is thus as important as raw
-accuracy.
+models avoid this dependency but have historically been less
+accurate\cite{alipanahi2015deepbind,zhou2015deepsea,kelley2016basset,eraslan2019deeplearning},
+and their reported advantages are frequently inflated by TF leakage, in which test
+proteins share close homologs with the training set and the model succeeds by recall
+rather than by genuine generalization\cite{mitra2024deeppbs}. Distinguishing real
+sequence-to-specificity inference from leakage is thus as important as raw accuracy,
+and has been a recurring concern in benchmarks of specificity
+prediction\cite{weirauch2013evaluation}.
 
-Protein language models (PLMs) trained on evolutionary-scale sequence data have
-reshaped what is achievable from sequence alone, recovering contacts, structure,
-and function that were previously thought to require experimental
-input\cite{rives2021esm1b,lin2023esm2}. We reasoned that a frozen PLM might already
+Protein language models (PLMs), which apply the transformer architecture and
+masked-language-model pretraining of modern natural-language
+processing\cite{vaswani2017attention,devlin2019bert} to evolutionary-scale sequence
+data, have reshaped what is achievable from sequence alone, recovering contacts,
+structure, and function that were previously thought to require experimental
+input\cite{rives2021esm1b,elnaggar2021prottrans,rao2021msa,rao2019evaluating,lin2023esm2}. We reasoned that a frozen PLM might already
 encode the recognition information that specifies DNA binding, and that the
 remaining problem is not representation learning but read-out: extracting a
 calibrated motif from features the backbone has already computed. This framing
@@ -205,7 +213,7 @@ quality by asking a question that neither TFScope nor DeepPBS was optimized to
 answer: does the DNA a model predicts actually form a confident complex with its own
 TF? For each of the 41 benchmark TFs we folded the protein together with its
 TFScope-ensemble consensus DNA and, separately, together with its DeepPBS consensus
-DNA, using Boltz-2\cite{wohlwend2024boltz} with ColabFold multiple-sequence
+DNA, using Boltz-2\cite{passaro2025boltz2,wohlwend2024boltz1} with ColabFold multiple-sequence
 alignments\cite{mirdita2022colabfold}. Because the protein is identical within each
 pair, the comparison isolates the effect of the predicted DNA on the confidence of
 the modeled interface (ipTM).
@@ -243,7 +251,12 @@ inserts into the major groove and hydrogen-bonds to the bases, matching the true
 crystallographic contacts (Fig.~\ref{fig:recognition}). Second, the same frozen
 embeddings organize TFs by structural family, with a k-nearest-neighbor purity of
 $0.83$ and a linear family-probe accuracy of $0.96$, so that clade identity is also
-available without supervision. Both signals are present before any TFScope training,
+available without supervision. This organization mirrors decades of structural
+work showing that DBD families such as homeodomains and C2H2 zinc fingers
+recognize DNA through characteristic, family-defining
+contacts\cite{noyes2008homeodomain,najafabadi2015c2h2}, the same regularities that
+explicit protein--DNA recognition codes encode by hand or learn from structural
+mappings\cite{wetzel2022rclamps}. Both signals are present before any TFScope training,
 which supports the view that the backbone supplies the recognition content and the
 contact-aware head mainly converts it into a calibrated, position-resolved motif.
 This also explains two negative results reported below, that a more elaborate
@@ -338,7 +351,8 @@ the frozen features do not resolve. The practical consequence is a clear scope
 statement for users. TFScope is well suited to predicting the specificity of a TF or a
 designed protein from its sequence, but it should not, in its present form, be used to
 score the effect of individual coding variants on binding, a task for which
-mutation-sensitive features are required. Closing this gap without sacrificing the
+mutation-sensitive features, such as those exploited by dedicated variant-effect
+predictors\cite{meier2021language,brandes2023genome}, are required. Closing this gap without sacrificing the
 model's structure-free generality is the central open problem, which we take up in the
 Discussion.
 
@@ -420,9 +434,9 @@ downstream modules an explicit notion of the recognition domain.
 Four lightweight modules operate on the frozen features. (i) Low-rank adaptation
 (LoRA, rank 16)\cite{hu2022lora} injects trainable low-rank updates into the backbone
 attention projections, the only mechanism by which gradients reach backbone
-computation. (ii) A token-level residue mixture-of-experts with two shared experts and
-eight routed experts, gated by a learned router that is conditioned on a TF-family
-embedding, processes each residue; the shared experts capture family-invariant
+computation. (ii) A token-level residue mixture-of-experts\cite{shazeer2017outrageously,fedus2022switch}
+with two shared experts and eight routed experts, gated by a learned router that is
+conditioned on a TF-family embedding, processes each residue; the shared experts capture family-invariant
 recognition chemistry while the routed experts specialize to structural classes,
 avoiding a proliferation of per-family heads. (iii) Dual gated-attention pooling
 summarizes the refined residues twice, once over all residues and once restricted to
@@ -514,7 +528,7 @@ hyperparameters, structure inputs used for the benchmark TFs}
 \subsection*{Independent foldability assay}
 For each of 41 TFs we constructed two protein--DNA complexes, one with the TF and its
 TFScope-ensemble consensus DNA and one with the same TF and its DeepPBS consensus DNA,
-and folded both with Boltz-2\cite{wohlwend2024boltz}. Each DNA was modeled as a
+and folded both with Boltz-2\cite{passaro2025boltz2,wohlwend2024boltz1}. Each DNA was modeled as a
 double-stranded duplex (the consensus and its reverse complement), and multiple-sequence
 alignments were obtained from the ColabFold server\cite{mirdita2022colabfold}. Because
 the protein is identical within a pair, its alignment is reused across the two
