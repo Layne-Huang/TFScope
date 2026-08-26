@@ -1,0 +1,2278 @@
+{
+ "note": "baseline ladder topped by the v24 5-seed ensemble; full metric panel",
+ "surfaces": {
+  "test": {
+   "n_rows": 291,
+   "n_genes": 51,
+   "contamination": "clean (never trained, never selected on)",
+   "note": "full clean surface"
+  },
+  "excluded": {
+   "n_rows": 269,
+   "n_genes": 44,
+   "contamination": "clean (never trained, never selected on)",
+   "note": "full clean surface"
+  },
+  "clean_combined": {
+   "n_rows": 560,
+   "n_genes": 95,
+   "contamination": "clean (never trained, never selected on)",
+   "note": "full clean surface"
+  },
+  "deeppbs20": {
+   "n_rows": 152,
+   "n_genes": 20,
+   "contamination": "clean (never trained, never selected on)",
+   "note": "co-crystal subset of clean_combined; the only surface where DeepPBS can be scored, so every rung is rescored here on identical genes"
+  }
+ },
+ "protocol": "Panel A = oracle shift+RC registration to IC-trimmed GT core, scored on overlap columns; Panel B = predicted length (baselines use a pre-registered per-family train length). Gene-balanced; CI = gene bootstrap x2000.",
+ "metric_direction": {
+  "pearson_r": true,
+  "cosine": true,
+  "topbase_acc": true,
+  "auroc": true,
+  "macroF1": true,
+  "mae": false,
+  "rmse": false,
+  "jsd_bits": false,
+  "kl_bits": false,
+  "ic_mae": false
+ },
+ "ladder": {
+  "test": {
+   "random_uniform": {
+    "pearson_r": 0.0,
+    "pearson_r_ci95": [
+     0.0,
+     0.0
+    ],
+    "cosine": 0.6087,
+    "cosine_ci95": [
+     0.5987,
+     0.6187
+    ],
+    "topbase_acc": 0.29,
+    "topbase_acc_ci95": [
+     0.2536,
+     0.3289
+    ],
+    "auroc": 0.5,
+    "auroc_ci95": [
+     0.5,
+     0.5
+    ],
+    "macroF1": 0.1079,
+    "macroF1_ci95": [
+     0.0972,
+     0.1189
+    ],
+    "mae": 0.2913,
+    "mae_ci95": [
+     0.2843,
+     0.2982
+    ],
+    "rmse": 0.3486,
+    "rmse_ci95": [
+     0.3415,
+     0.3554
+    ],
+    "jsd_bits": 0.3462,
+    "jsd_bits_ci95": [
+     0.3329,
+     0.3592
+    ],
+    "kl_bits": 1.2966,
+    "kl_bits_ci95": [
+     1.2473,
+     1.3453
+    ],
+    "ic_mae": 1.2966,
+    "ic_mae_ci95": [
+     1.2473,
+     1.3453
+    ],
+    "covR": 0.0,
+    "covR_ci95": [
+     0.0,
+     0.0
+    ],
+    "coverage": 0.9227,
+    "coverage_ci95": [
+     0.884,
+     0.9544
+    ],
+    "gate_len_mae": 3.1176,
+    "gate_len_mae_ci95": [
+     2.5294,
+     3.7255
+    ],
+    "gate_len_bias": 0.8824,
+    "gate_len_bias_ci95": [
+     -0.1961,
+     1.8044
+    ],
+    "auroc_pooled": 0.5,
+    "macroF1_pooled": 0.1057,
+    "n_genes": 51,
+    "n_rows": 291
+   },
+   "random_train_pwm": {
+    "pearson_r": 0.4463,
+    "pearson_r_ci95": [
+     0.4137,
+     0.4753
+    ],
+    "cosine": 0.6447,
+    "cosine_ci95": [
+     0.6349,
+     0.6688
+    ],
+    "topbase_acc": 0.5685,
+    "topbase_acc_ci95": [
+     0.5385,
+     0.5873
+    ],
+    "auroc": 0.7214,
+    "auroc_ci95": [
+     0.7062,
+     0.7502
+    ],
+    "macroF1": 0.4454,
+    "macroF1_ci95": [
+     0.4153,
+     0.4694
+    ],
+    "mae": 0.2374,
+    "mae_ci95": [
+     0.227,
+     0.2444
+    ],
+    "rmse": 0.3667,
+    "rmse_ci95": [
+     0.3495,
+     0.3718
+    ],
+    "jsd_bits": 0.3379,
+    "jsd_bits_ci95": [
+     0.3122,
+     0.3444
+    ],
+    "kl_bits": 3.6238,
+    "kl_bits_ci95": [
+     2.7329,
+     3.4488
+    ],
+    "ic_mae": 0.7065,
+    "ic_mae_ci95": [
+     0.6712,
+     0.7786
+    ],
+    "covR": 0.2901,
+    "covR_ci95": [
+     0.2728,
+     0.3348
+    ],
+    "coverage": 0.7384,
+    "coverage_ci95": [
+     0.6967,
+     0.7806
+    ],
+    "gate_len_mae": 3.1176,
+    "gate_len_mae_ci95": [
+     2.5294,
+     3.7255
+    ],
+    "gate_len_bias": 0.8824,
+    "gate_len_bias_ci95": [
+     -0.1961,
+     1.8044
+    ],
+    "auroc_pooled": 0.6928,
+    "macroF1_pooled": 0.5318,
+    "n_genes": 51,
+    "n_rows": 291,
+    "n_draws": 20,
+    "ci_note": "CIs are from the first draw only; the point estimates average all draws"
+   },
+   "B0_global": {
+    "pearson_r": 0.4836,
+    "pearson_r_ci95": [
+     0.4462,
+     0.5187
+    ],
+    "cosine": 0.6415,
+    "cosine_ci95": [
+     0.6292,
+     0.6542
+    ],
+    "topbase_acc": 0.6389,
+    "topbase_acc_ci95": [
+     0.5976,
+     0.6781
+    ],
+    "auroc": 0.777,
+    "auroc_ci95": [
+     0.7496,
+     0.8034
+    ],
+    "macroF1": 0.456,
+    "macroF1_ci95": [
+     0.4235,
+     0.487
+    ],
+    "mae": 0.2832,
+    "mae_ci95": [
+     0.2741,
+     0.2921
+    ],
+    "rmse": 0.3382,
+    "rmse_ci95": [
+     0.3278,
+     0.3479
+    ],
+    "jsd_bits": 0.3333,
+    "jsd_bits_ci95": [
+     0.3159,
+     0.3507
+    ],
+    "kl_bits": 1.2275,
+    "kl_bits_ci95": [
+     1.164,
+     1.2901
+    ],
+    "ic_mae": 1.3075,
+    "ic_mae_ci95": [
+     1.2398,
+     1.3752
+    ],
+    "covR": 0.3226,
+    "covR_ci95": [
+     0.2958,
+     0.3484
+    ],
+    "coverage": 0.7126,
+    "coverage_ci95": [
+     0.6605,
+     0.7626
+    ],
+    "gate_len_mae": 3.1176,
+    "gate_len_mae_ci95": [
+     2.5294,
+     3.7255
+    ],
+    "gate_len_bias": 0.8824,
+    "gate_len_bias_ci95": [
+     -0.1961,
+     1.8044
+    ],
+    "auroc_pooled": 0.7,
+    "macroF1_pooled": 0.4879,
+    "n_genes": 51,
+    "n_rows": 291
+   },
+   "B0_family": {
+    "pearson_r": 0.5836,
+    "pearson_r_ci95": [
+     0.5415,
+     0.6229
+    ],
+    "cosine": 0.7556,
+    "cosine_ci95": [
+     0.7302,
+     0.7786
+    ],
+    "topbase_acc": 0.6574,
+    "topbase_acc_ci95": [
+     0.6195,
+     0.6936
+    ],
+    "auroc": 0.8162,
+    "auroc_ci95": [
+     0.7916,
+     0.8392
+    ],
+    "macroF1": 0.541,
+    "macroF1_ci95": [
+     0.5034,
+     0.5749
+    ],
+    "mae": 0.2069,
+    "mae_ci95": [
+     0.189,
+     0.2258
+    ],
+    "rmse": 0.277,
+    "rmse_ci95": [
+     0.2614,
+     0.2929
+    ],
+    "jsd_bits": 0.225,
+    "jsd_bits_ci95": [
+     0.2033,
+     0.2486
+    ],
+    "kl_bits": 0.9247,
+    "kl_bits_ci95": [
+     0.8493,
+     1.0028
+    ],
+    "ic_mae": 0.8467,
+    "ic_mae_ci95": [
+     0.7463,
+     0.9622
+    ],
+    "covR": 0.5185,
+    "covR_ci95": [
+     0.4629,
+     0.5699
+    ],
+    "coverage": 0.8532,
+    "coverage_ci95": [
+     0.799,
+     0.9028
+    ],
+    "gate_len_mae": 3.1176,
+    "gate_len_mae_ci95": [
+     2.5294,
+     3.7255
+    ],
+    "gate_len_bias": 0.8824,
+    "gate_len_bias_ci95": [
+     -0.1961,
+     1.8044
+    ],
+    "auroc_pooled": 0.7652,
+    "macroF1_pooled": 0.5012,
+    "n_genes": 51,
+    "n_rows": 291,
+    "zero_shot_fallback_families": [
+     "POU",
+     "p53"
+    ]
+   },
+   "B1_nearest_pwm": {
+    "pearson_r": 0.5191,
+    "pearson_r_ci95": [
+     0.4709,
+     0.566
+    ],
+    "cosine": 0.6988,
+    "cosine_ci95": [
+     0.6689,
+     0.7287
+    ],
+    "topbase_acc": 0.6193,
+    "topbase_acc_ci95": [
+     0.5795,
+     0.6577
+    ],
+    "auroc": 0.7791,
+    "auroc_ci95": [
+     0.7489,
+     0.8093
+    ],
+    "macroF1": 0.5033,
+    "macroF1_ci95": [
+     0.4667,
+     0.5404
+    ],
+    "mae": 0.2046,
+    "mae_ci95": [
+     0.1885,
+     0.2202
+    ],
+    "rmse": 0.3272,
+    "rmse_ci95": [
+     0.3054,
+     0.3481
+    ],
+    "jsd_bits": 0.2794,
+    "jsd_bits_ci95": [
+     0.2521,
+     0.3073
+    ],
+    "kl_bits": 2.861,
+    "kl_bits_ci95": [
+     2.3661,
+     3.5086
+    ],
+    "ic_mae": 0.6151,
+    "ic_mae_ci95": [
+     0.5621,
+     0.6707
+    ],
+    "covR": 0.3835,
+    "covR_ci95": [
+     0.3333,
+     0.4351
+    ],
+    "coverage": 0.8282,
+    "coverage_ci95": [
+     0.7735,
+     0.8772
+    ],
+    "gate_len_mae": 3.1176,
+    "gate_len_mae_ci95": [
+     2.5294,
+     3.7255
+    ],
+    "gate_len_bias": 0.8824,
+    "gate_len_bias_ci95": [
+     -0.1961,
+     1.8044
+    ],
+    "auroc_pooled": 0.7313,
+    "macroF1_pooled": 0.5981,
+    "n_genes": 51,
+    "n_rows": 291
+   },
+   "v24_seed42": {
+    "pearson_r": 0.6295,
+    "pearson_r_ci95": [
+     0.5917,
+     0.6658
+    ],
+    "cosine": 0.7847,
+    "cosine_ci95": [
+     0.7627,
+     0.8076
+    ],
+    "topbase_acc": 0.6896,
+    "topbase_acc_ci95": [
+     0.6597,
+     0.721
+    ],
+    "auroc": 0.8376,
+    "auroc_ci95": [
+     0.8132,
+     0.8611
+    ],
+    "macroF1": 0.5567,
+    "macroF1_ci95": [
+     0.5263,
+     0.5889
+    ],
+    "mae": 0.1607,
+    "mae_ci95": [
+     0.1476,
+     0.1732
+    ],
+    "rmse": 0.2642,
+    "rmse_ci95": [
+     0.2465,
+     0.281
+    ],
+    "jsd_bits": 0.1911,
+    "jsd_bits_ci95": [
+     0.1711,
+     0.2104
+    ],
+    "kl_bits": 1.0471,
+    "kl_bits_ci95": [
+     0.93,
+     1.1649
+    ],
+    "ic_mae": 0.5163,
+    "ic_mae_ci95": [
+     0.4732,
+     0.5632
+    ],
+    "covR": 0.5305,
+    "covR_ci95": [
+     0.4836,
+     0.5751
+    ],
+    "coverage": 0.8415,
+    "coverage_ci95": [
+     0.791,
+     0.8859
+    ],
+    "gate_len_mae": 3.4771,
+    "gate_len_mae_ci95": [
+     2.8872,
+     4.0851
+    ],
+    "gate_len_bias": 0.9365,
+    "gate_len_bias_ci95": [
+     -0.246,
+     1.981
+    ],
+    "auroc_pooled": 0.8114,
+    "macroF1_pooled": 0.6262,
+    "n_genes": 51,
+    "n_rows": 291
+   },
+   "v24_ens5": {
+    "pearson_r": 0.6643,
+    "pearson_r_ci95": [
+     0.6272,
+     0.7
+    ],
+    "cosine": 0.8069,
+    "cosine_ci95": [
+     0.7881,
+     0.8265
+    ],
+    "topbase_acc": 0.7301,
+    "topbase_acc_ci95": [
+     0.7015,
+     0.7587
+    ],
+    "auroc": 0.8375,
+    "auroc_ci95": [
+     0.8129,
+     0.8607
+    ],
+    "macroF1": 0.5907,
+    "macroF1_ci95": [
+     0.5594,
+     0.6216
+    ],
+    "mae": 0.1818,
+    "mae_ci95": [
+     0.1717,
+     0.1915
+    ],
+    "rmse": 0.2526,
+    "rmse_ci95": [
+     0.2398,
+     0.2643
+    ],
+    "jsd_bits": 0.191,
+    "jsd_bits_ci95": [
+     0.1759,
+     0.2058
+    ],
+    "kl_bits": 0.7858,
+    "kl_bits_ci95": [
+     0.7181,
+     0.8495
+    ],
+    "ic_mae": 0.8049,
+    "ic_mae_ci95": [
+     0.756,
+     0.8522
+    ],
+    "covR": 0.5602,
+    "covR_ci95": [
+     0.508,
+     0.61
+    ],
+    "coverage": 0.835,
+    "coverage_ci95": [
+     0.7808,
+     0.8827
+    ],
+    "gate_len_mae": 3.4771,
+    "gate_len_mae_ci95": [
+     2.8872,
+     4.0851
+    ],
+    "gate_len_bias": 0.9365,
+    "gate_len_bias_ci95": [
+     -0.246,
+     1.981
+    ],
+    "auroc_pooled": 0.7995,
+    "macroF1_pooled": 0.6411,
+    "n_genes": 51,
+    "n_rows": 291
+   }
+  },
+  "excluded": {
+   "random_uniform": {
+    "pearson_r": 0.0,
+    "pearson_r_ci95": [
+     0.0,
+     0.0
+    ],
+    "cosine": 0.6036,
+    "cosine_ci95": [
+     0.5928,
+     0.6146
+    ],
+    "topbase_acc": 0.2814,
+    "topbase_acc_ci95": [
+     0.2403,
+     0.3232
+    ],
+    "auroc": 0.5,
+    "auroc_ci95": [
+     0.5,
+     0.5
+    ],
+    "macroF1": 0.1025,
+    "macroF1_ci95": [
+     0.089,
+     0.1162
+    ],
+    "mae": 0.2953,
+    "mae_ci95": [
+     0.2877,
+     0.3029
+    ],
+    "rmse": 0.3508,
+    "rmse_ci95": [
+     0.343,
+     0.3586
+    ],
+    "jsd_bits": 0.3521,
+    "jsd_bits_ci95": [
+     0.3372,
+     0.3666
+    ],
+    "kl_bits": 1.32,
+    "kl_bits_ci95": [
+     1.2658,
+     1.3718
+    ],
+    "ic_mae": 1.32,
+    "ic_mae_ci95": [
+     1.2658,
+     1.3718
+    ],
+    "covR": 0.0,
+    "covR_ci95": [
+     0.0,
+     0.0
+    ],
+    "coverage": 0.8754,
+    "coverage_ci95": [
+     0.8417,
+     0.9069
+    ],
+    "gate_len_mae": 3.1275,
+    "gate_len_mae_ci95": [
+     2.7273,
+     3.5553
+    ],
+    "gate_len_bias": -0.6277,
+    "gate_len_bias_ci95": [
+     -1.4131,
+     0.1804
+    ],
+    "auroc_pooled": 0.5,
+    "macroF1_pooled": 0.1091,
+    "n_genes": 44,
+    "n_rows": 269
+   },
+   "random_train_pwm": {
+    "pearson_r": 0.4426,
+    "pearson_r_ci95": [
+     0.4016,
+     0.4618
+    ],
+    "cosine": 0.6457,
+    "cosine_ci95": [
+     0.6189,
+     0.6601
+    ],
+    "topbase_acc": 0.5635,
+    "topbase_acc_ci95": [
+     0.5263,
+     0.5826
+    ],
+    "auroc": 0.723,
+    "auroc_ci95": [
+     0.7008,
+     0.7354
+    ],
+    "macroF1": 0.4228,
+    "macroF1_ci95": [
+     0.3799,
+     0.4444
+    ],
+    "mae": 0.2363,
+    "mae_ci95": [
+     0.2269,
+     0.2456
+    ],
+    "rmse": 0.3638,
+    "rmse_ci95": [
+     0.3535,
+     0.3821
+    ],
+    "jsd_bits": 0.3342,
+    "jsd_bits_ci95": [
+     0.3192,
+     0.357
+    ],
+    "kl_bits": 3.4134,
+    "kl_bits_ci95": [
+     2.9199,
+     3.5979
+    ],
+    "ic_mae": 0.7103,
+    "ic_mae_ci95": [
+     0.6495,
+     0.7336
+    ],
+    "covR": 0.2826,
+    "covR_ci95": [
+     0.242,
+     0.2887
+    ],
+    "coverage": 0.6923,
+    "coverage_ci95": [
+     0.6256,
+     0.7078
+    ],
+    "gate_len_mae": 3.1275,
+    "gate_len_mae_ci95": [
+     2.7273,
+     3.5553
+    ],
+    "gate_len_bias": -0.6277,
+    "gate_len_bias_ci95": [
+     -1.4131,
+     0.1804
+    ],
+    "auroc_pooled": 0.7005,
+    "macroF1_pooled": 0.5273,
+    "n_genes": 44,
+    "n_rows": 269,
+    "n_draws": 20,
+    "ci_note": "CIs are from the first draw only; the point estimates average all draws"
+   },
+   "B0_global": {
+    "pearson_r": 0.4405,
+    "pearson_r_ci95": [
+     0.4089,
+     0.4746
+    ],
+    "cosine": 0.6312,
+    "cosine_ci95": [
+     0.6212,
+     0.6418
+    ],
+    "topbase_acc": 0.5725,
+    "topbase_acc_ci95": [
+     0.5344,
+     0.6089
+    ],
+    "auroc": 0.7576,
+    "auroc_ci95": [
+     0.7387,
+     0.7781
+    ],
+    "macroF1": 0.399,
+    "macroF1_ci95": [
+     0.3673,
+     0.4319
+    ],
+    "mae": 0.2893,
+    "mae_ci95": [
+     0.2816,
+     0.2967
+    ],
+    "rmse": 0.3437,
+    "rmse_ci95": [
+     0.3356,
+     0.3514
+    ],
+    "jsd_bits": 0.3417,
+    "jsd_bits_ci95": [
+     0.3266,
+     0.3559
+    ],
+    "kl_bits": 1.2638,
+    "kl_bits_ci95": [
+     1.2093,
+     1.3147
+    ],
+    "ic_mae": 1.3393,
+    "ic_mae_ci95": [
+     1.282,
+     1.3936
+    ],
+    "covR": 0.323,
+    "covR_ci95": [
+     0.2992,
+     0.3488
+    ],
+    "coverage": 0.7176,
+    "coverage_ci95": [
+     0.6747,
+     0.7578
+    ],
+    "gate_len_mae": 3.1275,
+    "gate_len_mae_ci95": [
+     2.7273,
+     3.5553
+    ],
+    "gate_len_bias": -0.6277,
+    "gate_len_bias_ci95": [
+     -1.4131,
+     0.1804
+    ],
+    "auroc_pooled": 0.7487,
+    "macroF1_pooled": 0.4955,
+    "n_genes": 44,
+    "n_rows": 269
+   },
+   "B0_family": {
+    "pearson_r": 0.5454,
+    "pearson_r_ci95": [
+     0.4915,
+     0.5886
+    ],
+    "cosine": 0.7333,
+    "cosine_ci95": [
+     0.7122,
+     0.7548
+    ],
+    "topbase_acc": 0.634,
+    "topbase_acc_ci95": [
+     0.59,
+     0.6725
+    ],
+    "auroc": 0.8096,
+    "auroc_ci95": [
+     0.7812,
+     0.8327
+    ],
+    "macroF1": 0.4496,
+    "macroF1_ci95": [
+     0.4055,
+     0.49
+    ],
+    "mae": 0.2246,
+    "mae_ci95": [
+     0.2104,
+     0.2384
+    ],
+    "rmse": 0.2919,
+    "rmse_ci95": [
+     0.2783,
+     0.3043
+    ],
+    "jsd_bits": 0.25,
+    "jsd_bits_ci95": [
+     0.2316,
+     0.2689
+    ],
+    "kl_bits": 0.9779,
+    "kl_bits_ci95": [
+     0.9148,
+     1.0441
+    ],
+    "ic_mae": 0.9585,
+    "ic_mae_ci95": [
+     0.8703,
+     1.0495
+    ],
+    "covR": 0.4728,
+    "covR_ci95": [
+     0.4232,
+     0.5205
+    ],
+    "coverage": 0.8031,
+    "coverage_ci95": [
+     0.7552,
+     0.8485
+    ],
+    "gate_len_mae": 3.1275,
+    "gate_len_mae_ci95": [
+     2.7273,
+     3.5553
+    ],
+    "gate_len_bias": -0.6277,
+    "gate_len_bias_ci95": [
+     -1.4131,
+     0.1804
+    ],
+    "auroc_pooled": 0.8084,
+    "macroF1_pooled": 0.6038,
+    "n_genes": 44,
+    "n_rows": 269,
+    "zero_shot_fallback_families": [
+     "POU"
+    ]
+   },
+   "B1_nearest_pwm": {
+    "pearson_r": 0.5689,
+    "pearson_r_ci95": [
+     0.5027,
+     0.6292
+    ],
+    "cosine": 0.729,
+    "cosine_ci95": [
+     0.6896,
+     0.768
+    ],
+    "topbase_acc": 0.6432,
+    "topbase_acc_ci95": [
+     0.5963,
+     0.6844
+    ],
+    "auroc": 0.8091,
+    "auroc_ci95": [
+     0.7736,
+     0.845
+    ],
+    "macroF1": 0.4854,
+    "macroF1_ci95": [
+     0.4411,
+     0.5288
+    ],
+    "mae": 0.1908,
+    "mae_ci95": [
+     0.1713,
+     0.2105
+    ],
+    "rmse": 0.3035,
+    "rmse_ci95": [
+     0.2742,
+     0.3317
+    ],
+    "jsd_bits": 0.2516,
+    "jsd_bits_ci95": [
+     0.2163,
+     0.2865
+    ],
+    "kl_bits": 2.2633,
+    "kl_bits_ci95": [
+     1.7802,
+     2.8089
+    ],
+    "ic_mae": 0.604,
+    "ic_mae_ci95": [
+     0.5515,
+     0.6598
+    ],
+    "covR": 0.4575,
+    "covR_ci95": [
+     0.39,
+     0.5243
+    ],
+    "coverage": 0.8091,
+    "coverage_ci95": [
+     0.7648,
+     0.8513
+    ],
+    "gate_len_mae": 3.1275,
+    "gate_len_mae_ci95": [
+     2.7273,
+     3.5553
+    ],
+    "gate_len_bias": -0.6277,
+    "gate_len_bias_ci95": [
+     -1.4131,
+     0.1804
+    ],
+    "auroc_pooled": 0.7983,
+    "macroF1_pooled": 0.6225,
+    "n_genes": 44,
+    "n_rows": 269
+   },
+   "v24_seed42": {
+    "pearson_r": 0.6886,
+    "pearson_r_ci95": [
+     0.6352,
+     0.7341
+    ],
+    "cosine": 0.8203,
+    "cosine_ci95": [
+     0.7865,
+     0.8484
+    ],
+    "topbase_acc": 0.749,
+    "topbase_acc_ci95": [
+     0.7077,
+     0.7838
+    ],
+    "auroc": 0.8793,
+    "auroc_ci95": [
+     0.8488,
+     0.9047
+    ],
+    "macroF1": 0.5404,
+    "macroF1_ci95": [
+     0.5012,
+     0.5793
+    ],
+    "mae": 0.1408,
+    "mae_ci95": [
+     0.1259,
+     0.1578
+    ],
+    "rmse": 0.2358,
+    "rmse_ci95": [
+     0.2142,
+     0.2595
+    ],
+    "jsd_bits": 0.1646,
+    "jsd_bits_ci95": [
+     0.1406,
+     0.1932
+    ],
+    "kl_bits": 0.9187,
+    "kl_bits_ci95": [
+     0.7653,
+     1.1095
+    ],
+    "ic_mae": 0.5133,
+    "ic_mae_ci95": [
+     0.4672,
+     0.5662
+    ],
+    "covR": 0.5585,
+    "covR_ci95": [
+     0.4982,
+     0.6149
+    ],
+    "coverage": 0.7957,
+    "coverage_ci95": [
+     0.7433,
+     0.8433
+    ],
+    "gate_len_mae": 3.5908,
+    "gate_len_mae_ci95": [
+     3.1188,
+     4.1271
+    ],
+    "gate_len_bias": -0.4687,
+    "gate_len_bias_ci95": [
+     -1.4685,
+     0.4632
+    ],
+    "auroc_pooled": 0.8798,
+    "macroF1_pooled": 0.722,
+    "n_genes": 44,
+    "n_rows": 269
+   },
+   "v24_ens5": {
+    "pearson_r": 0.7182,
+    "pearson_r_ci95": [
+     0.6689,
+     0.764
+    ],
+    "cosine": 0.8359,
+    "cosine_ci95": [
+     0.8064,
+     0.8617
+    ],
+    "topbase_acc": 0.7588,
+    "topbase_acc_ci95": [
+     0.7135,
+     0.7985
+    ],
+    "auroc": 0.8781,
+    "auroc_ci95": [
+     0.8506,
+     0.9005
+    ],
+    "macroF1": 0.5573,
+    "macroF1_ci95": [
+     0.5136,
+     0.6012
+    ],
+    "mae": 0.1576,
+    "mae_ci95": [
+     0.1431,
+     0.174
+    ],
+    "rmse": 0.2275,
+    "rmse_ci95": [
+     0.2088,
+     0.2476
+    ],
+    "jsd_bits": 0.1655,
+    "jsd_bits_ci95": [
+     0.144,
+     0.1899
+    ],
+    "kl_bits": 0.7243,
+    "kl_bits_ci95": [
+     0.6095,
+     0.8657
+    ],
+    "ic_mae": 0.7047,
+    "ic_mae_ci95": [
+     0.6408,
+     0.7759
+    ],
+    "covR": 0.5824,
+    "covR_ci95": [
+     0.5189,
+     0.6397
+    ],
+    "coverage": 0.7981,
+    "coverage_ci95": [
+     0.743,
+     0.8464
+    ],
+    "gate_len_mae": 3.5908,
+    "gate_len_mae_ci95": [
+     3.1188,
+     4.1271
+    ],
+    "gate_len_bias": -0.4687,
+    "gate_len_bias_ci95": [
+     -1.4685,
+     0.4632
+    ],
+    "auroc_pooled": 0.8801,
+    "macroF1_pooled": 0.7213,
+    "n_genes": 44,
+    "n_rows": 269
+   }
+  },
+  "clean_combined": {
+   "random_uniform": {
+    "pearson_r": 0.0,
+    "pearson_r_ci95": [
+     0.0,
+     0.0
+    ],
+    "cosine": 0.6063,
+    "cosine_ci95": [
+     0.5994,
+     0.6133
+    ],
+    "topbase_acc": 0.2861,
+    "topbase_acc_ci95": [
+     0.2574,
+     0.3156
+    ],
+    "auroc": 0.5,
+    "auroc_ci95": [
+     0.5,
+     0.5
+    ],
+    "macroF1": 0.1054,
+    "macroF1_ci95": [
+     0.0965,
+     0.1144
+    ],
+    "mae": 0.2932,
+    "mae_ci95": [
+     0.2884,
+     0.298
+    ],
+    "rmse": 0.3496,
+    "rmse_ci95": [
+     0.3448,
+     0.3545
+    ],
+    "jsd_bits": 0.3489,
+    "jsd_bits_ci95": [
+     0.3397,
+     0.3584
+    ],
+    "kl_bits": 1.3074,
+    "kl_bits_ci95": [
+     1.2731,
+     1.3422
+    ],
+    "ic_mae": 1.3074,
+    "ic_mae_ci95": [
+     1.2731,
+     1.3422
+    ],
+    "covR": 0.0,
+    "covR_ci95": [
+     0.0,
+     0.0
+    ],
+    "coverage": 0.9008,
+    "coverage_ci95": [
+     0.8744,
+     0.9242
+    ],
+    "gate_len_mae": 3.1222,
+    "gate_len_mae_ci95": [
+     2.7453,
+     3.4724
+    ],
+    "gate_len_bias": 0.1829,
+    "gate_len_bias_ci95": [
+     -0.5128,
+     0.8363
+    ],
+    "auroc_pooled": 0.5,
+    "macroF1_pooled": 0.1073,
+    "n_genes": 95,
+    "n_rows": 560
+   },
+   "random_train_pwm": {
+    "pearson_r": 0.4433,
+    "pearson_r_ci95": [
+     0.4172,
+     0.456
+    ],
+    "cosine": 0.6458,
+    "cosine_ci95": [
+     0.6281,
+     0.653
+    ],
+    "topbase_acc": 0.5671,
+    "topbase_acc_ci95": [
+     0.5403,
+     0.5802
+    ],
+    "auroc": 0.7207,
+    "auroc_ci95": [
+     0.7064,
+     0.729
+    ],
+    "macroF1": 0.435,
+    "macroF1_ci95": [
+     0.4067,
+     0.4518
+    ],
+    "mae": 0.2359,
+    "mae_ci95": [
+     0.2318,
+     0.2437
+    ],
+    "rmse": 0.3645,
+    "rmse_ci95": [
+     0.3605,
+     0.3771
+    ],
+    "jsd_bits": 0.3344,
+    "jsd_bits_ci95": [
+     0.3274,
+     0.3501
+    ],
+    "kl_bits": 3.4269,
+    "kl_bits_ci95": [
+     3.2364,
+     3.7872
+    ],
+    "ic_mae": 0.7039,
+    "ic_mae_ci95": [
+     0.6695,
+     0.7328
+    ],
+    "covR": 0.2874,
+    "covR_ci95": [
+     0.273,
+     0.3124
+    ],
+    "coverage": 0.7193,
+    "coverage_ci95": [
+     0.6883,
+     0.7462
+    ],
+    "gate_len_mae": 3.1222,
+    "gate_len_mae_ci95": [
+     2.7453,
+     3.4724
+    ],
+    "gate_len_bias": 0.1829,
+    "gate_len_bias_ci95": [
+     -0.5128,
+     0.8363
+    ],
+    "auroc_pooled": 0.6968,
+    "macroF1_pooled": 0.533,
+    "n_genes": 95,
+    "n_rows": 560,
+    "n_draws": 20,
+    "ci_note": "CIs are from the first draw only; the point estimates average all draws"
+   },
+   "B0_global": {
+    "pearson_r": 0.4636,
+    "pearson_r_ci95": [
+     0.4386,
+     0.4886
+    ],
+    "cosine": 0.6368,
+    "cosine_ci95": [
+     0.6286,
+     0.6446
+    ],
+    "topbase_acc": 0.6081,
+    "topbase_acc_ci95": [
+     0.5798,
+     0.6374
+    ],
+    "auroc": 0.768,
+    "auroc_ci95": [
+     0.7507,
+     0.7845
+    ],
+    "macroF1": 0.4296,
+    "macroF1_ci95": [
+     0.4058,
+     0.4526
+    ],
+    "mae": 0.286,
+    "mae_ci95": [
+     0.2804,
+     0.2917
+    ],
+    "rmse": 0.3407,
+    "rmse_ci95": [
+     0.3344,
+     0.3468
+    ],
+    "jsd_bits": 0.3372,
+    "jsd_bits_ci95": [
+     0.326,
+     0.3486
+    ],
+    "kl_bits": 1.2443,
+    "kl_bits_ci95": [
+     1.2042,
+     1.2851
+    ],
+    "ic_mae": 1.3222,
+    "ic_mae_ci95": [
+     1.2799,
+     1.3657
+    ],
+    "covR": 0.3228,
+    "covR_ci95": [
+     0.3052,
+     0.341
+    ],
+    "coverage": 0.7149,
+    "coverage_ci95": [
+     0.6822,
+     0.7485
+    ],
+    "gate_len_mae": 3.1222,
+    "gate_len_mae_ci95": [
+     2.7453,
+     3.4724
+    ],
+    "gate_len_bias": 0.1829,
+    "gate_len_bias_ci95": [
+     -0.5128,
+     0.8363
+    ],
+    "auroc_pooled": 0.7247,
+    "macroF1_pooled": 0.4908,
+    "n_genes": 95,
+    "n_rows": 560
+   },
+   "B0_family": {
+    "pearson_r": 0.5659,
+    "pearson_r_ci95": [
+     0.5333,
+     0.5955
+    ],
+    "cosine": 0.7453,
+    "cosine_ci95": [
+     0.7292,
+     0.7615
+    ],
+    "topbase_acc": 0.6465,
+    "topbase_acc_ci95": [
+     0.6178,
+     0.673
+    ],
+    "auroc": 0.8132,
+    "auroc_ci95": [
+     0.795,
+     0.8295
+    ],
+    "macroF1": 0.4987,
+    "macroF1_ci95": [
+     0.4705,
+     0.5258
+    ],
+    "mae": 0.2151,
+    "mae_ci95": [
+     0.2037,
+     0.2267
+    ],
+    "rmse": 0.2839,
+    "rmse_ci95": [
+     0.2734,
+     0.2941
+    ],
+    "jsd_bits": 0.2366,
+    "jsd_bits_ci95": [
+     0.2217,
+     0.2516
+    ],
+    "kl_bits": 0.9493,
+    "kl_bits_ci95": [
+     0.899,
+     0.9986
+    ],
+    "ic_mae": 0.8985,
+    "ic_mae_ci95": [
+     0.8296,
+     0.9705
+    ],
+    "covR": 0.4973,
+    "covR_ci95": [
+     0.4591,
+     0.5338
+    ],
+    "coverage": 0.83,
+    "coverage_ci95": [
+     0.7919,
+     0.8652
+    ],
+    "gate_len_mae": 3.1222,
+    "gate_len_mae_ci95": [
+     2.7453,
+     3.4724
+    ],
+    "gate_len_bias": 0.1829,
+    "gate_len_bias_ci95": [
+     -0.5128,
+     0.8363
+    ],
+    "auroc_pooled": 0.7893,
+    "macroF1_pooled": 0.5517,
+    "n_genes": 95,
+    "n_rows": 560,
+    "zero_shot_fallback_families": [
+     "POU",
+     "p53"
+    ]
+   },
+   "B1_nearest_pwm": {
+    "pearson_r": 0.5422,
+    "pearson_r_ci95": [
+     0.5026,
+     0.5806
+    ],
+    "cosine": 0.7128,
+    "cosine_ci95": [
+     0.6872,
+     0.7379
+    ],
+    "topbase_acc": 0.6304,
+    "topbase_acc_ci95": [
+     0.6006,
+     0.6595
+    ],
+    "auroc": 0.793,
+    "auroc_ci95": [
+     0.7698,
+     0.8154
+    ],
+    "macroF1": 0.495,
+    "macroF1_ci95": [
+     0.4667,
+     0.5221
+    ],
+    "mae": 0.1982,
+    "mae_ci95": [
+     0.1855,
+     0.2109
+    ],
+    "rmse": 0.3162,
+    "rmse_ci95": [
+     0.2981,
+     0.3342
+    ],
+    "jsd_bits": 0.2665,
+    "jsd_bits_ci95": [
+     0.2439,
+     0.2894
+    ],
+    "kl_bits": 2.5842,
+    "kl_bits_ci95": [
+     2.2127,
+     2.9986
+    ],
+    "ic_mae": 0.61,
+    "ic_mae_ci95": [
+     0.5738,
+     0.6495
+    ],
+    "covR": 0.4178,
+    "covR_ci95": [
+     0.3753,
+     0.4601
+    ],
+    "coverage": 0.8194,
+    "coverage_ci95": [
+     0.7851,
+     0.8524
+    ],
+    "gate_len_mae": 3.1222,
+    "gate_len_mae_ci95": [
+     2.7453,
+     3.4724
+    ],
+    "gate_len_bias": 0.1829,
+    "gate_len_bias_ci95": [
+     -0.5128,
+     0.8363
+    ],
+    "auroc_pooled": 0.7609,
+    "macroF1_pooled": 0.6111,
+    "n_genes": 95,
+    "n_rows": 560
+   },
+   "v24_seed42": {
+    "pearson_r": 0.6568,
+    "pearson_r_ci95": [
+     0.627,
+     0.686
+    ],
+    "cosine": 0.8012,
+    "cosine_ci95": [
+     0.7829,
+     0.8189
+    ],
+    "topbase_acc": 0.7171,
+    "topbase_acc_ci95": [
+     0.6917,
+     0.7413
+    ],
+    "auroc": 0.8569,
+    "auroc_ci95": [
+     0.8383,
+     0.8739
+    ],
+    "macroF1": 0.5492,
+    "macroF1_ci95": [
+     0.5256,
+     0.5732
+    ],
+    "mae": 0.1515,
+    "mae_ci95": [
+     0.1419,
+     0.1617
+    ],
+    "rmse": 0.251,
+    "rmse_ci95": [
+     0.2378,
+     0.2644
+    ],
+    "jsd_bits": 0.1788,
+    "jsd_bits_ci95": [
+     0.1642,
+     0.1953
+    ],
+    "kl_bits": 0.9876,
+    "kl_bits_ci95": [
+     0.8905,
+     1.0907
+    ],
+    "ic_mae": 0.5149,
+    "ic_mae_ci95": [
+     0.4816,
+     0.55
+    ],
+    "covR": 0.5434,
+    "covR_ci95": [
+     0.5072,
+     0.5794
+    ],
+    "coverage": 0.8203,
+    "coverage_ci95": [
+     0.7851,
+     0.8539
+    ],
+    "gate_len_mae": 3.5298,
+    "gate_len_mae_ci95": [
+     3.1452,
+     3.9273
+    ],
+    "gate_len_bias": 0.2857,
+    "gate_len_bias_ci95": [
+     -0.4819,
+     1.0425
+    ],
+    "auroc_pooled": 0.8466,
+    "macroF1_pooled": 0.673,
+    "n_genes": 95,
+    "n_rows": 560
+   },
+   "v24_ens5": {
+    "pearson_r": 0.6893,
+    "pearson_r_ci95": [
+     0.6585,
+     0.7174
+    ],
+    "cosine": 0.8203,
+    "cosine_ci95": [
+     0.8035,
+     0.8355
+    ],
+    "topbase_acc": 0.7434,
+    "topbase_acc_ci95": [
+     0.7179,
+     0.7667
+    ],
+    "auroc": 0.8563,
+    "auroc_ci95": [
+     0.8387,
+     0.873
+    ],
+    "macroF1": 0.5752,
+    "macroF1_ci95": [
+     0.5484,
+     0.6015
+    ],
+    "mae": 0.1706,
+    "mae_ci95": [
+     0.1617,
+     0.1799
+    ],
+    "rmse": 0.241,
+    "rmse_ci95": [
+     0.23,
+     0.2524
+    ],
+    "jsd_bits": 0.1791,
+    "jsd_bits_ci95": [
+     0.1664,
+     0.1928
+    ],
+    "kl_bits": 0.7573,
+    "kl_bits_ci95": [
+     0.6945,
+     0.8314
+    ],
+    "ic_mae": 0.7585,
+    "ic_mae_ci95": [
+     0.7173,
+     0.8013
+    ],
+    "covR": 0.5705,
+    "covR_ci95": [
+     0.5308,
+     0.6082
+    ],
+    "coverage": 0.8179,
+    "coverage_ci95": [
+     0.7807,
+     0.8528
+    ],
+    "gate_len_mae": 3.5298,
+    "gate_len_mae_ci95": [
+     3.1452,
+     3.9273
+    ],
+    "gate_len_bias": 0.2857,
+    "gate_len_bias_ci95": [
+     -0.4819,
+     1.0425
+    ],
+    "auroc_pooled": 0.8432,
+    "macroF1_pooled": 0.6824,
+    "n_genes": 95,
+    "n_rows": 560
+   }
+  },
+  "deeppbs20": {
+   "random_uniform": {
+    "pearson_r": 0.0,
+    "pearson_r_ci95": [
+     0.0,
+     0.0
+    ],
+    "cosine": 0.6058,
+    "cosine_ci95": [
+     0.5932,
+     0.6178
+    ],
+    "topbase_acc": 0.2462,
+    "topbase_acc_ci95": [
+     0.206,
+     0.2889
+    ],
+    "auroc": 0.5,
+    "auroc_ci95": [
+     0.5,
+     0.5
+    ],
+    "macroF1": 0.0964,
+    "macroF1_ci95": [
+     0.0834,
+     0.1104
+    ],
+    "mae": 0.2923,
+    "mae_ci95": [
+     0.2843,
+     0.3008
+    ],
+    "rmse": 0.3497,
+    "rmse_ci95": [
+     0.3408,
+     0.3591
+    ],
+    "jsd_bits": 0.3517,
+    "jsd_bits_ci95": [
+     0.3332,
+     0.371
+    ],
+    "kl_bits": 1.3112,
+    "kl_bits_ci95": [
+     1.2452,
+     1.3788
+    ],
+    "ic_mae": 1.3112,
+    "ic_mae_ci95": [
+     1.2452,
+     1.3788
+    ],
+    "covR": 0.0,
+    "covR_ci95": [
+     0.0,
+     0.0
+    ],
+    "coverage": 0.9779,
+    "coverage_ci95": [
+     0.9564,
+     0.995
+    ],
+    "gate_len_mae": 3.1,
+    "gate_len_mae_ci95": [
+     2.4,
+     3.85
+    ],
+    "gate_len_bias": 2.6,
+    "gate_len_bias_ci95": [
+     1.55,
+     3.65
+    ],
+    "auroc_pooled": 0.5,
+    "macroF1_pooled": 0.1013,
+    "n_genes": 20,
+    "n_rows": 152
+   },
+   "random_train_pwm": {
+    "pearson_r": 0.4558,
+    "pearson_r_ci95": [
+     0.414,
+     0.5496
+    ],
+    "cosine": 0.6499,
+    "cosine_ci95": [
+     0.6383,
+     0.7095
+    ],
+    "topbase_acc": 0.5774,
+    "topbase_acc_ci95": [
+     0.5573,
+     0.664
+    ],
+    "auroc": 0.7243,
+    "auroc_ci95": [
+     0.6956,
+     0.7928
+    ],
+    "macroF1": 0.4473,
+    "macroF1_ci95": [
+     0.4209,
+     0.4795
+    ],
+    "mae": 0.2348,
+    "mae_ci95": [
+     0.2042,
+     0.2431
+    ],
+    "rmse": 0.3642,
+    "rmse_ci95": [
+     0.3092,
+     0.3731
+    ],
+    "jsd_bits": 0.3378,
+    "jsd_bits_ci95": [
+     0.2782,
+     0.3475
+    ],
+    "kl_bits": 3.7374,
+    "kl_bits_ci95": [
+     2.1452,
+     3.7862
+    ],
+    "ic_mae": 0.7075,
+    "ic_mae_ci95": [
+     0.5953,
+     0.837
+    ],
+    "covR": 0.2923,
+    "covR_ci95": [
+     0.2724,
+     0.3263
+    ],
+    "coverage": 0.771,
+    "coverage_ci95": [
+     0.7227,
+     0.8539
+    ],
+    "gate_len_mae": 3.1,
+    "gate_len_mae_ci95": [
+     2.4,
+     3.85
+    ],
+    "gate_len_bias": 2.6,
+    "gate_len_bias_ci95": [
+     1.55,
+     3.65
+    ],
+    "auroc_pooled": 0.6856,
+    "macroF1_pooled": 0.5247,
+    "n_genes": 20,
+    "n_rows": 152,
+    "n_draws": 20,
+    "ci_note": "CIs are from the first draw only; the point estimates average all draws"
+   },
+   "B0_global": {
+    "pearson_r": 0.5274,
+    "pearson_r_ci95": [
+     0.4711,
+     0.5824
+    ],
+    "cosine": 0.6423,
+    "cosine_ci95": [
+     0.6227,
+     0.666
+    ],
+    "topbase_acc": 0.6954,
+    "topbase_acc_ci95": [
+     0.628,
+     0.7577
+    ],
+    "auroc": 0.7919,
+    "auroc_ci95": [
+     0.7501,
+     0.8365
+    ],
+    "macroF1": 0.491,
+    "macroF1_ci95": [
+     0.4392,
+     0.5425
+    ],
+    "mae": 0.2841,
+    "mae_ci95": [
+     0.2674,
+     0.2983
+    ],
+    "rmse": 0.3379,
+    "rmse_ci95": [
+     0.3181,
+     0.3546
+    ],
+    "jsd_bits": 0.3403,
+    "jsd_bits_ci95": [
+     0.3081,
+     0.3701
+    ],
+    "kl_bits": 1.2418,
+    "kl_bits_ci95": [
+     1.1232,
+     1.3478
+    ],
+    "ic_mae": 1.3295,
+    "ic_mae_ci95": [
+     1.2016,
+     1.4435
+    ],
+    "covR": 0.332,
+    "covR_ci95": [
+     0.2948,
+     0.3655
+    ],
+    "coverage": 0.7219,
+    "coverage_ci95": [
+     0.6558,
+     0.797
+    ],
+    "gate_len_mae": 3.1,
+    "gate_len_mae_ci95": [
+     2.4,
+     3.85
+    ],
+    "gate_len_bias": 2.6,
+    "gate_len_bias_ci95": [
+     1.55,
+     3.65
+    ],
+    "auroc_pooled": 0.6515,
+    "macroF1_pooled": 0.4478,
+    "n_genes": 20,
+    "n_rows": 152
+   },
+   "B0_family": {
+    "pearson_r": 0.6442,
+    "pearson_r_ci95": [
+     0.5847,
+     0.6906
+    ],
+    "cosine": 0.803,
+    "cosine_ci95": [
+     0.7785,
+     0.8257
+    ],
+    "topbase_acc": 0.7106,
+    "topbase_acc_ci95": [
+     0.6596,
+     0.751
+    ],
+    "auroc": 0.8448,
+    "auroc_ci95": [
+     0.8029,
+     0.8777
+    ],
+    "macroF1": 0.6167,
+    "macroF1_ci95": [
+     0.5746,
+     0.6525
+    ],
+    "mae": 0.1703,
+    "mae_ci95": [
+     0.1491,
+     0.191
+    ],
+    "rmse": 0.2513,
+    "rmse_ci95": [
+     0.2323,
+     0.2695
+    ],
+    "jsd_bits": 0.1828,
+    "jsd_bits_ci95": [
+     0.1579,
+     0.2098
+    ],
+    "kl_bits": 0.8021,
+    "kl_bits_ci95": [
+     0.7148,
+     0.8869
+    ],
+    "ic_mae": 0.6313,
+    "ic_mae_ci95": [
+     0.5082,
+     0.7643
+    ],
+    "covR": 0.6234,
+    "covR_ci95": [
+     0.5566,
+     0.6788
+    ],
+    "coverage": 0.9546,
+    "coverage_ci95": [
+     0.9127,
+     0.9875
+    ],
+    "gate_len_mae": 3.1,
+    "gate_len_mae_ci95": [
+     2.4,
+     3.85
+    ],
+    "gate_len_bias": 2.6,
+    "gate_len_bias_ci95": [
+     1.55,
+     3.65
+    ],
+    "auroc_pooled": 0.7458,
+    "macroF1_pooled": 0.4759,
+    "n_genes": 20,
+    "n_rows": 152,
+    "zero_shot_fallback_families": [
+     "p53"
+    ]
+   },
+   "B1_nearest_pwm": {
+    "pearson_r": 0.5658,
+    "pearson_r_ci95": [
+     0.4938,
+     0.6399
+    ],
+    "cosine": 0.7277,
+    "cosine_ci95": [
+     0.6787,
+     0.7769
+    ],
+    "topbase_acc": 0.6463,
+    "topbase_acc_ci95": [
+     0.5879,
+     0.7067
+    ],
+    "auroc": 0.8197,
+    "auroc_ci95": [
+     0.7734,
+     0.865
+    ],
+    "macroF1": 0.5177,
+    "macroF1_ci95": [
+     0.4639,
+     0.5677
+    ],
+    "mae": 0.191,
+    "mae_ci95": [
+     0.1647,
+     0.2172
+    ],
+    "rmse": 0.3092,
+    "rmse_ci95": [
+     0.2691,
+     0.3479
+    ],
+    "jsd_bits": 0.2563,
+    "jsd_bits_ci95": [
+     0.2102,
+     0.3028
+    ],
+    "kl_bits": 2.5678,
+    "kl_bits_ci95": [
+     1.6642,
+     3.5672
+    ],
+    "ic_mae": 0.6019,
+    "ic_mae_ci95": [
+     0.5186,
+     0.6875
+    ],
+    "covR": 0.3869,
+    "covR_ci95": [
+     0.3027,
+     0.475
+    ],
+    "coverage": 0.8382,
+    "coverage_ci95": [
+     0.7335,
+     0.9303
+    ],
+    "gate_len_mae": 3.1,
+    "gate_len_mae_ci95": [
+     2.4,
+     3.85
+    ],
+    "gate_len_bias": 2.6,
+    "gate_len_bias_ci95": [
+     1.55,
+     3.65
+    ],
+    "auroc_pooled": 0.731,
+    "macroF1_pooled": 0.6073,
+    "n_genes": 20,
+    "n_rows": 152
+   },
+   "v24_seed42": {
+    "pearson_r": 0.6854,
+    "pearson_r_ci95": [
+     0.647,
+     0.7208
+    ],
+    "cosine": 0.8191,
+    "cosine_ci95": [
+     0.7921,
+     0.8454
+    ],
+    "topbase_acc": 0.7334,
+    "topbase_acc_ci95": [
+     0.6954,
+     0.7694
+    ],
+    "auroc": 0.8666,
+    "auroc_ci95": [
+     0.8405,
+     0.8907
+    ],
+    "macroF1": 0.6157,
+    "macroF1_ci95": [
+     0.5706,
+     0.6609
+    ],
+    "mae": 0.1396,
+    "mae_ci95": [
+     0.1232,
+     0.1573
+    ],
+    "rmse": 0.2409,
+    "rmse_ci95": [
+     0.2164,
+     0.2644
+    ],
+    "jsd_bits": 0.1614,
+    "jsd_bits_ci95": [
+     0.1385,
+     0.1858
+    ],
+    "kl_bits": 0.9198,
+    "kl_bits_ci95": [
+     0.7873,
+     1.0652
+    ],
+    "ic_mae": 0.4493,
+    "ic_mae_ci95": [
+     0.3906,
+     0.5255
+    ],
+    "covR": 0.6312,
+    "covR_ci95": [
+     0.5827,
+     0.6706
+    ],
+    "coverage": 0.9197,
+    "coverage_ci95": [
+     0.8795,
+     0.9568
+    ],
+    "gate_len_mae": 2.9676,
+    "gate_len_mae_ci95": [
+     2.2835,
+     3.6274
+    ],
+    "gate_len_bias": 2.6215,
+    "gate_len_bias_ci95": [
+     1.6917,
+     3.4697
+    ],
+    "auroc_pooled": 0.8194,
+    "macroF1_pooled": 0.6409,
+    "n_genes": 20,
+    "n_rows": 152
+   },
+   "v24_ens5": {
+    "pearson_r": 0.7071,
+    "pearson_r_ci95": [
+     0.664,
+     0.7454
+    ],
+    "cosine": 0.8275,
+    "cosine_ci95": [
+     0.8036,
+     0.851
+    ],
+    "topbase_acc": 0.7605,
+    "topbase_acc_ci95": [
+     0.7235,
+     0.7911
+    ],
+    "auroc": 0.8576,
+    "auroc_ci95": [
+     0.8288,
+     0.8852
+    ],
+    "macroF1": 0.6482,
+    "macroF1_ci95": [
+     0.6101,
+     0.6846
+    ],
+    "mae": 0.1705,
+    "mae_ci95": [
+     0.1568,
+     0.1836
+    ],
+    "rmse": 0.2422,
+    "rmse_ci95": [
+     0.2244,
+     0.2589
+    ],
+    "jsd_bits": 0.1778,
+    "jsd_bits_ci95": [
+     0.1598,
+     0.1958
+    ],
+    "kl_bits": 0.7398,
+    "kl_bits_ci95": [
+     0.6562,
+     0.8222
+    ],
+    "ic_mae": 0.7689,
+    "ic_mae_ci95": [
+     0.69,
+     0.8429
+    ],
+    "covR": 0.655,
+    "covR_ci95": [
+     0.5995,
+     0.7038
+    ],
+    "coverage": 0.922,
+    "coverage_ci95": [
+     0.8813,
+     0.9585
+    ],
+    "gate_len_mae": 2.9676,
+    "gate_len_mae_ci95": [
+     2.2835,
+     3.6274
+    ],
+    "gate_len_bias": 2.6215,
+    "gate_len_bias_ci95": [
+     1.6917,
+     3.4697
+    ],
+    "auroc_pooled": 0.791,
+    "macroF1_pooled": 0.6387,
+    "n_genes": 20,
+    "n_rows": 152
+   },
+   "deeppbs": {
+    "pearson_r": 0.6939,
+    "pearson_r_ci95": [
+     0.6335,
+     0.7464
+    ],
+    "cosine": 0.8364,
+    "cosine_ci95": [
+     0.8025,
+     0.8655
+    ],
+    "topbase_acc": 0.7243,
+    "topbase_acc_ci95": [
+     0.6699,
+     0.7768
+    ],
+    "auroc": 0.8852,
+    "auroc_ci95": [
+     0.8474,
+     0.916
+    ],
+    "macroF1": 0.6784,
+    "macroF1_ci95": [
+     0.6088,
+     0.7434
+    ],
+    "mae": 0.153,
+    "mae_ci95": [
+     0.1347,
+     0.173
+    ],
+    "rmse": 0.2215,
+    "rmse_ci95": [
+     0.2001,
+     0.2447
+    ],
+    "jsd_bits": 0.151,
+    "jsd_bits_ci95": [
+     0.1288,
+     0.1767
+    ],
+    "kl_bits": 0.5804,
+    "kl_bits_ci95": [
+     0.4821,
+     0.6975
+    ],
+    "ic_mae": 0.6667,
+    "ic_mae_ci95": [
+     0.5948,
+     0.7449
+    ],
+    "covR": 0.6939,
+    "covR_ci95": [
+     0.6335,
+     0.7464
+    ],
+    "coverage": 1.0,
+    "coverage_ci95": [
+     1.0,
+     1.0
+    ],
+    "gate_len_mae": 5.1,
+    "gate_len_mae_ci95": [
+     3.4,
+     7.05
+    ],
+    "gate_len_bias": 5.1,
+    "gate_len_bias_ci95": [
+     3.4,
+     7.05
+    ],
+    "auroc_pooled": 0.7476,
+    "macroF1_pooled": 0.5679,
+    "n_genes": 20,
+    "n_rows": 152
+   }
+  }
+ }
+}

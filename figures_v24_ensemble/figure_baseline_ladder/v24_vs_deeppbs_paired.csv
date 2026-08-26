@@ -1,0 +1,25 @@
+surface,comparison,metric,direction,delta_oriented_positive_is_tfscope_better,ci95_lo,ci95_hi,n_genes,significant
+deeppbs20,v24_seed42 - deeppbs,pearson_r,higher_better,-0.0085,-0.0599,0.0412,20,False
+deeppbs20,v24_seed42 - deeppbs,cosine,higher_better,-0.0174,-0.0467,0.0115,20,False
+deeppbs20,v24_seed42 - deeppbs,topbase_acc,higher_better,0.0091,-0.0395,0.0577,20,False
+deeppbs20,v24_seed42 - deeppbs,auroc,higher_better,-0.0186,-0.0421,0.0076,20,False
+deeppbs20,v24_seed42 - deeppbs,macroF1,higher_better,-0.0627,-0.1242,-0.0022,20,True
+deeppbs20,v24_seed42 - deeppbs,covR,higher_better,-0.0628,-0.113,-0.0137,20,True
+deeppbs20,v24_seed42 - deeppbs,mae,lower_better,0.0133,-0.0054,0.0331,20,False
+deeppbs20,v24_seed42 - deeppbs,rmse,lower_better,-0.0194,-0.0411,0.0025,20,False
+deeppbs20,v24_seed42 - deeppbs,jsd_bits,lower_better,-0.0104,-0.0347,0.0152,20,False
+deeppbs20,v24_seed42 - deeppbs,kl_bits,lower_better,-0.3394,-0.4776,-0.1963,20,True
+deeppbs20,v24_seed42 - deeppbs,ic_mae,lower_better,0.2174,0.1349,0.3099,20,True
+deeppbs20,v24_seed42 - deeppbs,coverage,higher_better,-0.0803,-0.1209,-0.0441,20,True
+deeppbs20,v24_ens5 - deeppbs,pearson_r,higher_better,0.0132,-0.034,0.0623,20,False
+deeppbs20,v24_ens5 - deeppbs,cosine,higher_better,-0.0089,-0.0316,0.0138,20,False
+deeppbs20,v24_ens5 - deeppbs,topbase_acc,higher_better,0.0362,-0.0119,0.0854,20,False
+deeppbs20,v24_ens5 - deeppbs,auroc,higher_better,-0.0277,-0.0485,-0.0058,20,True
+deeppbs20,v24_ens5 - deeppbs,macroF1,higher_better,-0.0302,-0.0928,0.0306,20,False
+deeppbs20,v24_ens5 - deeppbs,covR,higher_better,-0.0389,-0.0903,0.0149,20,False
+deeppbs20,v24_ens5 - deeppbs,mae,lower_better,-0.0175,-0.0361,0.0014,20,False
+deeppbs20,v24_ens5 - deeppbs,rmse,lower_better,-0.0208,-0.0366,-0.0043,20,True
+deeppbs20,v24_ens5 - deeppbs,jsd_bits,lower_better,-0.0268,-0.048,-0.0046,20,True
+deeppbs20,v24_ens5 - deeppbs,kl_bits,lower_better,-0.1594,-0.2396,-0.0674,20,True
+deeppbs20,v24_ens5 - deeppbs,ic_mae,lower_better,-0.1021,-0.2104,0.0131,20,False
+deeppbs20,v24_ens5 - deeppbs,coverage,higher_better,-0.078,-0.1187,-0.0415,20,True

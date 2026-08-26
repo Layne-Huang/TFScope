@@ -1,0 +1,15 @@
+# v26 diagnostic: loss_v24parity
+# Full v24-style loss: registration + top-base hinge (0.1) + cov-r (0.25), matching --topbase-
+# weight/--pwm-cov-r-weight.
+# Family/source/provenance are NEVER model inputs.
+name: loss_v24parity
+dataset: "core"
+epochs: 225
+registration_max_shift: 6
+topbase_margin: 2.0
+w_covr: 0.25
+w_registration: 1.0
+w_topbase: 0.1
+seeds: [42]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

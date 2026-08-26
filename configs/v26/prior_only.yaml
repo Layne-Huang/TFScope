@@ -1,0 +1,21 @@
+# v26 ablation: prior_only
+# Contact-correction head off; Z_final = Z_prior only.
+# Family/source/provenance are NEVER model inputs; they are stratification and
+# reporting only. See src/tfscope/v26/model.py::BANNED_KEYS.
+name: prior_only
+d_model: 512
+dataset: "core"
+esm_model: "esm2_t33_650M_UR50D"
+lambda_contact_init: 0.0
+n_routed_experts: 4
+n_shared_experts: 1
+top_k: 2
+use_contact_head: false
+use_flank: false
+use_moe: true
+use_partners: false
+w_contact1d: 0.0
+w_contact2d: 0.0
+seeds: [42, 1, 7]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

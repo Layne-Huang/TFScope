@@ -1,0 +1,17 @@
+# v26 diagnostic: v23compat_v24loss
+# Closest achievable match to v24's PWM loss: sharpness terms PLUS top-base 0.1 and cov-r
+# 0.25. Registration deliberately left OFF -- it measurably hurt (loss_reg 0.3058 vs core
+# 0.3507).
+name: v23compat_v24loss
+d_model: 256
+dataset: "v23compat"
+dropout: 0.35
+epochs: 225
+refiner_layers: 1
+w_covr: 0.25
+w_entropy: 0.1
+w_ic: 0.5
+w_ic_pcc: 0.5
+w_topbase: 0.1
+seeds: [42]
+manifest: data/processed/splits/v26/manifest_v23compat.parquet

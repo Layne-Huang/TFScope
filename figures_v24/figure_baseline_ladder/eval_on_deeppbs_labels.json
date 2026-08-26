@@ -1,0 +1,965 @@
+{
+ "note": "every method scored against DeepPBS's own masked labels (Y_pwm[pwm_mask]) on the 20 co-crystal test structures",
+ "target": "Y_pwm[strand0][pwm_mask[0]], column-normalized, NOT IC-trimmed",
+ "metric_conventions": {
+  "mae": "mean |p-t| over bases x columns, range [0, 0.5]",
+  "mae_dpbs": "DeepPBS convention: mean over columns of the per-column sum of |p-t| over the 4 bases, range [0, 2]; == 4 x mae",
+  "rmse": "sqrt(mean (p-t)^2 over bases x columns)",
+  "rmse_dpbs": "DeepPBS convention (brier_multi with root): sqrt(mean over columns of the per-column sum of (p-t)^2); == 2 x rmse"
+ },
+ "label_length": {
+  "min": 5,
+  "median": 9,
+  "max": 15
+ },
+ "n_structures": 20,
+ "ladder": {
+  "random_uniform": {
+   "n": 20,
+   "pearson_r": 0.0,
+   "pearson_r_ci95": [
+    0.0,
+    0.0
+   ],
+   "cosine": 0.6313,
+   "cosine_ci95": [
+    0.6173,
+    0.6469
+   ],
+   "topbase_acc": 0.3318,
+   "topbase_acc_ci95": [
+    0.2375,
+    0.4278
+   ],
+   "auroc": 0.5,
+   "auroc_ci95": [
+    0.5,
+    0.5
+   ],
+   "macroF1": 0.1143,
+   "macroF1_ci95": [
+    0.0853,
+    0.1422
+   ],
+   "mae": 0.2767,
+   "mae_ci95": [
+    0.2653,
+    0.2865
+   ],
+   "rmse": 0.3339,
+   "rmse_ci95": [
+    0.3215,
+    0.3443
+   ],
+   "jsd_bits": 0.3181,
+   "jsd_bits_ci95": [
+    0.2943,
+    0.3396
+   ],
+   "kl_bits": 1.194,
+   "kl_bits_ci95": [
+    1.1117,
+    1.2689
+   ],
+   "ic_mae": 1.194,
+   "ic_mae_ci95": [
+    1.1096,
+    1.2691
+   ],
+   "mae_dpbs": 1.1066,
+   "mae_dpbs_ci95": [
+    1.0605,
+    1.1464
+   ],
+   "rmse_dpbs": 0.6678,
+   "rmse_dpbs_ci95": [
+    0.6441,
+    0.6894
+   ],
+   "covR": 0.0,
+   "covR_ci95": [
+    0.0,
+    0.0
+   ],
+   "coverage": 0.9459,
+   "coverage_ci95": [
+    0.8977,
+    0.9809
+   ],
+   "len_mae": 1.7,
+   "len_mae_ci95": [
+    1.05,
+    2.45
+   ],
+   "len_bias": 0.4,
+   "len_bias_ci95": [
+    -0.65,
+    1.4
+   ]
+  },
+  "random_train_pwm": {
+   "n": 20,
+   "pearson_r": 0.4661,
+   "pearson_r_ci95": [
+    0.4431,
+    0.488
+   ],
+   "cosine": 0.6659,
+   "cosine_ci95": [
+    0.6544,
+    0.6784
+   ],
+   "topbase_acc": 0.5843,
+   "topbase_acc_ci95": [
+    0.5643,
+    0.6027
+   ],
+   "auroc": 0.7256,
+   "auroc_ci95": [
+    0.7121,
+    0.7377
+   ],
+   "macroF1": 0.408,
+   "macroF1_ci95": [
+    0.3771,
+    0.437
+   ],
+   "mae": 0.2296,
+   "mae_ci95": [
+    0.2244,
+    0.2343
+   ],
+   "rmse": 0.3509,
+   "rmse_ci95": [
+    0.3414,
+    0.3593
+   ],
+   "jsd_bits": 0.3142,
+   "jsd_bits_ci95": [
+    0.2999,
+    0.3273
+   ],
+   "kl_bits": 3.4557,
+   "kl_bits_ci95": [
+    3.2517,
+    3.6825
+   ],
+   "ic_mae": 0.7033,
+   "ic_mae_ci95": [
+    0.6674,
+    0.7379
+   ],
+   "mae_dpbs": 0.9183,
+   "mae_dpbs_ci95": [
+    0.8982,
+    0.9378
+   ],
+   "rmse_dpbs": 0.7018,
+   "rmse_dpbs_ci95": [
+    0.6829,
+    0.7187
+   ],
+   "covR": 0.3411,
+   "covR_ci95": [
+    0.3169,
+    0.3642
+   ],
+   "coverage": 0.746,
+   "coverage_ci95": [
+    0.7122,
+    0.7776
+   ],
+   "len_mae": 1.7,
+   "len_mae_ci95": [
+    1.05,
+    2.45
+   ],
+   "len_bias": 0.4,
+   "len_bias_ci95": [
+    -0.65,
+    1.4
+   ],
+   "n_draws": 20
+  },
+  "B0_global": {
+   "n": 20,
+   "pearson_r": 0.4887,
+   "pearson_r_ci95": [
+    0.4317,
+    0.5408
+   ],
+   "cosine": 0.6542,
+   "cosine_ci95": [
+    0.6353,
+    0.6739
+   ],
+   "topbase_acc": 0.6428,
+   "topbase_acc_ci95": [
+    0.5575,
+    0.724
+   ],
+   "auroc": 0.7742,
+   "auroc_ci95": [
+    0.7413,
+    0.8066
+   ],
+   "macroF1": 0.4281,
+   "macroF1_ci95": [
+    0.3661,
+    0.4887
+   ],
+   "mae": 0.275,
+   "mae_ci95": [
+    0.2602,
+    0.2893
+   ],
+   "rmse": 0.3289,
+   "rmse_ci95": [
+    0.3124,
+    0.3446
+   ],
+   "jsd_bits": 0.3129,
+   "jsd_bits_ci95": [
+    0.283,
+    0.3427
+   ],
+   "kl_bits": 1.1567,
+   "kl_bits_ci95": [
+    1.0525,
+    1.2619
+   ],
+   "ic_mae": 1.2405,
+   "ic_mae_ci95": [
+    1.1215,
+    1.3535
+   ],
+   "mae_dpbs": 1.0998,
+   "mae_dpbs_ci95": [
+    1.0417,
+    1.1582
+   ],
+   "rmse_dpbs": 0.6578,
+   "rmse_dpbs_ci95": [
+    0.6256,
+    0.6889
+   ],
+   "covR": 0.3918,
+   "covR_ci95": [
+    0.3392,
+    0.444
+   ],
+   "coverage": 0.7558,
+   "coverage_ci95": [
+    0.6636,
+    0.8436
+   ],
+   "len_mae": 1.7,
+   "len_mae_ci95": [
+    1.05,
+    2.45
+   ],
+   "len_bias": 0.4,
+   "len_bias_ci95": [
+    -0.65,
+    1.4
+   ]
+  },
+  "B0_family": {
+   "n": 20,
+   "pearson_r": 0.7083,
+   "pearson_r_ci95": [
+    0.6314,
+    0.7783
+   ],
+   "cosine": 0.845,
+   "cosine_ci95": [
+    0.8095,
+    0.8791
+   ],
+   "topbase_acc": 0.7371,
+   "topbase_acc_ci95": [
+    0.66,
+    0.8076
+   ],
+   "auroc": 0.863,
+   "auroc_ci95": [
+    0.8198,
+    0.9022
+   ],
+   "macroF1": 0.5258,
+   "macroF1_ci95": [
+    0.4607,
+    0.5906
+   ],
+   "mae": 0.151,
+   "mae_ci95": [
+    0.128,
+    0.1742
+   ],
+   "rmse": 0.2105,
+   "rmse_ci95": [
+    0.1836,
+    0.2372
+   ],
+   "jsd_bits": 0.1413,
+   "jsd_bits_ci95": [
+    0.1133,
+    0.1696
+   ],
+   "kl_bits": 0.6032,
+   "kl_bits_ci95": [
+    0.4849,
+    0.7301
+   ],
+   "ic_mae": 0.5643,
+   "ic_mae_ci95": [
+    0.4517,
+    0.6849
+   ],
+   "mae_dpbs": 0.6038,
+   "mae_dpbs_ci95": [
+    0.5115,
+    0.6966
+   ],
+   "rmse_dpbs": 0.4211,
+   "rmse_dpbs_ci95": [
+    0.3677,
+    0.4726
+   ],
+   "covR": 0.5003,
+   "covR_ci95": [
+    0.437,
+    0.5582
+   ],
+   "coverage": 0.7594,
+   "coverage_ci95": [
+    0.6716,
+    0.8411
+   ],
+   "len_mae": 1.7,
+   "len_mae_ci95": [
+    1.05,
+    2.45
+   ],
+   "len_bias": 0.4,
+   "len_bias_ci95": [
+    -0.65,
+    1.4
+   ]
+  },
+  "B1_nearest_pwm": {
+   "n": 20,
+   "pearson_r": 0.5472,
+   "pearson_r_ci95": [
+    0.4681,
+    0.6291
+   ],
+   "cosine": 0.7274,
+   "cosine_ci95": [
+    0.6723,
+    0.7849
+   ],
+   "topbase_acc": 0.6046,
+   "topbase_acc_ci95": [
+    0.5304,
+    0.6825
+   ],
+   "auroc": 0.8012,
+   "auroc_ci95": [
+    0.7365,
+    0.8602
+   ],
+   "macroF1": 0.4143,
+   "macroF1_ci95": [
+    0.3535,
+    0.4775
+   ],
+   "mae": 0.1996,
+   "mae_ci95": [
+    0.1705,
+    0.2261
+   ],
+   "rmse": 0.3065,
+   "rmse_ci95": [
+    0.2636,
+    0.3464
+   ],
+   "jsd_bits": 0.2521,
+   "jsd_bits_ci95": [
+    0.2015,
+    0.3015
+   ],
+   "kl_bits": 2.8149,
+   "kl_bits_ci95": [
+    1.7723,
+    4.0403
+   ],
+   "ic_mae": 0.6922,
+   "ic_mae_ci95": [
+    0.5808,
+    0.8225
+   ],
+   "mae_dpbs": 0.7986,
+   "mae_dpbs_ci95": [
+    0.6851,
+    0.9068
+   ],
+   "rmse_dpbs": 0.6129,
+   "rmse_dpbs_ci95": [
+    0.5247,
+    0.6944
+   ],
+   "covR": 0.386,
+   "covR_ci95": [
+    0.3142,
+    0.4655
+   ],
+   "coverage": 0.7846,
+   "coverage_ci95": [
+    0.6988,
+    0.8667
+   ],
+   "len_mae": 1.7,
+   "len_mae_ci95": [
+    1.05,
+    2.45
+   ],
+   "len_bias": 0.4,
+   "len_bias_ci95": [
+    -0.65,
+    1.4
+   ]
+  },
+  "deeppbs": {
+   "n": 20,
+   "pearson_r": 0.695,
+   "pearson_r_ci95": [
+    0.6284,
+    0.7575
+   ],
+   "cosine": 0.855,
+   "cosine_ci95": [
+    0.8212,
+    0.8859
+   ],
+   "topbase_acc": 0.7151,
+   "topbase_acc_ci95": [
+    0.6531,
+    0.7772
+   ],
+   "auroc": 0.8865,
+   "auroc_ci95": [
+    0.8477,
+    0.9196
+   ],
+   "macroF1": 0.564,
+   "macroF1_ci95": [
+    0.4877,
+    0.6402
+   ],
+   "mae": 0.1416,
+   "mae_ci95": [
+    0.1242,
+    0.1608
+   ],
+   "rmse": 0.2046,
+   "rmse_ci95": [
+    0.181,
+    0.2295
+   ],
+   "jsd_bits": 0.1323,
+   "jsd_bits_ci95": [
+    0.1096,
+    0.1574
+   ],
+   "kl_bits": 0.5442,
+   "kl_bits_ci95": [
+    0.4512,
+    0.6518
+   ],
+   "ic_mae": 0.5994,
+   "ic_mae_ci95": [
+    0.5339,
+    0.6692
+   ],
+   "mae_dpbs": 0.5665,
+   "mae_dpbs_ci95": [
+    0.4968,
+    0.6409
+   ],
+   "rmse_dpbs": 0.4091,
+   "rmse_dpbs_ci95": [
+    0.3615,
+    0.4573
+   ],
+   "covR": 0.695,
+   "covR_ci95": [
+    0.6276,
+    0.7574
+   ],
+   "coverage": 1.0,
+   "coverage_ci95": [
+    1.0,
+    1.0
+   ],
+   "len_mae": 5.85,
+   "len_mae_ci95": [
+    4.2488,
+    7.65
+   ],
+   "len_bias": 5.85,
+   "len_bias_ci95": [
+    4.2,
+    7.6
+   ]
+  },
+  "v24_seed42": {
+   "n": 20,
+   "pearson_r": 0.7366,
+   "pearson_r_ci95": [
+    0.6771,
+    0.7913
+   ],
+   "cosine": 0.8613,
+   "cosine_ci95": [
+    0.8239,
+    0.8952
+   ],
+   "topbase_acc": 0.7816,
+   "topbase_acc_ci95": [
+    0.7301,
+    0.833
+   ],
+   "auroc": 0.8743,
+   "auroc_ci95": [
+    0.8419,
+    0.9056
+   ],
+   "macroF1": 0.5654,
+   "macroF1_ci95": [
+    0.5086,
+    0.6241
+   ],
+   "mae": 0.1244,
+   "mae_ci95": [
+    0.1051,
+    0.1457
+   ],
+   "rmse": 0.2007,
+   "rmse_ci95": [
+    0.1725,
+    0.2307
+   ],
+   "jsd_bits": 0.1293,
+   "jsd_bits_ci95": [
+    0.1026,
+    0.1594
+   ],
+   "kl_bits": 0.7606,
+   "kl_bits_ci95": [
+    0.5935,
+    0.9549
+   ],
+   "ic_mae": 0.4328,
+   "ic_mae_ci95": [
+    0.362,
+    0.5124
+   ],
+   "mae_dpbs": 0.4977,
+   "mae_dpbs_ci95": [
+    0.4206,
+    0.5851
+   ],
+   "rmse_dpbs": 0.4014,
+   "rmse_dpbs_ci95": [
+    0.3442,
+    0.4601
+   ],
+   "covR": 0.6816,
+   "covR_ci95": [
+    0.6073,
+    0.7514
+   ],
+   "coverage": 0.9191,
+   "coverage_ci95": [
+    0.8591,
+    0.9684
+   ],
+   "len_mae": 3.75,
+   "len_mae_ci95": [
+    2.75,
+    4.8
+   ],
+   "len_bias": 3.25,
+   "len_bias_ci95": [
+    1.85,
+    4.5
+   ]
+  },
+  "v24_ens5": {
+   "n": 20,
+   "pearson_r": 0.7338,
+   "pearson_r_ci95": [
+    0.656,
+    0.8054
+   ],
+   "cosine": 0.8598,
+   "cosine_ci95": [
+    0.8204,
+    0.8942
+   ],
+   "topbase_acc": 0.7897,
+   "topbase_acc_ci95": [
+    0.7163,
+    0.8556
+   ],
+   "auroc": 0.8701,
+   "auroc_ci95": [
+    0.834,
+    0.8997
+   ],
+   "macroF1": 0.5752,
+   "macroF1_ci95": [
+    0.494,
+    0.6497
+   ],
+   "mae": 0.1552,
+   "mae_ci95": [
+    0.1386,
+    0.1744
+   ],
+   "rmse": 0.2108,
+   "rmse_ci95": [
+    0.187,
+    0.2355
+   ],
+   "jsd_bits": 0.1452,
+   "jsd_bits_ci95": [
+    0.1224,
+    0.1703
+   ],
+   "kl_bits": 0.6051,
+   "kl_bits_ci95": [
+    0.4958,
+    0.7222
+   ],
+   "ic_mae": 0.6904,
+   "ic_mae_ci95": [
+    0.6137,
+    0.7662
+   ],
+   "mae_dpbs": 0.6207,
+   "mae_dpbs_ci95": [
+    0.554,
+    0.6971
+   ],
+   "rmse_dpbs": 0.4216,
+   "rmse_dpbs_ci95": [
+    0.374,
+    0.4705
+   ],
+   "covR": 0.6869,
+   "covR_ci95": [
+    0.5975,
+    0.7677
+   ],
+   "coverage": 0.9313,
+   "coverage_ci95": [
+    0.8713,
+    0.9797
+   ],
+   "len_mae": 3.75,
+   "len_mae_ci95": [
+    2.75,
+    4.8
+   ],
+   "len_bias": 3.25,
+   "len_bias_ci95": [
+    1.85,
+    4.5
+   ]
+  }
+ },
+ "paired_vs_deeppbs": [
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "pearson_r",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0416,
+   "ci95_lo": -0.0154,
+   "ci95_hi": 0.0998,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "cosine",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0063,
+   "ci95_lo": -0.0274,
+   "ci95_hi": 0.0407,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "topbase_acc",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0666,
+   "ci95_lo": 0.0089,
+   "ci95_hi": 0.1248,
+   "n": 20,
+   "significant": true
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "auroc",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0121,
+   "ci95_lo": -0.049,
+   "ci95_hi": 0.0272,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "macroF1",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0014,
+   "ci95_lo": -0.0582,
+   "ci95_hi": 0.0593,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "mae",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.0172,
+   "ci95_lo": -0.0042,
+   "ci95_hi": 0.0398,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "rmse",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.0038,
+   "ci95_lo": -0.0221,
+   "ci95_hi": 0.0316,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "jsd_bits",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.0031,
+   "ci95_lo": -0.0276,
+   "ci95_hi": 0.0344,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "kl_bits",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.2164,
+   "ci95_lo": -0.4048,
+   "ci95_hi": -0.0357,
+   "n": 20,
+   "significant": true
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "ic_mae",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.1665,
+   "ci95_lo": 0.0582,
+   "ci95_hi": 0.2809,
+   "n": 20,
+   "significant": true
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "mae_dpbs",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.0687,
+   "ci95_lo": -0.0169,
+   "ci95_hi": 0.1593,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "rmse_dpbs",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": 0.0077,
+   "ci95_lo": -0.0443,
+   "ci95_hi": 0.0633,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "covR",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0133,
+   "ci95_lo": -0.0625,
+   "ci95_hi": 0.0361,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_seed42 - deeppbs",
+   "metric": "coverage",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0809,
+   "ci95_lo": -0.1412,
+   "ci95_hi": -0.0318,
+   "n": 20,
+   "significant": true
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "pearson_r",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0388,
+   "ci95_lo": -0.0232,
+   "ci95_hi": 0.0992,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "cosine",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0048,
+   "ci95_lo": -0.0257,
+   "ci95_hi": 0.0324,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "topbase_acc",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0746,
+   "ci95_lo": 0.0114,
+   "ci95_hi": 0.1371,
+   "n": 20,
+   "significant": true
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "auroc",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0163,
+   "ci95_lo": -0.0544,
+   "ci95_hi": 0.0239,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "macroF1",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": 0.0112,
+   "ci95_lo": -0.0469,
+   "ci95_hi": 0.0688,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "mae",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0136,
+   "ci95_lo": -0.0326,
+   "ci95_hi": 0.0061,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "rmse",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0062,
+   "ci95_lo": -0.0249,
+   "ci95_hi": 0.0129,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "jsd_bits",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0128,
+   "ci95_lo": -0.0359,
+   "ci95_hi": 0.011,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "kl_bits",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0609,
+   "ci95_lo": -0.172,
+   "ci95_hi": 0.0554,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "ic_mae",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0911,
+   "ci95_lo": -0.1894,
+   "ci95_hi": 0.0195,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "mae_dpbs",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0543,
+   "ci95_lo": -0.1304,
+   "ci95_hi": 0.0242,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "rmse_dpbs",
+   "direction": "lower_better",
+   "delta_positive_is_tfscope_better": -0.0125,
+   "ci95_lo": -0.0498,
+   "ci95_hi": 0.0257,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "covR",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0081,
+   "ci95_lo": -0.0662,
+   "ci95_hi": 0.0487,
+   "n": 20,
+   "significant": false
+  },
+  {
+   "comparison": "v24_ens5 - deeppbs",
+   "metric": "coverage",
+   "direction": "higher_better",
+   "delta_positive_is_tfscope_better": -0.0687,
+   "ci95_lo": -0.13,
+   "ci95_hi": -0.0203,
+   "n": 20,
+   "significant": true
+  }
+ ]
+}

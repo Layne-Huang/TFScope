@@ -1,0 +1,20 @@
+# v26 ablation: complex_primary
+# Assembly-aware architecture, partners withheld. Report separately from partners-on.
+# Family/source/provenance are NEVER model inputs; they are stratification and
+# reporting only. See src/tfscope/v26/model.py::BANNED_KEYS.
+name: complex_primary
+assembly_aware: true
+d_model: 512
+dataset: "core"
+esm_model: "esm2_t33_650M_UR50D"
+n_routed_experts: 4
+n_shared_experts: 1
+top_k: 2
+use_contact_head: true
+use_flank: false
+use_moe: true
+use_partners: false
+w_contact2d: 0.0
+seeds: [42, 1, 7]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

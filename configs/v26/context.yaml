@@ -1,0 +1,19 @@
+# v26 ablation: context
+# Gated flank residual on DBD+-20. Gate bias -3 so it starts as core.
+# Family/source/provenance are NEVER model inputs; they are stratification and
+# reporting only. See src/tfscope/v26/model.py::BANNED_KEYS.
+name: context
+d_model: 512
+dataset: "flank20"
+esm_model: "esm2_t33_650M_UR50D"
+n_routed_experts: 4
+n_shared_experts: 1
+top_k: 2
+use_contact_head: true
+use_flank: true
+use_moe: true
+use_partners: false
+w_contact2d: 0.0
+seeds: [42, 1, 7]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

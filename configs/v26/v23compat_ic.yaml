@@ -1,0 +1,15 @@
+# v26 diagnostic: v23compat_ic
+# SINGLE VARIABLE vs v23compat_regstrong (0.3641 cov_r): adds ONLY v24's three sharpness terms
+# (ic 0.5 + ic_pcc 0.5 + entropy 0.1). Evidence: v26 ic_mae 0.81 vs v24 0.62 -- v26's PWMs are
+# too flat, and these are precisely the terms v24 uses to suppress flat solutions.
+name: v23compat_ic
+d_model: 256
+dataset: "v23compat"
+dropout: 0.35
+epochs: 225
+refiner_layers: 1
+w_entropy: 0.1
+w_ic: 0.5
+w_ic_pcc: 0.5
+seeds: [42]
+manifest: data/processed/splits/v26/manifest_v23compat.parquet

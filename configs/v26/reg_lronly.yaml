@@ -1,0 +1,12 @@
+# v26 diagnostic: reg_lronly
+# LR FIX ONLY: OneCycle spans the full 40 epochs so the LR actually anneals (v24 and v26 both
+# stopped at 84-94% of peak LR). Same regularisation as core, so this isolates the schedule
+# from the capacity change.
+# Family/source/provenance are NEVER model inputs.
+name: reg_lronly
+dataset: "core"
+epochs: 40
+patience: 40
+seeds: [42]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

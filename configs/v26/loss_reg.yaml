@@ -1,0 +1,14 @@
+# v26 diagnostic: loss_reg
+# ONLY adds registration-aware PWM loss. Isolates the single most likely cause of the
+# v24-vs-v26 gap: v24 trained with --latent-registration, v26 did not, so v26's column-wise
+# loss punishes a correct-but-shifted motif.
+# Family/source/provenance are NEVER model inputs.
+name: loss_reg
+dataset: "core"
+epochs: 225
+registration_max_shift: 6
+registration_rc: true
+w_registration: 1.0
+seeds: [42]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

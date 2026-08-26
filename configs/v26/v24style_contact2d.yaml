@@ -1,0 +1,19 @@
+# v26 ablation: v24style_contact2d
+# DIAGNOSTIC ONLY. Enables the 2-D column loss that docs/v26_contact_2d_decision.md shows is near-noise (match 0.387 vs 0.25 null). Measures what v24's contact_distill_weight=0.2 cost.
+# Family/source/provenance are NEVER model inputs; they are stratification and
+# reporting only. See src/tfscope/v26/model.py::BANNED_KEYS.
+name: v24style_contact2d
+d_model: 512
+dataset: "core"
+esm_model: "esm2_t33_650M_UR50D"
+n_routed_experts: 4
+n_shared_experts: 1
+top_k: 2
+use_contact_head: true
+use_flank: false
+use_moe: true
+use_partners: false
+w_contact2d: 0.2
+seeds: [42, 1, 7]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

@@ -87,3 +87,9 @@ manuscript/*.zip
 manuscript/**/*.pptx
 *.prewriter.bak
 data/raw/hocomoco_v14/
+
+# v26 big-data stores (symlinks to /data1, machine-local)
+data/annotations_v26
+data/contacts_v26
+data/processed/v26
+data/processed/splits/v26

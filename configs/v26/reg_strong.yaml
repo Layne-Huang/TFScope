@@ -1,0 +1,14 @@
+# v26 diagnostic: reg_strong
+# LR fix + stronger regularisation: dropout 0.35, d_model 512->256, refiner 2->1 layers. 858
+# training target units vs 15.7M params.
+# Family/source/provenance are NEVER model inputs.
+name: reg_strong
+d_model: 256
+dataset: "core"
+dropout: 0.35
+epochs: 40
+patience: 40
+refiner_layers: 1
+seeds: [42]
+split: data/processed/splits/v26/split.json
+manifest: data/processed/splits/v26/manifest.parquet

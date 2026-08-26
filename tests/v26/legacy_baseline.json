@@ -1,0 +1,132 @@
+{
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/contact_targets_v23.json": {
+  "head_sha256": "321811639d0350e9800f3994d0dffc0d28c461a634f277e5047d772de2d42a4e",
+  "mtime": 1785040447,
+  "size": 295386
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/contact_targets_v25flank.json": {
+  "head_sha256": "e3701b343f2598738ce8ff36e9c4e708e6c2862bfe2eba67b765e6eb94d70e5c",
+  "mtime": 1785985527,
+  "size": 288794
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/contact_targets_v25xtal.json": {
+  "head_sha256": "1b9ea88b00b0e6301f48221e887a6876f8f34e395b0ddbb534a338313372b0dd",
+  "mtime": 1786027845,
+  "size": 283017
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/recognition_residues_v23.json": {
+  "head_sha256": "873a605128e3bdaef018afc71ae8865b1e3acb5679026d2ef5587568f73a0951",
+  "mtime": 1785040447,
+  "size": 31220
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/recognition_residues_v25flank.json": {
+  "head_sha256": "9ed7bb65b807b1721fdf955b92cf71e3c2e9c29c746f67e9237e430ef01d7bd1",
+  "mtime": 1785985527,
+  "size": 31594
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/contact_maps/recognition_residues_v25xtal.json": {
+  "head_sha256": "52515c6daec190626c13771f2c317f210b0b7c087a1524abd8c11c5e8a9e34f1",
+  "mtime": 1786027845,
+  "size": 30833
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/splits/train_v22/assignments.parquet": {
+  "head_sha256": "6ee58f6b82fcb39b52591c92b803b0923f3c9c9e89767b55e220a708f5429ee7",
+  "mtime": 1784821691,
+  "size": 404546
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/splits/train_v22/split.json": {
+  "head_sha256": "e621c8962680d6263bdace5328680788fa939607ffe1009122e6c86b6912dc8f",
+  "mtime": 1784821691,
+  "size": 69968
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/tf_pwm_training_v22.parquet": {
+  "head_sha256": "8db7982a809c1e4cc8daddf6ef7865542127b6119643d2ca8d4676a8504d54d4",
+  "mtime": 1784912008,
+  "size": 1556687
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/tf_pwm_training_v23.parquet": {
+  "head_sha256": "d96269c9408ff081d37e51982f1c9b7715d1328f79797e65b7302aaffad2b6af",
+  "mtime": 1784915106,
+  "size": 1585115
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/tf_pwm_training_v25flank.parquet": {
+  "head_sha256": "1034e415a652516d018963676f4aa392c921a04dac5ba37028f57a0c2b151a91",
+  "mtime": 1785985383,
+  "size": 1624775
+ },
+ "/afs/csail.mit.edu/u/l/leihuang/project/TFScope/data/processed/tf_pwm_training_v25xtal.parquet": {
+  "head_sha256": "b6c4996109b900f033345a742414f1436639c77e585de687506456b433a87aa7",
+  "mtime": 1786027787,
+  "size": 1631341
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed1/ckpt_best.pt": {
+  "head_sha256": "7248d0e97694e605a2f01bf63f58a4712a0d1469f03a84583506c099254db500",
+  "mtime": 1785865057,
+  "size": 332293387
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed1/config.json": {
+  "head_sha256": "1a3751ef2bcf2076f70f9afa9205c99f641a058fe9ef5763dff3e5203edcc8b9",
+  "mtime": 1785849460,
+  "size": 3554
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed1/train.log": {
+  "head_sha256": "62d8d15318286f475399f9b13db7f728171f58320afbaa847bb176ebf86af4dd",
+  "mtime": 1785907227,
+  "size": 16416
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed13/ckpt_best.pt": {
+  "head_sha256": "128f10f248d01a16a0e128d5968a8b6aef0f05b27cff7881f60fcd753964212a",
+  "mtime": 1785881000,
+  "size": 332293387
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed13/config.json": {
+  "head_sha256": "dff112f14452c18e9a38b4da6acb9564b2abbac09eff82ef741cfdd6b2f49be1",
+  "mtime": 1785849466,
+  "size": 3555
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed13/train.log": {
+  "head_sha256": "3046de3e5eca50df2067207b165f32235c4030c3e84cdc7fbbeb7ea731922c85",
+  "mtime": 1785915248,
+  "size": 18083
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed23/ckpt_best.pt": {
+  "head_sha256": "c128859cc468e41374cb7a149d1e3f0c295545a753d159e7f3db4bd7d878ea0f",
+  "mtime": 1785862491,
+  "size": 332293387
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed23/config.json": {
+  "head_sha256": "cc7286b9a77fe69b053e5e2e0c7aa71fe11d0ddb41ba2ea7a4df7ed7d717867d",
+  "mtime": 1785849471,
+  "size": 3555
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed23/train.log": {
+  "head_sha256": "50bb14423dc53c8f38eac7727abdef7bd82aff97799a7bcf7dd994fd200b3343",
+  "mtime": 1785904903,
+  "size": 15681
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed7/ckpt_best.pt": {
+  "head_sha256": "999e4b4ffd1291ba9c2dd489b6b3c688bbf7fe2169c92f6a39ac3bc88f533166",
+  "mtime": 1785892033,
+  "size": 332293387
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed7/config.json": {
+  "head_sha256": "759e8a1683092aaa332c08d798bd90411d6f2dfa4567f67dfbb65ed41cbce690",
+  "mtime": 1785849453,
+  "size": 3554
+ },
+ "/data1/leihuang/TFScope_store/checkpoints/iclr_phase1/v24_ens/seed7/train.log": {
+  "head_sha256": "28d53904a6372154be3324f841d89a6b342c2664863e4d1e568ff1f2cfeb291a",
+  "mtime": 1785914744,
+  "size": 18262
+ },
+ "/data1/leihuang/project/TFScope/checkpoints/v24_contact/contact_v24_seed42/ckpt_best.pt": {
+  "head_sha256": "101eb152edf981def1a7aa748c357322ed62f4a39a166648b5892f87408b6257",
+  "mtime": 1785045471,
+  "size": 332293387
+ },
+ "/data1/leihuang/project/TFScope/checkpoints/v24_contact/contact_v24_seed42/config.json": {
+  "head_sha256": "d7cddb3faeb77da914afcf267fee6a4ff30c7a72256b6e3101c2130218f8445f",
+  "mtime": 1785040533,
+  "size": 3411
+ }
+}

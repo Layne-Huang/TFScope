@@ -1,0 +1,13 @@
+# v26 diagnostic: v23compat_regstrong
+# reg_strong architecture trained on v23 rows + the v24 train_v22 split. Same rows, same
+# split, same 291 test rows as v24 -- the only remaining variable is the model and its loss.
+# DIAGNOSTIC ONLY: train_v22 carries the leakage v26 exists to remove, but it applies equally
+# to both models so it cancels in the comparison.
+name: v23compat_regstrong
+d_model: 256
+dataset: "v23compat"
+dropout: 0.35
+epochs: 225
+refiner_layers: 1
+seeds: [42]
+manifest: data/processed/splits/v26/manifest_v23compat.parquet

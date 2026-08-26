@@ -2,50 +2,92 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
-\citation{weirauch2014cisbp,castromondragon2022jaspar}
+\citation{stormo2000dna,weirauch2014cisbp,castromondragon2022jaspar,kulakovskiy2018hocomoco,avsec2021enformer}
+\citation{berger2006compact,badis2009diversity}
 \citation{jolma2013dna}
+\citation{vaquerizas2009census,lambert2018human}
+\citation{rohs2009dnashape,zhou2013dnashape,mitra2024deeppbs}
+\citation{jumper2021alphafold,baek2021rosettafold,abramson2024alphafold3}
+\citation{alipanahi2015deepbind,zhou2015deepsea,kelley2016basset,eraslan2019deeplearning}
 \citation{mitra2024deeppbs}
-\citation{mitra2024deeppbs}
-\citation{rives2021esm1b,lin2023esm2}
+\citation{weirauch2013evaluation}
+\citation{vaswani2017attention,devlin2019bert}
+\citation{rives2021esm1b,elnaggar2021prottrans,rao2021msa,rao2019evaluating,lin2023esm2}
 \citation{lin2023esm2}
 \citation{hu2022lora}
 \citation{mitra2024deeppbs}
-\citation{wohlwend2024boltz}
+\citation{passaro2025boltz2,wohlwend2024boltz1}
 \citation{mirdita2022colabfold}
+\citation{noyes2008homeodomain,najafabadi2015c2h2}
+\citation{wetzel2022rclamps}
 \citation{barrera2016survey}
+\citation{meier2021language,brandes2023genome}
+\citation{lin2023esm2}
+\citation{hu2022lora}
+\citation{shazeer2017outrageously,fedus2022switch}
 \citation{mitra2024deeppbs}
-\citation{wohlwend2024boltz}
+\citation{passaro2025boltz2,wohlwend2024boltz1}
 \citation{mirdita2022colabfold}
 \citation{barrera2016survey}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {TFScope architecture.} Frozen ESM-2 650M backbone with LoRA, residue mixture-of-experts, contact-aware PWM head, and span gate mapping a DBD sequence to a PWM. {\color  {red}\textbf  {[TODO: draw schematic]}}}}{6}{figure.caption.25}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {TFScope architecture (sequence-only, no structure at inference).} (1)~Input: a TF DNA-binding-domain (DBD) protein sequence. (2)~PLM encoder: a \emph  {frozen} ESM-2 650M backbone with LoRA adapters; residue embeddings are a weighted average of the last four layers, concatenated with a DBD indicator. (3)~Token-level residue mixture-of-experts (2 shared $+$ 8 routed experts) conditioned on a family embedding, followed by dual gated-attention pooling (global and DBD-restricted). (4)~Position gate head: a projection head produces a soft motif gate over positions and a protein representation. (5)~Contact-aware PWM head: a prior PWM (A) is refined by a contact-aware correction (B) driven by recognition-residue contact supervision (train-only), giving Final PWM $=$ Prior $+$ Correction. (6)~Output: the predicted position gate, PWM, and motif logo; predicted consensus DNA can be validated by downstream folding (AF3/Boltz) or Rosetta.}}{11}{figure.caption.29}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:overview}{{1}{6}{\textbf {TFScope architecture.} Frozen ESM-2 650M backbone with LoRA, residue mixture-of-experts, contact-aware PWM head, and span gate mapping a DBD sequence to a PWM. \TODO {draw schematic}}{figure.caption.25}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {Representative predicted motifs.} TFScope-ensemble predicted logos for held-out TFs. }}{6}{figure.caption.26}\protected@file@percent }
-\newlabel{fig:logos}{{2}{6}{\textbf {Representative predicted motifs.} TFScope-ensemble predicted logos for held-out TFs}{figure.caption.26}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Leakage-controlled benchmark, per family.} Motif content correlation on the clustered holdout ($n{=}84$, $41$ TFs); ensemble $0.664$. Head-to-head with DeepPBS is a statistical tie (mean gate-oracle $r$ $0.657$ vs $0.626$; bootstrap $p=0.30$). }}{7}{figure.caption.27}\protected@file@percent }
-\newlabel{fig:perfamily}{{3}{7}{\textbf {Leakage-controlled benchmark, per family.} Motif content correlation on the clustered holdout ($n{=}84$, $41$ TFs); ensemble $0.664$. Head-to-head with DeepPBS is a statistical tie (mean gate-oracle $r$ $0.657$ vs $0.626$; bootstrap $p=0.30$)}{figure.caption.27}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Benchmark and ablation ladder.} {\color  {red}\textbf  {[TODO: assemble from results/iclr\_phase1\_apples\_to\_apples]}}. }}{7}{figure.caption.28}\protected@file@percent }
-\newlabel{fig:benchmark}{{4}{7}{\textbf {Benchmark and ablation ladder.} \TODO {assemble from results/iclr\_phase1\_apples\_to\_apples}}{figure.caption.28}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Independent foldability.} Boltz-2 complex ipTM for TFScope- ensemble vs DeepPBS consensus DNA ($41$ TFs): $0.957$ vs $0.923$, $32/41$ favor TFScope, Wilcoxon $p=1\times 10^{-5}$. }}{7}{figure.caption.29}\protected@file@percent }
-\newlabel{fig:foldability}{{5}{7}{\textbf {Independent foldability.} Boltz-2 complex ipTM for TFScope- ensemble vs DeepPBS consensus DNA ($41$ TFs): $0.957$ vs $0.923$, $32/41$ favor TFScope, Wilcoxon $p=1\times 10^{-5}$}{figure.caption.29}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {DNA-contact residues recognized by TFScope.} PBX1 homeodomain (PDB 1B72): recognition-helix residues scored as DNA-contacting by the frozen- backbone contact probe (AUROC $0.95$) shown as orange sticks with H-bonds to the major-groove bases. }}{8}{figure.caption.30}\protected@file@percent }
-\newlabel{fig:recognition}{{6}{8}{\textbf {DNA-contact residues recognized by TFScope.} PBX1 homeodomain (PDB 1B72): recognition-helix residues scored as DNA-contacting by the frozen- backbone contact probe (AUROC $0.95$) shown as orange sticks with H-bonds to the major-groove bases}{figure.caption.30}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {In-silico mutagenesis / within-family signal.} {\color  {red}\textbf  {[TODO: finalize caption + add decomposition panel]}}. }}{8}{figure.caption.31}\protected@file@percent }
-\newlabel{fig:mutagenesis}{{7}{8}{\textbf {In-silico mutagenesis / within-family signal.} \TODO {finalize caption + add decomposition panel}}{figure.caption.31}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textbf  {Single-mutation motif switch.} MyoD1 L122R E-box switch, $\Delta _{\mathrm  {switch}}=+9.17$. }}{9}{figure.caption.32}\protected@file@percent }
-\newlabel{fig:switch}{{8}{9}{\textbf {Single-mutation motif switch.} MyoD1 L122R E-box switch, $\Delta _{\mathrm {switch}}=+9.17$}{figure.caption.32}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces \textbf  {Designed DNA-binding proteins.} TFScope recovers intended CAC- type preference (strongest DBP6, $r=0.65$). }}{9}{figure.caption.33}\protected@file@percent }
-\newlabel{fig:dbp}{{9}{9}{\textbf {Designed DNA-binding proteins.} TFScope recovers intended CAC- type preference (strongest DBP6, $r=0.65$)}{figure.caption.33}{}}
+\newlabel{fig:overview}{{1}{11}{\textbf {TFScope architecture (sequence-only, no structure at inference).} (1)~Input: a TF DNA-binding-domain (DBD) protein sequence. (2)~PLM encoder: a \emph {frozen} ESM-2 650M backbone with LoRA adapters; residue embeddings are a weighted average of the last four layers, concatenated with a DBD indicator. (3)~Token-level residue mixture-of-experts (2 shared $+$ 8 routed experts) conditioned on a family embedding, followed by dual gated-attention pooling (global and DBD-restricted). (4)~Position gate head: a projection head produces a soft motif gate over positions and a protein representation. (5)~Contact-aware PWM head: a prior PWM (A) is refined by a contact-aware correction (B) driven by recognition-residue contact supervision (train-only), giving Final PWM $=$ Prior $+$ Correction. (6)~Output: the predicted position gate, PWM, and motif logo; predicted consensus DNA can be validated by downstream folding (AF3/Boltz) or Rosetta}{figure.caption.29}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {Representative predicted motifs.} TFScope-ensemble predicted logos for held-out TFs. }}{11}{figure.caption.30}\protected@file@percent }
+\newlabel{fig:logos}{{2}{11}{\textbf {Representative predicted motifs.} TFScope-ensemble predicted logos for held-out TFs}{figure.caption.30}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Leakage-controlled benchmark, per family.} Motif content correlation on the clustered holdout ($n{=}84$, $41$ TFs); ensemble $0.664$. Head-to-head with DeepPBS is a statistical tie (mean gate-oracle $r$ $0.657$ vs $0.626$; bootstrap $p=0.30$). }}{12}{figure.caption.31}\protected@file@percent }
+\newlabel{fig:perfamily}{{3}{12}{\textbf {Leakage-controlled benchmark, per family.} Motif content correlation on the clustered holdout ($n{=}84$, $41$ TFs); ensemble $0.664$. Head-to-head with DeepPBS is a statistical tie (mean gate-oracle $r$ $0.657$ vs $0.626$; bootstrap $p=0.30$)}{figure.caption.31}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Benchmark and ablation ladder.} {\color  {red}\textbf  {[TODO: assemble from results/iclr\_phase1\_apples\_to\_apples]}}. }}{12}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:benchmark}{{4}{12}{\textbf {Benchmark and ablation ladder.} \TODO {assemble from results/iclr\_phase1\_apples\_to\_apples}}{figure.caption.32}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Independent foldability.} Boltz-2 complex ipTM for TFScope- ensemble vs DeepPBS consensus DNA ($41$ TFs): $0.957$ vs $0.923$, $32/41$ favor TFScope, Wilcoxon $p=1\times 10^{-5}$. }}{12}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:foldability}{{5}{12}{\textbf {Independent foldability.} Boltz-2 complex ipTM for TFScope- ensemble vs DeepPBS consensus DNA ($41$ TFs): $0.957$ vs $0.923$, $32/41$ favor TFScope, Wilcoxon $p=1\times 10^{-5}$}{figure.caption.33}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {DNA-contact residues recognized by TFScope.} PBX1 homeodomain (PDB 1B72): recognition-helix residues scored as DNA-contacting by the frozen- backbone contact probe (AUROC $0.95$) shown as orange sticks with H-bonds to the major-groove bases. }}{13}{figure.caption.34}\protected@file@percent }
+\newlabel{fig:recognition}{{6}{13}{\textbf {DNA-contact residues recognized by TFScope.} PBX1 homeodomain (PDB 1B72): recognition-helix residues scored as DNA-contacting by the frozen- backbone contact probe (AUROC $0.95$) shown as orange sticks with H-bonds to the major-groove bases}{figure.caption.34}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {In-silico mutagenesis / within-family signal.} {\color  {red}\textbf  {[TODO: finalize caption + add decomposition panel]}}. }}{13}{figure.caption.35}\protected@file@percent }
+\newlabel{fig:mutagenesis}{{7}{13}{\textbf {In-silico mutagenesis / within-family signal.} \TODO {finalize caption + add decomposition panel}}{figure.caption.35}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textbf  {Single-mutation motif switch.} MyoD1 L122R E-box switch, $\Delta _{\mathrm  {switch}}=+9.17$. }}{14}{figure.caption.36}\protected@file@percent }
+\newlabel{fig:switch}{{8}{14}{\textbf {Single-mutation motif switch.} MyoD1 L122R E-box switch, $\Delta _{\mathrm {switch}}=+9.17$}{figure.caption.36}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces \textbf  {Designed DNA-binding proteins.} TFScope recovers intended CAC- type preference (strongest DBP6, $r=0.65$). }}{14}{figure.caption.37}\protected@file@percent }
+\newlabel{fig:dbp}{{9}{14}{\textbf {Designed DNA-binding proteins.} TFScope recovers intended CAC- type preference (strongest DBP6, $r=0.65$)}{figure.caption.37}{}}
 \bibstyle{unsrtnat}
 \bibdata{../references/references}
-\bibcite{weirauch2014cisbp}{{1}{2014}{{Weirauch et~al.}}{{Weirauch, Yang, Albu, et~al.}}}
-\bibcite{castromondragon2022jaspar}{{2}{2022}{{Castro-Mondragon et~al.}}{{Castro-Mondragon, Riudavets-Puig, Rauluseviciute, et~al.}}}
-\bibcite{jolma2013dna}{{3}{2013}{{Jolma et~al.}}{{Jolma, Yan, Whitington, et~al.}}}
-\bibcite{mitra2024deeppbs}{{4}{2024}{{Mitra et~al.}}{{Mitra, Cohen, Sagendorf, Berman, and Rohs}}}
-\bibcite{rives2021esm1b}{{5}{2021}{{Rives et~al.}}{{Rives, Meier, Sercu, Goyal, Lin, Liu, Guo, Ott, Zitnick, Ma, and Fergus}}}
-\bibcite{lin2023esm2}{{6}{2023}{{Lin et~al.}}{{Lin, Akin, Rao, Hie, Zhu, Lu, Smetanin, Verkuil, Kabeli, Shmueli, dos Santos~Costa, Fazel-Zarandi, Sercu, Candido, and Rives}}}
-\bibcite{hu2022lora}{{7}{2022}{{Hu et~al.}}{{Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and Chen}}}
-\bibcite{wohlwend2024boltz}{{8}{2024}{{Wohlwend et~al.}}{{Wohlwend, Corso, Passaro, et~al.}}}
-\bibcite{mirdita2022colabfold}{{9}{2022}{{Mirdita et~al.}}{{Mirdita, Sch{\"u}tze, Moriwaki, Heo, Ovchinnikov, and Steinegger}}}
-\bibcite{barrera2016survey}{{10}{2016}{{Barrera et~al.}}{{Barrera, Vedenko, Kurland, et~al.}}}
-\gdef \@abspage@last{10}
+\bibcite{stormo2000dna}{{1}{2000}{{Stormo}}{{}}}
+\bibcite{weirauch2014cisbp}{{2}{2014}{{Weirauch et~al.}}{{Weirauch, Yang, Albu, et~al.}}}
+\bibcite{castromondragon2022jaspar}{{3}{2022}{{Castro-Mondragon et~al.}}{{Castro-Mondragon, Riudavets-Puig, Rauluseviciute, et~al.}}}
+\bibcite{kulakovskiy2018hocomoco}{{4}{2018}{{Kulakovskiy et~al.}}{{Kulakovskiy, Vorontsov, Yevshin, et~al.}}}
+\bibcite{avsec2021enformer}{{5}{2021}{{Avsec et~al.}}{{Avsec, Agarwal, Visentin, et~al.}}}
+\bibcite{berger2006compact}{{6}{2006}{{Berger et~al.}}{{Berger, Philippakis, Qureshi, He, Estep, and Bulyk}}}
+\bibcite{badis2009diversity}{{7}{2009}{{Badis et~al.}}{{Badis, Berger, Philippakis, et~al.}}}
+\bibcite{jolma2013dna}{{8}{2013}{{Jolma et~al.}}{{Jolma, Yan, Whitington, et~al.}}}
+\bibcite{vaquerizas2009census}{{9}{2009}{{Vaquerizas et~al.}}{{Vaquerizas, Kummerfeld, Teichmann, and Luscombe}}}
+\bibcite{lambert2018human}{{10}{2018}{{Lambert et~al.}}{{Lambert, Jolma, Campitelli, Das, Yin, Albu, Chen, Taipale, Hughes, and Weirauch}}}
+\bibcite{rohs2009dnashape}{{11}{2009}{{Rohs et~al.}}{{Rohs, West, Sosinsky, Liu, Mann, and Honig}}}
+\bibcite{zhou2013dnashape}{{12}{2013}{{Zhou et~al.}}{{Zhou, Yang, Lu, Dror, Dantas~Machado, Ghane, Di~Felice, and Rohs}}}
+\bibcite{mitra2024deeppbs}{{13}{2024}{{Mitra et~al.}}{{Mitra, Li, Sagendorf, Jiang, Cohen, Chiu, Glasscock, and Rohs}}}
+\bibcite{jumper2021alphafold}{{14}{2021}{{Jumper et~al.}}{{Jumper, Evans, Pritzel, et~al.}}}
+\bibcite{baek2021rosettafold}{{15}{2021}{{Baek et~al.}}{{Baek, DiMaio, Anishchenko, Dauparas, Ovchinnikov, Lee, et~al.}}}
+\bibcite{abramson2024alphafold3}{{16}{2024}{{Abramson et~al.}}{{Abramson, Adler, Dunger, et~al.}}}
+\bibcite{alipanahi2015deepbind}{{17}{2015}{{Alipanahi et~al.}}{{Alipanahi, Delong, Weirauch, and Frey}}}
+\bibcite{zhou2015deepsea}{{18}{2015}{{Zhou and Troyanskaya}}{{}}}
+\bibcite{kelley2016basset}{{19}{2016}{{Kelley et~al.}}{{Kelley, Snoek, and Rinn}}}
+\bibcite{eraslan2019deeplearning}{{20}{2019}{{Eraslan et~al.}}{{Eraslan, Avsec, Gagneur, and Theis}}}
+\bibcite{weirauch2013evaluation}{{21}{2013}{{Weirauch et~al.}}{{Weirauch, Cote, Norel, et~al.}}}
+\bibcite{vaswani2017attention}{{22}{2017}{{Vaswani et~al.}}{{Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, and Polosukhin}}}
+\bibcite{devlin2019bert}{{23}{2019}{{Devlin et~al.}}{{Devlin, Chang, Lee, and Toutanova}}}
+\bibcite{rives2021esm1b}{{24}{2021}{{Rives et~al.}}{{Rives, Meier, Sercu, Goyal, Lin, Liu, Guo, Ott, Zitnick, Ma, and Fergus}}}
+\bibcite{elnaggar2021prottrans}{{25}{2022}{{Elnaggar et~al.}}{{Elnaggar, Heinzinger, Dallago, Rehawi, Wang, Jones, Gibbs, Feher, Angerer, Steinegger, Bhowmik, and Rost}}}
+\bibcite{rao2021msa}{{26}{2021}{{Rao et~al.}}{{Rao, Liu, Verkuil, Meier, Canny, Abbeel, Sercu, and Rives}}}
+\bibcite{rao2019evaluating}{{27}{2019}{{Rao et~al.}}{{Rao, Bhattacharya, Thomas, Duan, Chen, Canny, Abbeel, and Song}}}
+\bibcite{lin2023esm2}{{28}{2023}{{Lin et~al.}}{{Lin, Akin, Rao, Hie, Zhu, Lu, Smetanin, Verkuil, Kabeli, Shmueli, dos Santos~Costa, Fazel-Zarandi, Sercu, Candido, and Rives}}}
+\bibcite{hu2022lora}{{29}{2022}{{Hu et~al.}}{{Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and Chen}}}
+\bibcite{passaro2025boltz2}{{30}{2025}{{Passaro et~al.}}{{Passaro, Corso, Wohlwend, Reveiz, Thaler, Somnath, Getz, Portnoi, Roy, Stark, Kwabi-Addo, Beaini, Jaakkola, and Barzilay}}}
+\bibcite{wohlwend2024boltz1}{{31}{2024}{{Wohlwend et~al.}}{{Wohlwend, Corso, Passaro, Reveiz, Leidal, Swiderski, Portnoi, Chinn, Silterra, Jaakkola, and Barzilay}}}
+\bibcite{mirdita2022colabfold}{{32}{2022}{{Mirdita et~al.}}{{Mirdita, Sch{\"u}tze, Moriwaki, Heo, Ovchinnikov, and Steinegger}}}
+\bibcite{noyes2008homeodomain}{{33}{2008}{{Noyes et~al.}}{{Noyes, Christensen, Wakabayashi, Stormo, Brodsky, and Wolfe}}}
+\bibcite{najafabadi2015c2h2}{{34}{2015}{{Najafabadi et~al.}}{{Najafabadi, Mnaimneh, Schmitges, Garton, Lam, Yang, Albu, Weirauch, Radovani, Kim, Greenblatt, Frey, and Hughes}}}
+\bibcite{wetzel2022rclamps}{{35}{2022}{{Wetzel et~al.}}{{Wetzel, Zhang, and Singh}}}
+\bibcite{barrera2016survey}{{36}{2016}{{Barrera et~al.}}{{Barrera, Vedenko, Kurland, et~al.}}}
+\bibcite{meier2021language}{{37}{2021}{{Meier et~al.}}{{Meier, Rao, Verkuil, Liu, Sercu, and Rives}}}
+\bibcite{brandes2023genome}{{38}{2023}{{Brandes et~al.}}{{Brandes, Goldman, Wang, Ye, and Ntranos}}}
+\bibcite{shazeer2017outrageously}{{39}{2017}{{Shazeer et~al.}}{{Shazeer, Mirhoseini, Maziarz, Davis, Le, Hinton, and Dean}}}
+\bibcite{fedus2022switch}{{40}{2022}{{Fedus et~al.}}{{Fedus, Zoph, and Shazeer}}}
+\gdef \@abspage@last{18}

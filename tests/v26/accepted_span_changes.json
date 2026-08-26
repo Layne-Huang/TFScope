@@ -1,0 +1,16 @@
+{
+  "note": "Span changes on pre-existing accessions that were reviewed and ACCEPTED. Any change not listed here fails test_rescue_entries_cause_zero_tier1_drift. Add an entry only with a stated biological justification.",
+  "accepted": [
+    {
+      "accession": "Q9P215",
+      "gene": "POGK",
+      "candidate_idx": 0,
+      "old": [250, 323],
+      "new": [195, 323],
+      "delta_aa": 55,
+      "cause": "round-3 whitelist addition IPR018586/PF09607 (Brinker DNA-binding domain)",
+      "justification": "POGK carries BOTH a CENP-B HTH domain and a Brinker DBD. The pre-existing span covered only CenpB_HTH; the Brinker fragment at 195+ merges into the same cluster, so the wider span is the correct sequence-derived DBD region. Reviewed 2026-08-14.",
+      "families_after": "Brinker;CenpB_HTH"
+    }
+  ]
+}

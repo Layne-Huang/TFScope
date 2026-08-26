@@ -1,0 +1,7 @@
+# v26 diagnostic: v23compat_core
+# Same, with the original v26 core architecture (d_model 512, dropout 0.1, refiner 2).
+name: v23compat_core
+dataset: "v23compat"
+epochs: 225
+seeds: [42]
+manifest: data/processed/splits/v26/manifest_v23compat.parquet

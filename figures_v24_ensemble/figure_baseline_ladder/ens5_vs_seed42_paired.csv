@@ -1,0 +1,13 @@
+metric,direction,ens5_minus_seed42_oriented_positive_is_ensemble_better,ci95_lo,ci95_hi,n_genes,significant
+pearson_r,higher_better,0.0324,0.0162,0.0488,95,True
+cosine,higher_better,0.0192,0.011,0.0273,95,True
+topbase_acc,higher_better,0.0263,0.0086,0.0449,95,True
+auroc,higher_better,-0.0006,-0.009,0.0078,95,False
+macroF1,higher_better,0.0261,0.0048,0.0473,95,True
+covR,higher_better,0.027,0.0135,0.0409,95,True
+mae,lower_better,-0.0191,-0.0239,-0.0143,95,True
+rmse,lower_better,0.0101,0.0036,0.0162,95,True
+jsd_bits,lower_better,-0.0003,-0.0072,0.0068,95,False
+kl_bits,lower_better,0.2303,0.1784,0.2864,95,True
+ic_mae,lower_better,-0.2436,-0.2822,-0.2052,95,True
+coverage,higher_better,-0.0024,-0.0111,0.0062,95,False
