@@ -305,8 +305,17 @@ def main():
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--max-proteins", type=int, default=0)
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--seeds", nargs="*", default=None,
+                    help="subset of checkpoint tags to analyse (default: all 5). "
+                         "Pass a single tag, e.g. --seeds seed42, to characterise ONE "
+                         "model; the cross-seed reproducibility section is then skipped "
+                         "because it needs at least two.")
     ap.add_argument("--out", default=os.path.join(OUTDIR, "v24_ens_expert_residues.json"))
     a = ap.parse_args()
+    ckpts = [(t, c) for t, c in CKPTS if a.seeds is None or t in a.seeds]
+    if not ckpts:
+        sys.exit(f"no checkpoint tag matches {a.seeds}; known tags: "
+                 f"{[t for t, _ in CKPTS]}")
     os.makedirs(OUTDIR, exist_ok=True)
 
     df, contact_sets = load_proteins(a.max_proteins or None)
@@ -316,7 +325,7 @@ def main():
     log(f"family-ablation constant family_id = {const_fid}")
 
     results, profiles, profiles_wf = {}, {}, {}
-    for tag, ck in CKPTS:
+    for tag, ck in ckpts:
         if not os.path.exists(ck):
             log(f"!! missing {ck} — skipping {tag}")
             continue
@@ -344,8 +353,10 @@ def main():
         del model
         torch.cuda.empty_cache()
 
-    out = {"data": DATA, "contacts": CONTACTS, "ckpts": dict(CKPTS),
+    out = {"data": DATA, "contacts": CONTACTS, "ckpts": dict(ckpts),
            "n_proteins": int(len(df)), "per_seed": results}
+    if len(profiles) == 1:
+        log("single model: cross-seed reproducibility skipped (needs >= 2 checkpoints)")
     if len(profiles) > 1:
         out["cross_seed_aa"] = cross_seed(profiles)
         out["cross_seed_aa_within_family"] = cross_seed(profiles_wf)

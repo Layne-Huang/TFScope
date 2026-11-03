@@ -1,0 +1,53 @@
+{
+ "note": "unified 40%-identity split over sequence+structure rows; the DeepPBS 84-sample benchmark is inside test by construction",
+ "universe_rows": 6662,
+ "universe_genes": 1337,
+ "identity": 0.4,
+ "seed": 42,
+ "n_cdhit_clusters": 281,
+ "n_components_after_gene_closure": 281,
+ "largest_component_rows": 524,
+ "deeppbs_benchmark_rows": 84,
+ "gene_edge_used": false,
+ "leakage": {
+  "genes_straddling_splits": 18,
+  "genes_total": 1337,
+  "straddling_genes": [
+   "AL",
+   "BCD",
+   "BCL11A",
+   "CRX",
+   "EGR1",
+   "FOXA3",
+   "FOXG1",
+   "FOXO3",
+   "FOXP2",
+   "FOXP3",
+   "GBX1",
+   "GCN4",
+   "SMAD4",
+   "SRY",
+   "TAL1::TCF3",
+   "ZBTB7A",
+   "ZFP57",
+   "ZNF410"
+  ]
+ },
+ "splits": {
+  "train": {
+   "rows": 4596,
+   "genes": 909,
+   "frac": 0.6899
+  },
+  "val": {
+   "rows": 666,
+   "genes": 188,
+   "frac": 0.1
+  },
+  "test": {
+   "rows": 1400,
+   "genes": 259,
+   "frac": 0.2101
+  }
+ }
+}

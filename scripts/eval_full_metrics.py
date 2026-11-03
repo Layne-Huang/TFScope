@@ -147,8 +147,11 @@ def panel(core, aligned, cols):
     p = p / p.sum(0, keepdims=True)
     d = {}
     d["r"]   = np.nanmean([pearsonr(t[:, j], p[:, j])[0] for j in range(t.shape[1])])
-    d["mae"] = np.abs(p - t).mean()
-    d["rmse"] = np.sqrt(((p - t) ** 2).mean())
+    # DeepPBS convention: sum the error over the 4 bases within a column, then average
+    # over columns -> MAE in [0, 2], directly comparable to DeepPBS's own logs. The old
+    # per-entry mean was exactly this / 4 (RMSE / 2) and made us look 4x better.
+    d["mae"] = np.abs(p - t).sum(0).mean()
+    d["rmse"] = np.sqrt(((p - t) ** 2).sum(0).mean())
     d["ce"]  = -(t * np.log(p)).sum(0).mean()
     d["kl"]  = (t * (np.log(t) - np.log(p))).sum(0).mean()
     ic = 2.0 + (t * np.log2(t)).sum(0); w = ic / (ic.sum() + 1e-8)

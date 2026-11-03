@@ -25,10 +25,16 @@ for d in src/tfscope scripts/lofo scripts/v26 scripts/case_study iclr; do
   echo "  synced $d ($(find "$MIRROR/$d" -type f | wc -l) files)"
 done
 
+# Every top-level analysis/figure script, not a hand-kept list. Enumerating them one
+# by one has now failed three times: a new script is written, the job is launched
+# --mirror, and dies with "No such file". 44 files / 450 KB, so just take them all.
+echo "=== top-level scripts (all of scripts/*.py) ==="
+mkdir -p "$MIRROR/scripts"
+rsync -a "$REPO"/scripts/*.py "$MIRROR/scripts/"
+echo "  $(ls "$MIRROR"/scripts/*.py | wc -l) files"
+
 echo "=== single-file inputs (read-only; never written by a LOFO job) ==="
 INPUTS=(
-  scripts/train.py
-  scripts/reclassify_tf_families.py
   data/processed/tf_pwm_training_v23.parquet
   data/processed/tf_pwm_deeppbs_only_canon_trim.parquet
   data/contact_maps/contact_targets_v23.json
@@ -57,10 +63,14 @@ link() {  # $1 = repo-relative path, $2 = /data1 target
 }
 link checkpoints           "$STORE/checkpoints"
 link results/family_lofo   "$STORE/results_family_lofo"
+link results/moe_expert_interpretation "$STORE/results_moe_expert_interpretation"
+link figures_v24_ensemble  "$STORE/figures_v24_ensemble"
+link figures_v24           "$STORE/figures_v24"
 
 echo "=== verify: mirror resolves with NO AFS access ==="
 for p in scripts/train.py scripts/lofo/build_lofo_splits_v24.py \
          scripts/lofo/run_lofo_queue.sh scripts/v26/run_detached.sh \
+         scripts/analyze_v24_ens_expert_residues.py \
          data/processed/tf_pwm_training_v23.parquet \
          data/contact_maps/contact_targets_v23.json \
          data/processed/splits/lofo_v24/_manifest.json \

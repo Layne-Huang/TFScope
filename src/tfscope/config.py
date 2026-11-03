@@ -50,6 +50,11 @@ class TFScopeConfig:
                                        # ~50-70 decisions/protein so specialization can emerge).
 
     # Family conditioning
+    use_family_id: bool = True         # False -> the family label is NOT an input. Every
+                                       # family embedding becomes one learned constant, so
+                                       # FiLM/gating/router keep their shapes and init but
+                                       # carry zero family information. Predictions then
+                                       # depend only on the protein sequence.
     num_families: int = 10             # 8 core + "other" + "multi-domain"
     family_embed_dim: int = 64
     # Path to pre-computed semantic family embeddings (ProTrek text + ESM-2 seq).

@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 """Figure for the v24 ResidueMoE expert interpretation.
 
-  A  expert x amino-acid log2 enrichment (family-composition-controlled), seed42
-  B  same for all 5 seeds, rows Hungarian-matched onto seed42 -> are archetypes shared?
-  C  per-expert DNA-contact log2 enrichment (co-crystal base contacts), all seeds
+  A  expert x amino-acid log2 enrichment (family-composition-controlled)
+  B  same for every seed, rows Hungarian-matched onto the first -> archetypes shared?
+  C  per-expert DNA-contact log2 enrichment (co-crystal base contacts)
   D  cross-seed matched profile correlation vs permutation null
+
+With a SINGLE checkpoint, B and D carry no information -- B would restate A and D has
+no pair to compare -- so the figure drops to the two panels that are still meaningful.
 
   python scripts/plot_v24_ens_expert_residues.py <results.json> [outdir]
 """
@@ -47,11 +50,18 @@ cs = R.get("cross_seed_aa_within_family", R.get("cross_seed_aa", {}))
 for s in seeds[1:]:
     assign[s] = {int(k): int(v) for k, v in cs[s]["assignment"].items()}
 
-fig = plt.figure(figsize=(15, 10))
-gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1], hspace=0.38, wspace=0.22)
+MULTI = len(seeds) > 1
+if MULTI:
+    fig = plt.figure(figsize=(15, 10))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1], hspace=0.38, wspace=0.22)
+    CELL_A, CELL_C = gs[0, 0], gs[1, 0]
+else:
+    fig = plt.figure(figsize=(8.6, 10))
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.15, 1], hspace=0.34)
+    CELL_A, CELL_C = gs[0, 0], gs[1, 0]
 
 # ── A: seed42 heatmap ────────────────────────────────────────────────────────
-ax = fig.add_subplot(gs[0, 0])
+ax = fig.add_subplot(CELL_A)
 M = prof(seeds[0])
 v = np.nanpercentile(np.abs(M), 98)
 im = ax.imshow(M, cmap="RdBu_r", vmin=-v, vmax=v, aspect="auto")
@@ -65,54 +75,58 @@ ax.set_title(f"A  {seeds[0]}: expert x residue enrichment\n"
 plt.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
 
 # ── B: all seeds, matched rows, stacked ──────────────────────────────────────
-ax = fig.add_subplot(gs[0, 1])
-big = np.vstack([prof(s)[[assign[s][i] for i in range(E)]] for s in seeds])
-v = np.nanpercentile(np.abs(big), 98)
-im = ax.imshow(big, cmap="RdBu_r", vmin=-v, vmax=v, aspect="auto")
-for k in range(1, len(seeds)):
-    ax.axhline(k * E - 0.5, color="k", lw=1.2)
-ax.set_xticks(range(20)); ax.set_xticklabels(AAS, fontsize=9)
-ax.set_yticks([k * E + E / 2 - 0.5 for k in range(len(seeds))])
-ax.set_yticklabels(seeds, fontsize=9)
-ax.set_title("B  all 5 ensemble members, experts Hungarian-matched onto "
-             f"{seeds[0]}\n(shared vertical structure = reproducible archetype)",
-             fontsize=10, loc="left")
-plt.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+if MULTI:
+  ax = fig.add_subplot(gs[0, 1])
+  big = np.vstack([prof(s)[[assign[s][i] for i in range(E)]] for s in seeds])
+  v = np.nanpercentile(np.abs(big), 98)
+  im = ax.imshow(big, cmap="RdBu_r", vmin=-v, vmax=v, aspect="auto")
+  for k in range(1, len(seeds)):
+      ax.axhline(k * E - 0.5, color="k", lw=1.2)
+  ax.set_xticks(range(20)); ax.set_xticklabels(AAS, fontsize=9)
+  ax.set_yticks([k * E + E / 2 - 0.5 for k in range(len(seeds))])
+  ax.set_yticklabels(seeds, fontsize=9)
+  ax.set_title(f"B  all {len(seeds)} checkpoints, experts Hungarian-matched onto "
+               f"{seeds[0]}\n(shared vertical structure = reproducible archetype)",
+               fontsize=10, loc="left")
+  plt.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
 
 # ── C: contact enrichment ────────────────────────────────────────────────────
-ax = fig.add_subplot(gs[1, 0])
-w = 0.16
+ax = fig.add_subplot(CELL_C)
+w = 0.16 if MULTI else 0.6
 for k, s in enumerate(seeds):
     c = contact(s)[[assign[s][i] for i in range(E)]]
-    ax.bar(np.arange(E) + (k - 2) * w, c, w, label=s)
+    ax.bar(np.arange(E) + ((k - 2) * w if MULTI else 0), c, w, label=s)
 ax.axhline(0, color="k", lw=0.8)
 ax.set_xticks(range(E)); ax.set_xticklabels([f"e{i}" for i in range(E)])
-ax.set_xlabel(f"expert (matched index, {seeds[0]} frame)")
+ax.set_xlabel("expert" + (f" (matched index, {seeds[0]} frame)" if MULTI else ""))
 ax.set_ylabel(r"log$_2$ enrichment for DNA-contact residues")
 ax.set_title("C  do experts concentrate co-crystal base-contacting residues?\n"
              f"background contact rate = {R['per_seed'][seeds[0]]['contact_background_rate']}",
              fontsize=10, loc="left")
-ax.legend(fontsize=8, ncol=5)
+ax.legend(fontsize=8, ncol=5) if MULTI else None
 
 # ── D: cross-seed reproducibility ────────────────────────────────────────────
-ax = fig.add_subplot(gs[1, 1])
-xs = seeds[1:]
-m = [cs[s]["matched_mean_r"] for s in xs]
-n = [cs[s]["null_mean_r"] for s in xs]
-n95 = [cs[s]["null_p95_r"] for s in xs]
-x = np.arange(len(xs))
-ax.bar(x - 0.2, m, 0.4, color="#2c7fb8", label="Hungarian-matched")
-ax.bar(x + 0.2, n, 0.4, color="#bdbdbd", label="random permutation (mean)")
-ax.plot(x + 0.2, n95, "k_", ms=18, label="null p95")
-for i, s in enumerate(xs):
-    ax.text(i - 0.2, m[i] + 0.01, f"p={cs[s]['p_vs_null']:g}", ha="center", fontsize=8)
-ax.set_xticks(x); ax.set_xticklabels([f"{seeds[0]} vs {s}" for s in xs], fontsize=9)
-ax.set_ylabel("mean profile correlation")
-ax.set_title("D  are expert archetypes reproducible across seeds?", fontsize=10, loc="left")
-ax.legend(fontsize=8)
+if MULTI:
+  ax = fig.add_subplot(gs[1, 1])
+  xs = seeds[1:]
+  m = [cs[s]["matched_mean_r"] for s in xs]
+  n = [cs[s]["null_mean_r"] for s in xs]
+  n95 = [cs[s]["null_p95_r"] for s in xs]
+  x = np.arange(len(xs))
+  ax.bar(x - 0.2, m, 0.4, color="#2c7fb8", label="Hungarian-matched")
+  ax.bar(x + 0.2, n, 0.4, color="#bdbdbd", label="random permutation (mean)")
+  ax.plot(x + 0.2, n95, "k_", ms=18, label="null p95")
+  for i, s in enumerate(xs):
+      ax.text(i - 0.2, m[i] + 0.01, f"p={cs[s]['p_vs_null']:g}", ha="center", fontsize=8)
+  ax.set_xticks(x); ax.set_xticklabels([f"{seeds[0]} vs {s}" for s in xs], fontsize=9)
+  ax.set_ylabel("mean profile correlation")
+  ax.set_title("D  are expert archetypes reproducible across seeds?", fontsize=10, loc="left")
+  ax.legend(fontsize=8)
 
-fig.suptitle("v24 per-residue MoE: what each expert reads on the DBD "
-             f"({R['n_proteins']} unique DBDs, {R['per_seed'][seeds[0]]['n_tokens']:,} routed residues)",
+who = "5-seed ensemble" if MULTI else f"single model ({seeds[0]})"
+fig.suptitle(f"v24 per-residue MoE, {who}: what each expert reads on the DBD "
+             f"({R['n_proteins']} unique DBDs, "
+             f"{R['per_seed'][seeds[0]]['n_tokens']:,} routed residues)",
              fontsize=12)
 for ext in ("png", "pdf"):
     fig.savefig(f"{OUT}/figure_moe_expert_residues.{ext}", dpi=200, bbox_inches="tight")

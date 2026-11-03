@@ -63,6 +63,10 @@ SEED = 42
 LOFO_FAMILIES = [
     "C2H2", "Homeodomain", "bHLH", "bZIP", "Nuclear_Receptor", "HMG/SOX",
     "IRF", "T-box", "RHD/NFkB", "PAX", "E2F/DP", "GATA",
+    # added later: big enough to pair (20/21 test genes) and originally skipped only
+    # because they are near-zero-shot in the CANONICAL split -- a reason that does not
+    # survive, since the canonical training pool differs from the LOFO one
+    "Forkhead", "ETS",
 ]
 
 # per-family gene holdout sizes
@@ -115,6 +119,12 @@ def main():
     ap.add_argument("--outdir", default=OUTDIR)
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--families", nargs="*", default=LOFO_FAMILIES)
+    ap.add_argument("--pooled-rest", metavar="TAG", default=None,
+                    help="also build ONE split whose test set is every family NOT in "
+                         "--families. This is a novel-fold generalization control, not a "
+                         "13th family: its delta averages many unrelated folds and it "
+                         "removes far more training data at once, so it must be reported "
+                         "separately and never placed beside the per-family bars.")
     args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -152,14 +162,22 @@ def main():
         "families": {},
     }
 
+    jobs = [(f, [f]) for f in args.families]
+    if args.pooled_rest:
+        rest = sorted(set(pool.fam_lofo) - set(args.families))
+        jobs.append((args.pooled_rest, rest))
+        print(f"pooled holdout '{args.pooled_rest}': {len(rest)} families "
+              f"({sum(pool.fam_lofo.isin(rest))} rows / "
+              f"{pool[pool.fam_lofo.isin(rest)].g.nunique()} genes)")
+
     rows_out = []
-    for fam in args.families:
-        f_pool = pool[pool.fam_lofo == fam]
+    for fam, held in jobs:
+        f_pool = pool[pool.fam_lofo.isin(held)]
         if f_pool.empty:
             print(f"[skip] {fam}: no rows"); continue
-        f_excl = excl[excl.fam_lofo == fam]
+        f_excl = excl[excl.fam_lofo.isin(held)]
 
-        keep = pool[pool.fam_lofo != fam]
+        keep = pool[~pool.fam_lofo.isin(held)]
         tr = keep[keep.g.isin(train_genes)]
         va = keep[keep.g.isin(val_genes)]
         ct = keep[keep.g.isin(ctrl_genes)]
@@ -172,11 +190,13 @@ def main():
             assert not (set(a) & set(b)), f"{fam}: filename overlap between splits"
         for a, b in [(tr, va), (tr, te), (tr, ct), (va, te), (va, ct), (ct, te)]:
             assert not (set(a.g) & set(b.g)), f"{fam}: GENE overlap between splits"
-        assert fam not in set(tr.fam_lofo) | set(va.fam_lofo) | set(ct.fam_lofo), \
-            f"{fam}: held-out family leaked into train/val/ctrl"
+        leaked = (set(tr.fam_lofo) | set(va.fam_lofo) | set(ct.fam_lofo)) & set(held)
+        assert not leaked, f"{fam}: held-out families leaked into train/val/ctrl: {leaked}"
 
         meta = {
             "held_out_family": fam,
+            "held_out_family_members": held,
+            "is_pooled_holdout": len(held) > 1,
             "method": "leave_one_family_out + global paired ctrl gene holdout",
             "n_train_rows": len(tr_f), "n_train_genes": int(tr.g.nunique()),
             "n_val_rows": len(va_f), "n_val_genes": int(va.g.nunique()),

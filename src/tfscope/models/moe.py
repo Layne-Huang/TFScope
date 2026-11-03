@@ -111,9 +111,33 @@ class SemanticFamilyEmbedding(nn.Module):
         return self.proj(self.vectors[family_id])
 
 
+class NullFamilyEmbedding(nn.Module):
+    """Family embedding that ignores the label — used when family_id is not an input.
+
+    Returns one learned vector for every protein. Downstream consumers (FiLM, the
+    gate's semantic bias, the residue router) therefore see a constant where the
+    family code used to be, which collapses to a plain learned bias in each of
+    them: shapes, initialisation and the identity-at-init property of FiLM all
+    survive, but no family information reaches the model. Zeroing the tensor
+    instead would work too, yet it would also freeze those bias paths at zero, so
+    the constant is kept trainable.
+    """
+
+    def __init__(self, embed_dim: int):
+        super().__init__()
+        self.constant = nn.Parameter(torch.zeros(1, embed_dim))
+
+    def forward(self, family_id: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        return self.constant.expand(family_id.shape[0], -1)
+
+
 def build_family_embedding(config: TFScopeConfig) -> nn.Module:
     """Return SemanticFamilyEmbedding if the pre-computed file exists,
     otherwise fall back to LearnedFamilyEmbedding."""
+    if not getattr(config, "use_family_id", True):
+        print("[MoE] use_family_id=False — family label is not an input "
+              "(constant embedding)")
+        return NullFamilyEmbedding(config.family_embed_dim)
     path = getattr(config, "family_embedding_path", None)
     if path and __import__("os").path.isfile(path):
         data = torch.load(path, map_location="cpu", weights_only=False)

@@ -1,0 +1,19 @@
+{
+ "structonly_split": "data/processed/splits/ablation_v24/structonly.json",
+ "structonly_metadata": {
+  "derived_from": "data/processed/splits/train_v22/split.json",
+  "rule": "train and val restricted to _set == 'struct' (structure-backed rows)",
+  "n_train_rows": 936,
+  "n_val_rows": 144,
+  "n_test_rows": 291,
+  "n_train_genes": 211,
+  "n_val_genes": 32,
+  "n_test_genes": 51,
+  "n_dropped_train_rows": 3858,
+  "n_dropped_val_rows": 514
+ },
+ "shuffled_recognition": "data/contact_maps/recognition_residues_v23_shuffled.json",
+ "shuffled_contact_targets": "data/contact_maps/contact_targets_v23_shuffled.json",
+ "shuffle_seed": 0,
+ "shuffle_rule": "per-row permutation of [0, len(chain1)); indices >= len(chain1) left unchanged so clipping/partner-spill is identical to the real file"
+}

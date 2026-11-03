@@ -35,6 +35,11 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, DistributedSampler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+# Repo root too: the checkpoint selector imports `iclr.unified_eval` so that it scores
+# with the SAME code as the benchmark. Under `torch.distributed.run` sys.path[0] is
+# scripts/, not the repo root, so without this the import dies at the first oracle-r
+# epoch — several epochs in, long after launch looks healthy.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from tfscope.config import TFScopeConfig
 from tfscope.data.dataset import (
@@ -101,6 +106,11 @@ def parse_args():
     p.add_argument("--family-embedding-path", default=None,
                    help="semantic family-embedding file; pass 'none' to force the learned embedding "
                         "(required when num-families != the precomputed file's family count)")
+    p.add_argument("--no-family-id", action="store_true",
+                   help="drop the family label as a model input: every family embedding "
+                        "becomes one learned constant and family_id is zeroed at the model "
+                        "entry, so the prediction depends on the protein sequence alone. "
+                        "Forces the family-dependent aux losses (diversity, route CE) off.")
     p.add_argument("--v18-attn-sparse", default=None,
                    choices=["softmax", "entmax15", "sparsemax", "entmax_learn"],
                    help="hard-sparse recognition attention normalizer (default softmax = current model)")
@@ -208,10 +218,12 @@ def parse_args():
     p.add_argument("--max-chains", type=int, default=2,
                    help="Max protomers fed (self + max_chains-1 partners). "
                         "2=dimer, 4=tetramer (p53/HSF/NF-Y/IRF); needs partner_seqs in --data")
-    p.add_argument("--legacy-oracle-r", action="store_true",
-                   help="Select on the LEGACY length-blind gate-oracle-r (overlap "
-                        "only). Default is coverage-aware (r x coverage), matching "
-                        "eval_full_metrics.panel_full so a collapsed gate cannot win.")
+    p.add_argument("--select-on-covr", "--legacy-oracle-r", action="store_true",
+                   dest="select_on_covr",
+                   help="Select checkpoints on covR (content_r x coverage) instead of "
+                        "the project's single r. Only for reproducing runs from before "
+                        "2026-08-28: selecting on covR while reporting content_r made "
+                        "v25's ckpt_best the worst of its nine checkpoints.")
     # Benchmark eval: periodic oracle-r on a held-out, contamination-controlled set
     # (e.g. cluster40 test). val-oracle-r is lenient + on easy paralogs, so it's a poor
     # selector; this selects ckpt_best_bench on the hard test-like metric instead.
@@ -697,19 +709,35 @@ def run_val_epoch(model, loss_fn, loader, device, precision="fp32"):
 @torch.no_grad()
 def run_oracle_r_eval(model, val_loader, device, n_tfs=0,
                       ic_thresh=0.25, max_shift=10, precision="fp32",
-                      coverage_aware=True, aggregation="gene"):
-    """Oracle-aligned Pearson r on up to n_tfs val TFs.
+                      coverage_aware=False, aggregation="gene"):
+    """Validation r on up to n_tfs val TFs — THE single r of this project.
 
-    For each TF: extract gate-predicted active columns, align vs the trimmed
-    informative core of the target (offset + RC freedom), record per-col r.
+    For each TF: extract the gate-predicted active columns, register them against
+    the IC-trimmed informative core of the target (shift + reverse-complement
+    freedom), and take the mean per-column Pearson over the overlap. This is
+    `iclr.unified_eval.panel_A`'s `content_r`, called through that module so the
+    checkpoint selector and the benchmark are literally the same code.
 
-    coverage_aware (default True): scale the overlap r by coverage
-    (n_overlap / L_target_core), matching eval_full_metrics.panel_full's r_cov.
-    Without it the gate-based r has a length blind spot -- a short gate is
-    scored on fewer, easier columns and gets an inflated r, so a plain-r
-    selector rewards gate collapse. The coverage-scaled r removes that, so
-    ckpt_best is chosen on the same honest quantity we report at eval.
+    Do not add a second r. The repo previously carried two:
+
+      content_r  mean per-column Pearson after registration (this one, and what
+                 `_col_metrics.pearson_r` computes — verified identical to 7e-9)
+      covR       content_r x coverage, i.e. accuracy and length folded into one
+                 scalar
+
+    Selecting on covR while reporting content_r is what made v25's shipped
+    `ckpt_best` the WORST of its nine checkpoints (0.569 vs 0.615-0.662 on the
+    84-row benchmark): covR could not tell the epochs apart and picked an unlucky
+    one. covR is also unusable for the DeepPBS comparison, since DeepPBS predicts
+    no length at all and its coverage is free.
+
+    Length behaviour has not been dropped, it has been *separated*: coverage,
+    gate-length MAE and length bias are reported as their own diagnostics at eval
+    (`unified_eval.panel_B`). `coverage_aware=True` restores the old covR selector
+    only for reproducing pre-2026-08-28 runs.
     """
+    from importlib import import_module
+    _panel_A = import_module("iclr.unified_eval").panel_A
     def _ic(pwm):
         p = np.clip(pwm, 1e-8, 1.0)
         return 2.0 + (p * np.log2(p)).sum(0)
@@ -774,6 +802,10 @@ def run_oracle_r_eval(model, val_loader, device, n_tfs=0,
             continue
         tgt_core = _trim_core(tgt_valid, ic_thresh)
         if tgt_core.shape[1] == 0:
+            continue
+        if not coverage_aware:
+            # the one r: exactly the benchmark's panel_A content_r
+            scored.append((gene, _panel_A(pred_core, tgt_core)["content_r"]))
             continue
         _, shift, _, r = align_pwm(pred_core, tgt_core, max_shift=max_shift,
                                     consider_revcomp=True)
@@ -967,6 +999,17 @@ def main():
     if args.v18_attn_sparse is not None:       config.v18_attn_sparse = args.v18_attn_sparse
     if args.v18_attn_alpha_init is not None:   config.v18_attn_alpha_init = args.v18_attn_alpha_init
     config.use_dual_family = bool(args.dual_family)
+    config.use_family_id = not bool(getattr(args, "no_family_id", False))
+    if not config.use_family_id:
+        # Both read family_id as a supervision signal, so leaving either on would
+        # reintroduce the label through the loss after the input path was cut.
+        for name in ("diversity_loss_weight", "route_supervision_weight"):
+            if float(getattr(config, name, 0.0)) != 0.0:
+                print(f"  --no-family-id: forcing {name} {getattr(config, name)} -> 0.0")
+                setattr(config, name, 0.0)
+        if config.use_dual_family:
+            raise SystemExit("--no-family-id is incompatible with --dual-family "
+                             "(the dual conditioner exists only to fuse the family label)")
     if args.dual_family_dim is not None:           config.dual_family_dim = args.dual_family_dim
     if args.dual_family_semantic_path is not None: config.dual_family_semantic_path = args.dual_family_semantic_path
     if config.use_dual_family and is_main:
@@ -1251,7 +1294,7 @@ def main():
             print(f"W&B init failed ({e}) — continuing without logging")
 
     use_oracle = args.eval_oracle_r and not args.dummy
-    oracle_label = "Oracle-r" if args.legacy_oracle_r else "CovR"
+    oracle_label = "CovR" if args.select_on_covr else "r"
     oracle_hdr = f"  {oracle_label:>9}" if use_oracle else ""
     if is_main:
         print(f"\n{'Epoch':>6}  {'Train Loss':>10}  {'Val Loss':>10}  "
@@ -1286,7 +1329,7 @@ def main():
                 raw_model, val_loader, device,
                 n_tfs=args.oracle_r_n_tfs,
                 precision=args.precision,
-                coverage_aware=not args.legacy_oracle_r,
+                coverage_aware=args.select_on_covr,
                 aggregation=args.oracle_aggregation,
                 ic_thresh=args.pwm_core_ic_thresh)
 
@@ -1298,7 +1341,7 @@ def main():
                 (epoch + 1) % bench_every == 0 or epoch + 1 == args.epochs):
             bench_r = run_oracle_r_eval(raw_model, bench_loader, device,
                                         n_tfs=100000, precision=args.precision,
-                                        coverage_aware=not args.legacy_oracle_r,
+                                        coverage_aware=args.select_on_covr,
                                         aggregation=args.oracle_aggregation,
                                         ic_thresh=args.pwm_core_ic_thresh)
         if distributed:

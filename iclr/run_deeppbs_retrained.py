@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import pickle
 import re
 import sys
@@ -83,7 +84,10 @@ def run_deeppbs(deep_repo: Path, out_root: Path, model_names, structure_names, d
         )
         batches_by_model.append(list(DataLoader(dataset, batch_size=1, shuffle=False, pin_memory=False)))
         model = Model(13, 14, condition=config["condition"])
-        state = torch.load(out_root / mn / "Model.best.tar", map_location=device)
+        # DeepPBS selects on validation MAE while we score content_r; DP_CKPT lets us test
+        # whether that mismatch costs it, the way covR cost TFScope its best epoch.
+        state = torch.load(out_root / mn / os.environ.get("DP_CKPT", "Model.best.tar"),
+                           map_location=device)
         model.load_state_dict(state["model_state_dict"])
         models.append(model.to(device).eval())
 

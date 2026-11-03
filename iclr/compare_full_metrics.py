@@ -29,7 +29,18 @@ from iclr.baselines import _decode_pwm
 
 def _col_metrics(P, T):
     """P,T = (4,N) aligned & column-normalized. Return dict of scalar metrics
-    plus pooled arrays for auroc/F1."""
+    plus pooled arrays for auroc/F1.
+
+    `mae` and `rmse` use **DeepPBS's convention**: the error is summed over the 4
+    bases within a column before averaging over columns, so MAE lands in [0, 2] and
+    is directly comparable to the numbers DeepPBS's own trainer prints. Averaging
+    over the 4x N entries instead (the project's older habit) gives exactly MAE/4
+    and RMSE/2, and quietly made our models look 4x better than DeepPBS's logs.
+    `mae_dpbs`/`rmse_dpbs` are kept as aliases for callers that ask for them by name.
+
+    Results files written before 2026-08-28 hold the OLD per-entry scale; multiply
+    their `mae` by 4 and `rmse` by 2 before putting them next to anything new.
+    """
     P = np.clip(P, 1e-8, 1.0); P = P / P.sum(0, keepdims=True)
     T = np.clip(T, 1e-8, 1.0); T = T / T.sum(0, keepdims=True)
     N = P.shape[1]
@@ -42,12 +53,13 @@ def _col_metrics(P, T):
         m = 0.5 * (p + t)
         kl = lambda a, b: float(np.sum(a * np.log2(a / b)))
         jsd.append(0.5 * kl(p, m) + 0.5 * kl(t, m))
-    mae = float(np.mean(np.abs(P - T)))
-    rmse = float(np.sqrt(np.mean((P - T) ** 2)))
+    mae = float(np.mean(np.sum(np.abs(P - T), axis=0)))               # DeepPBS scale [0,2]
+    rmse = float(np.sqrt(np.mean(np.sum((P - T) ** 2, axis=0))))      # DeepPBS brier_multi
     topbase = float(np.mean(P.argmax(0) == T.argmax(0)))
     ic = lambda M: 2.0 + np.sum(M * np.log2(M), axis=0)          # (N,) bits
     ic_mae = float(np.mean(np.abs(ic(P) - ic(T))))
     return dict(pearson_r=float(np.nanmean(rs)), mae=mae, rmse=rmse,
+                mae_dpbs=mae, rmse_dpbs=rmse,
                 cosine=float(np.mean(cos)), jsd_bits=float(np.mean(jsd)),
                 topbase_acc=topbase, ic_mae=ic_mae,
                 _pred_letter=list(P.argmax(0)), _true_letter=list(T.argmax(0)),

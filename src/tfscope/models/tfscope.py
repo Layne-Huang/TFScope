@@ -116,6 +116,13 @@ class TFScopeModel(nn.Module):
             pwm_logits:  (B, 4, max_motif_length) nucleotide logits (all positions)
             aux: dict with gate_logits, top_indices, family_id
         """
+        # config.use_family_id=False -> the family label must not reach ANY consumer.
+        # NullFamilyEmbedding already neutralises the MoE path; flattening the tensor
+        # here also covers the v18 contact-code head, the recognition-energy head and
+        # the aux dict, so no option combination can smuggle the label back in.
+        if not getattr(self.config, "use_family_id", True):
+            family_id = torch.zeros_like(family_id)
+
         if getattr(self.config, "use_cached_esmc", False):
             embeddings = self.backbone(sequence_tokens, esmc_emb=esmc_emb)
         else:

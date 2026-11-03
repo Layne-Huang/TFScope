@@ -284,7 +284,9 @@ def main():
                         "gate_r": float(gate_r),
                         "panel_r": float(panel_metrics["r"]),
                         "canon_r": float(canon_fixed_r(core, prediction_panel)),
-                        "mae": float(4.0 * panel_metrics["mae"]),
+                        # panel() now returns the DeepPBS convention directly; the old
+                        # x4 conversion here would double-count it.
+                        "mae": float(panel_metrics["mae"]),
                         "panel_mae": float(panel_metrics["mae"]),
                         "fixed_mae": fixed_deeppbs_mae(
                             prediction_panel, target_valid
